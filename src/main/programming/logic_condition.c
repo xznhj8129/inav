@@ -644,6 +644,23 @@ static int logicConditionGetWaypointOperandValue(int operand) {
             return ((posControl.waypointList[NAV_Status.activeWpIndex].p3 & NAV_WP_USER4) == NAV_WP_USER4);
             break;
 
+        case LOGIC_CONDITION_OPERAND_WAYPOINTS_WAYPOINT_HEADING:
+            {
+                uint32_t heading = 0;
+                if (navGetCurrentStateFlags() & NAV_AUTO_WP) {
+                    fpVector3_t poi;
+                    gpsLocation_t wp;
+                    wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
+                    wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
+                    wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
+                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, GEO_ALT_RELATIVE);
+                    heading = calculateBearingToDestination(&poi);//calculateDistanceToDestination(&poi) / 100;
+                }
+
+                return heading;
+            }
+            break;
+
         default:
             return 0;
             break;
