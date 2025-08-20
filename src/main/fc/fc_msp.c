@@ -422,6 +422,8 @@ static bool mspFcProcessOutCommand(uint16_t cmdMSP, sbuf_t *dst, mspPostProcessF
         sbufWriteU8(dst, getHwRangefinderStatus());
         sbufWriteU8(dst, getHwPitotmeterStatus());
         sbufWriteU8(dst, getHwOpticalFlowStatus());
+
+        isMspConfigActive(true);  // used to indicate configurator connection active
         break;
 
     case MSP_ACTIVEBOXES:
@@ -1737,6 +1739,13 @@ static bool mspFcProcessOutCommand(uint16_t cmdMSP, sbuf_t *dst, mspPostProcessF
         }
         break;
 #endif
+
+    case MSP2_COMMON_GET_RADAR_GPS:
+        for (uint8_t i = 0; i < RADAR_MAX_POIS; i++){
+            sbufWriteDataSafe(dst, &radar_pois[i].gps, sizeof(gpsLocation_t));
+        }
+        break;
+
     default:
         return false;
     }
@@ -1820,7 +1829,7 @@ static mspResult_e mspFcGeozoneVerteciesOutCommand(sbuf_t *dst, sbuf_t *src)
             return MSP_RESULT_ACK;
         } else {
             return MSP_RESULT_ERROR;
-        } 
+        }
     } else {
         return MSP_RESULT_ERROR;
     }
@@ -2814,7 +2823,11 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
 
 #ifdef USE_FLASHFS
     case MSP_DATAFLASH_ERASE:
-        flashfsEraseCompletely();
+        if (blackboxMayEditConfig()) {
+            flashfsEraseCompletely();
+        } else {
+            return MSP_RESULT_ERROR;
+        }
         break;
 #endif
 
@@ -3431,13 +3444,13 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
             if (!sbufReadU8Safe(&geozoneId, src) || geozoneId >= MAX_GEOZONES_IN_CONFIG) {
                 return MSP_RESULT_ERROR;
             }
-            
+
             geozoneResetVertices(geozoneId, -1);
-            geoZonesConfigMutable(geozoneId)->type = sbufReadU8(src); 
+            geoZonesConfigMutable(geozoneId)->type = sbufReadU8(src);
             geoZonesConfigMutable(geozoneId)->shape = sbufReadU8(src);
             geoZonesConfigMutable(geozoneId)->minAltitude = sbufReadU32(src);
-            geoZonesConfigMutable(geozoneId)->maxAltitude = sbufReadU32(src);  
-            geoZonesConfigMutable(geozoneId)->isSealevelRef = sbufReadU8(src);   
+            geoZonesConfigMutable(geozoneId)->maxAltitude = sbufReadU32(src);
+            geoZonesConfigMutable(geozoneId)->isSealevelRef = sbufReadU8(src);
             geoZonesConfigMutable(geozoneId)->fenceAction = sbufReadU8(src);
             geoZonesConfigMutable(geozoneId)->vertexCount = sbufReadU8(src);
         } else {
