@@ -172,7 +172,8 @@ static uint8_t mavRates[] = {
     [MAV_DATA_STREAM_POSITION] = 2,             // 2Hz
     [MAV_DATA_STREAM_EXTRA1] = 3,               // 3Hz
     [MAV_DATA_STREAM_EXTRA2] = 2,               // 2Hz, HEARTBEATs are important
-    [MAV_DATA_STREAM_EXTRA3] = 1                // 1Hz
+    [MAV_DATA_STREAM_EXTRA3] = 1               // 1Hz
+    // TODO: Add current mode stream
 };
 
 #define MAXSTREAMS (sizeof(mavRates) / sizeof(mavRates[0]))
@@ -199,7 +200,7 @@ static APM_COPTER_MODE inavToArduCopterMap(flightModeForTelemetry_e flightMode)
         case FLM_ALTITUDE_HOLD: return COPTER_MODE_ALT_HOLD;
         case FLM_POSITION_HOLD: 
             {
-                if (IS_RC_MODE_ACTIVE(BOXGCSNAV) & (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
+                if (IS_RC_MODE_ACTIVE(BOXGCSNAV) && (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
                     return COPTER_MODE_GUIDED;
                 } else {
                     return COPTER_MODE_POSHOLD;
@@ -236,7 +237,7 @@ static APM_PLANE_MODE inavToArduPlaneMap(flightModeForTelemetry_e flightMode)
         case FLM_ALTITUDE_HOLD: return PLANE_MODE_FLY_BY_WIRE_B;
         case FLM_POSITION_HOLD: 
             {
-                if (IS_RC_MODE_ACTIVE(BOXGCSNAV) & (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
+                if (IS_RC_MODE_ACTIVE(BOXGCSNAV) && (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
                     return PLANE_MODE_GUIDED;
                 } else {
                     return PLANE_MODE_LOITER;
@@ -261,6 +262,196 @@ static APM_PLANE_MODE inavToArduPlaneMap(flightModeForTelemetry_e flightMode)
             }
         default:                return PLANE_MODE_ENUM_END;
     }
+}
+
+// NEW
+static void mavlinkSendMessage(void)
+{
+    uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
+
+    mavlink_status_t* chan_state = mavlink_get_channel_status(MAVLINK_COMM_0);
+    if (telemetryConfig()->mavlink.version == 1) {
+        chan_state->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+    } else {
+        chan_state->flags &= ~MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+    }
+
+    int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavSendMsg);
+
+    for (int i = 0; i < msgLength; i++) {
+        serialWrite(mavlinkPort, mavBuffer[i]);
+    }
+}
+
+// NEW
+// --- Standard Modes microservice (MAVLink v2 only: msgs 435..437) ---
+static timeUs_t lastCurrentModeMsgUs = 0;  // ~0.5 Hz stream for CURRENT_MODE
+static uint8_t availableModesSeq = 0;      // bump if your available modes set changes
+
+// NEW
+// Map INAV flight mode -> MAV_STANDARD_MODE (0 = NON_STANDARD)
+// this one's the problem
+static uint8_t flmToStandard(flightModeForTelemetry_e flm)
+{
+    switch (flm) {
+        case FLM_CRUISE:
+            return MAV_STANDARD_MODE_CRUISE;
+        case FLM_POSITION_HOLD:
+            return MAV_STANDARD_MODE_POSITION_HOLD;
+        case FLM_ALTITUDE_HOLD:
+            return MAV_STANDARD_MODE_ALTITUDE_HOLD;
+        case FLM_MISSION:
+            return MAV_STANDARD_MODE_MISSION;
+        case FLM_RTH:
+            return MAV_STANDARD_MODE_SAFE_RECOVERY;
+        case FLM_LAUNCH:
+            return MAV_STANDARD_MODE_TAKEOFF;
+        // non-standard INAV modes
+        case FLM_MANUAL:
+        case FLM_ACRO:
+        case FLM_ACRO_AIR:
+        case FLM_ANGLE:
+        case FLM_HORIZON:
+        case FLM_ANGLEHOLD:
+            return MAV_STANDARD_MODE_NON_STANDARD;
+        default:
+            return MAV_STANDARD_MODE_NON_STANDARD;
+    }
+}
+
+
+// NEW
+// AVAILABLE_MODES properties bitmask
+static uint32_t flmProperties(flightModeForTelemetry_e flm)
+{
+    uint32_t p = 0;
+    const bool gcsGuided = IS_RC_MODE_ACTIVE(BOXGCSNAV) && (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS);
+    if (flm == FLM_MISSION || flm == FLM_RTH || flm == FLM_LAUNCH || (flm == FLM_POSITION_HOLD && gcsGuided)) p |= MAV_MODE_PROPERTY_AUTO_MODE;
+    if (flm == FLM_ACRO) p |= MAV_MODE_PROPERTY_ADVANCED;
+    return p;
+}
+
+// NEW
+// Name for non-standard entries (empty for standard modes)
+static void flmName(char out[35], flightModeForTelemetry_e flm)
+{
+    out[0] = '\0';
+    switch (flm) {
+        case FLM_ACRO:    strncpy(out, "INAV Acro", 34);    out[34] = '\0'; break;
+        case FLM_ANGLE:   strncpy(out, "INAV Angle", 34);   out[34] = '\0'; break;
+        case FLM_HORIZON: strncpy(out, "INAV Horizon", 34); out[34] = '\0'; break;
+        case FLM_MANUAL:  strncpy(out, "INAV Manual", 34);  out[34] = '\0'; break;
+        default: break; // standard modes keep empty name
+    }
+}
+
+// NEW
+// Compact list QGC will actually use
+static uint8_t buildAvailableModesList(flightModeForTelemetry_e modesOut[], uint8_t maxLen)
+{
+    uint8_t n = 0;
+
+    if (n < maxLen) modesOut[n++] = FLM_CRUISE;
+    if (n < maxLen) modesOut[n++] = FLM_POSITION_HOLD;
+    if (n < maxLen) modesOut[n++] = FLM_ALTITUDE_HOLD;
+    if (n < maxLen) modesOut[n++] = FLM_MISSION;
+    if (n < maxLen) modesOut[n++] = FLM_RTH;
+    if (n < maxLen) modesOut[n++] = FLM_LAUNCH;
+
+    if (n < maxLen) modesOut[n++] = FLM_ANGLE;
+    if (n < maxLen) modesOut[n++] = FLM_HORIZON;
+    if (n < maxLen) modesOut[n++] = FLM_ACRO;
+
+    return n;
+}
+
+// NEW
+static void mavlinkSendCurrentModeNow(void)
+{
+    if (telemetryConfig()->mavlink.version == 1) return;
+    const flightModeForTelemetry_e flm = getFlightModeForTelemetry();
+
+    const uint8_t  standard = flmToStandard(flm);
+    const uint32_t custom   = (uint32_t)flm; // display only; we do not accept DO_SET_MODE
+    const uint32_t intended = 0;             // unknown/not supplied
+
+    mavlink_msg_current_mode_pack(mavSystemId, mavComponentId, &mavSendMsg,
+        standard, custom, intended);
+    mavlinkSendMessage();
+}
+
+// NEW
+static void mavlinkSendAvailableModesEnumerate(uint8_t indexOrZero)
+{
+    if (telemetryConfig()->mavlink.version == 1) return;
+
+    flightModeForTelemetry_e list[16];
+    const uint8_t count = buildAvailableModesList(list, (uint8_t)(sizeof(list)/sizeof(list[0])));
+
+    uint8_t start = 1, end = count;
+    if (indexOrZero >= 1 && indexOrZero <= count) { start = end = indexOrZero; }
+
+    for (uint8_t idx = start; idx <= end; idx++) {
+        const flightModeForTelemetry_e flm = list[idx - 1];
+        const uint8_t  standard = flmToStandard(flm);
+        const uint32_t custom   = (uint32_t)flm;
+        const uint32_t props    = flmProperties(flm);
+        char name[35];
+        flmName(name, flm); // empty for standard modes
+
+        mavlink_msg_available_modes_pack(
+            mavSystemId, mavComponentId, &mavSendMsg,
+            /* number_modes */ count,
+            /* mode_index  */ idx,
+            /* standard    */ standard,
+            /* custom_mode */ custom,
+            /* properties  */ props,
+            /* mode_name   */ name
+        );
+        mavlinkSendMessage();
+    }
+}
+
+// NEW
+static void mavlinkSendAvailableModesMonitor(void)
+{
+    if (telemetryConfig()->mavlink.version == 1) return;
+    mavlink_msg_available_modes_monitor_pack(mavSystemId, mavComponentId, &mavSendMsg, availableModesSeq);
+    mavlinkSendMessage();
+}
+
+// NEW
+static void mavlinkSendAutopilotVersion(void)
+{
+    if (telemetryConfig()->mavlink.version == 1) return;
+
+    // will need to add real capabilities according to ifdef: https://mavlink.io/en/messages/common.html#MAV_PROTOCOL_CAPABILITY
+    uint64_t capabilities = 0;
+    capabilities |= MAV_PROTOCOL_CAPABILITY_MAVLINK2;
+    capabilities |= MAV_PROTOCOL_CAPABILITY_MISSION_INT; // i assume
+    capabilities |= MAV_PROTOCOL_CAPABILITY_COMMAND_INT;
+    //	MAV_PROTOCOL_CAPABILITY_MISSION_FENCE geofence
+    capabilities |= MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_GLOBAL_INT;
+
+    // Bare minimum: caps + IDs. Everything else 0 is fine.
+    mavlink_msg_autopilot_version_pack(
+        mavSystemId, 
+        mavComponentId, 
+        &mavSendMsg,
+        capabilities,                // capabilities
+        0,                           // flight_sw_version
+        0,                           // middleware_sw_version
+        0,                           // os_sw_version
+        0,                           // board_version
+        0ULL,                        // flight_custom_version
+        0ULL,                        // middleware_custom_version
+        0ULL,                        // os_custom_version
+        0ULL,                        // vendor_id
+        0ULL,                        // product_id
+        (uint64_t)mavSystemId,       // uid (any stable nonzero is fine)
+        0ULL                         // uid2
+    );
+    mavlinkSendMessage();
 }
 
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
@@ -345,23 +536,6 @@ void checkMAVLinkTelemetryState(void)
         freeMAVLinkTelemetryPort();
 }
 
-static void mavlinkSendMessage(void)
-{
-    uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-
-    mavlink_status_t* chan_state = mavlink_get_channel_status(MAVLINK_COMM_0);
-    if (telemetryConfig()->mavlink.version == 1) {
-        chan_state->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
-    } else {
-        chan_state->flags &= ~MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
-    }
-
-    int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavSendMsg);
-
-    for (int i = 0; i < msgLength; i++) {
-        serialWrite(mavlinkPort, mavBuffer[i]);
-    }
-}
 
 void mavlinkSendSystemStatus(void)
 {
@@ -748,10 +922,6 @@ void mavlinkSendHUDAndHeartbeat(void)
     mavlinkSendMessage();
 
 
-    uint8_t mavModes = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED | MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-    if (ARMING_FLAG(ARMED))
-        mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
-
     uint8_t mavSystemType;
     switch (mixerConfig()->platformType)
     {
@@ -778,21 +948,30 @@ void mavlinkSendHUDAndHeartbeat(void)
             break;
     }
 
+    // NEW
+    uint8_t mavModes = 0;//MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+    if (ARMING_FLAG(ARMED)) mavModes |= MAV_MODE_FLAG_SAFETY_ARMED;
     flightModeForTelemetry_e flm = getFlightModeForTelemetry();
-    uint8_t mavCustomMode;
+    const bool gcsGuided = IS_RC_MODE_ACTIVE(BOXGCSNAV) && (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS);
 
-    if (STATE(FIXED_WING_LEGACY)) {
-        mavCustomMode = (uint8_t)inavToArduPlaneMap(flm);
+    // Only set STABILIZE when standard mode is not GUIDED
+    if (gcsGuided) {
+        mavModes |= MAV_MODE_FLAG_GUIDED_ENABLED;
     }
     else {
-        mavCustomMode = (uint8_t)inavToArduCopterMap(flm);
-    }
-
-    if (flm != FLM_MANUAL) {
-        mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
-    }
-    if (flm == FLM_POSITION_HOLD || flm == FLM_RTH || flm == FLM_MISSION) {
-        mavModes |= MAV_MODE_FLAG_GUIDED_ENABLED;
+        switch (flm) {
+            case FLM_ANGLE:
+            case FLM_HORIZON:
+            case FLM_ANGLEHOLD:
+            case FLM_ALTITUDE_HOLD:
+            case FLM_POSITION_HOLD:
+            case FLM_MISSION:
+            case FLM_RTH:
+            case FLM_LAUNCH:
+                mavModes |= MAV_MODE_FLAG_STABILIZE_ENABLED;
+                break;
+            default: break;
+        }
     }
 
     uint8_t mavSystemState = 0;
@@ -819,7 +998,7 @@ void mavlinkSendHUDAndHeartbeat(void)
         // base_mode System mode bitfield, see MAV_MODE_FLAGS ENUM in mavlink/include/mavlink_types.h
         mavModes,
         // custom_mode A bitfield for use for autopilot-specific flags.
-        mavCustomMode,
+        0,
         // system_status System status flag, see MAV_STATE ENUM
         mavSystemState);
 
@@ -950,6 +1129,13 @@ void processMAVLinkTelemetry(timeUs_t currentTimeUs)
         mavlinkSendBatteryTemperatureStatusText();
     }
 
+    // Standard Modes: broadcast CURRENT_MODE at ~0.5 Hz
+    if (telemetryConfig()->mavlink.version != 1) {
+        if ((currentTimeUs - lastCurrentModeMsgUs) >= 2000000) { // 2 s
+            mavlinkSendCurrentModeNow();
+            lastCurrentModeMsgUs = currentTimeUs;
+        }
+    }
 }
 
 static bool handleIncoming_MISSION_CLEAR_ALL(void)
@@ -1143,7 +1329,7 @@ static bool handleIncoming_COMMAND_INT(void)
                     return true;
                 }
 
-            if (IS_RC_MODE_ACTIVE(BOXGCSNAV) & (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
+            if (IS_RC_MODE_ACTIVE(BOXGCSNAV) && (posControl.navState == NAV_STATE_POSHOLD_3D_IN_PROGRESS)) {
                 navWaypoint_t wp;
                 wp.action = NAV_WP_ACTION_WAYPOINT;
                 wp.lat = msg.x;
@@ -1184,6 +1370,58 @@ static bool handleIncoming_COMMAND_INT(void)
         }
         return true;
     }
+    return false;
+}
+
+static bool handleIncoming_COMMAND_LONG(void)
+{
+    mavlink_command_long_t cmd;
+    mavlink_msg_command_long_decode(&mavRecvMsg, &cmd);
+
+    if (cmd.target_system != 0 && cmd.target_system != mavSystemId) {
+        return false;
+    }
+
+    if (cmd.command == MAV_CMD_REQUEST_MESSAGE) {
+        const uint32_t msgid = (uint32_t)cmd.param1;
+        const uint8_t  idx   = (uint8_t)cmd.param2; // 0 = enumerate all, else 1-based index
+        bool handled = false;
+
+        switch (msgid) {
+            case MAVLINK_MSG_ID_AVAILABLE_MODES:         // 435
+                mavlinkSendAvailableModesEnumerate(idx);
+                handled = true;
+                break;
+            case MAVLINK_MSG_ID_CURRENT_MODE:            // 436
+                mavlinkSendCurrentModeNow();
+                handled = true;
+                break;
+            case MAVLINK_MSG_ID_AVAILABLE_MODES_MONITOR: // 437
+                mavlinkSendAvailableModesMonitor();
+                handled = true;
+                break;
+            case MAVLINK_MSG_ID_AUTOPILOT_VERSION: // 148 via MAV_CMD_REQUEST_MESSAGE
+                mavlinkSendAutopilotVersion();
+                handled = true;
+                break;
+            default:
+                handled = false;
+                break;
+        }
+
+        mavlink_msg_command_ack_pack(
+            mavSystemId, mavComponentId, &mavSendMsg,
+            cmd.command,
+            handled ? MAV_RESULT_ACCEPTED : MAV_RESULT_UNSUPPORTED,
+            0, 0,
+            mavRecvMsg.sysid, mavRecvMsg.compid
+        );
+        mavlinkSendMessage();
+        return true;
+    }
+
+
+    // We do not implement DO_SET_STANDARD_MODE or DO_SET_MODE. INAV is channel-based.
     return false;
 }
 
@@ -1318,6 +1556,7 @@ static bool processMAVLinkIncomingTelemetry(void)
                    return handleIncoming_HEARTBEAT();
                 case MAVLINK_MSG_ID_PARAM_REQUEST_LIST:
                     return handleIncoming_PARAM_REQUEST_LIST();
+
                 case MAVLINK_MSG_ID_MISSION_CLEAR_ALL:
                     return handleIncoming_MISSION_CLEAR_ALL();
                 case MAVLINK_MSG_ID_MISSION_COUNT:
@@ -1326,18 +1565,16 @@ static bool processMAVLinkIncomingTelemetry(void)
                     return handleIncoming_MISSION_ITEM();
                 case MAVLINK_MSG_ID_MISSION_REQUEST_LIST:
                     return handleIncoming_MISSION_REQUEST_LIST();
-
-                //TODO:
-                //case MAVLINK_MSG_ID_COMMAND_LONG; //up to 7 float parameters
-                    //return handleIncoming_COMMAND_LONG();
-                
-                case MAVLINK_MSG_ID_COMMAND_INT: //7 parameters: parameters 1-4, 7 are floats, and parameters 5,6 are scaled integers
-                    return handleIncoming_COMMAND_INT();
                 case MAVLINK_MSG_ID_MISSION_REQUEST:
                     return handleIncoming_MISSION_REQUEST();
+
+                case MAVLINK_MSG_ID_COMMAND_LONG:
+                    return handleIncoming_COMMAND_LONG();
+                case MAVLINK_MSG_ID_COMMAND_INT:
+                    return handleIncoming_COMMAND_INT();
+                    
                 case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:
                     handleIncoming_RC_CHANNELS_OVERRIDE();
-                    // Don't set that we handled a message, otherwise RC channel packets will block telemetry messages
                     return false;
 #ifdef USE_ADSB
                 case MAVLINK_MSG_ID_ADSB_VEHICLE:
@@ -1345,16 +1582,15 @@ static bool processMAVLinkIncomingTelemetry(void)
 #endif
                 case MAVLINK_MSG_ID_RADIO_STATUS:
                     handleIncoming_RADIO_STATUS();
-                    // Don't set that we handled a message, otherwise radio status packets will block telemetry messages.
                     return false;
                 default:
                     return false;
             }
         }
     }
-
     return false;
 }
+
 
 static bool isMAVLinkTelemetryHalfDuplex(void) {
     return telemetryConfig()->halfDuplex ||
