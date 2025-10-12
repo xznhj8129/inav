@@ -109,6 +109,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { .boxId = BOXGIMBALRLOCK,      .boxName = "GIMBAL LEVEL ROLL", .permanentId = 66 },
     { .boxId = BOXGIMBALCENTER,     .boxName = "GIMBAL CENTER",     .permanentId = 67 },
     { .boxId = BOXGIMBALHTRK,       .boxName = "GIMBAL HEADTRACKER", .permanentId = 68 },
+    { .boxId = BOXGIMBALPOI,        .boxName = "GIMBAL POI",        .permanentId = 69 },
     { .boxId = CHECKBOX_ITEM_COUNT, .boxName = NULL,                .permanentId = 0xFF }
 };
 
@@ -371,6 +372,7 @@ void initActiveBoxIds(void)
         ADD_ACTIVE_BOX(BOXGIMBALTLOCK);
         ADD_ACTIVE_BOX(BOXGIMBALRLOCK);
         ADD_ACTIVE_BOX(BOXGIMBALCENTER);
+        ADD_ACTIVE_BOX(BOXGIMBALPOI);
     }
 #endif
 #ifdef USE_HEADTRACKER
@@ -462,6 +464,7 @@ void packBoxModeFlags(boxBitmask_t * mspBoxModeFlags)
     } else {
         CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGIMBALTLOCK) && !IS_RC_MODE_ACTIVE(BOXGIMBALCENTER)),     BOXGIMBALTLOCK);
         CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGIMBALRLOCK) && !IS_RC_MODE_ACTIVE(BOXGIMBALCENTER)),     BOXGIMBALRLOCK);
+        CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGIMBALPOI) && !IS_RC_MODE_ACTIVE(BOXGIMBALCENTER)),       BOXGIMBALPOI);
         CHECK_ACTIVE_BOX(IS_ENABLED(IS_RC_MODE_ACTIVE(BOXGIMBALHTRK) && !IS_RC_MODE_ACTIVE(BOXGIMBALCENTER)),     BOXGIMBALRLOCK);
     }
 #endif
