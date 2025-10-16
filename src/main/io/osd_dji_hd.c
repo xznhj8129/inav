@@ -274,6 +274,7 @@ void djiPackBoxModeBitmask(boxBitmask_t * flightModeBitmask)
             // DJI: No bits set = ACRO
             break;
         case FLM_ANGLE:
+        case FLM_LEVEL:
             bitArraySet(flightModeBitmask->bits, 1);    // DJI: 1 << 1 : ANGLE
             break;
         case FLM_HORIZON:

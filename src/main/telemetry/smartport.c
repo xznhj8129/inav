@@ -175,7 +175,7 @@ static uint16_t frskyGetFlightMode(void)
         tmpi += 4;
 
     // tens column
-    if (FLIGHT_MODE(ANGLE_MODE))
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(LEVEL_MODE))
         tmpi += 10;
     if (FLIGHT_MODE(HORIZON_MODE))
         tmpi += 20;

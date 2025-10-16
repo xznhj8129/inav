@@ -419,7 +419,7 @@ static const hsvColor_t* getDirectionalModeColor(const int ledIndex, const modeC
 // map flight mode to led mode, in order of priority
 // flightMode == 0 is always active
 static const struct {
-    uint16_t flightMode;
+    flightModeFlags_e flightMode;
     uint8_t ledMode;
 } flightModeToLed[] = {
     {HEADFREE_MODE, LED_MODE_HEADFREE},
@@ -428,6 +428,7 @@ static const struct {
     {NAV_ALTHOLD_MODE, LED_MODE_BARO},
 #endif
     {HORIZON_MODE,  LED_MODE_HORIZON},
+    {LEVEL_MODE,    LED_MODE_ANGLE},
     {ANGLE_MODE,    LED_MODE_ANGLE},
     {0,             LED_MODE_ORIENTATION},
 };

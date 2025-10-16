@@ -130,9 +130,40 @@ static ibusAddress_t getAddress(uint8_t ibusPacket[static IBUS_MIN_LEN]) {
     return (ibusPacket[1] & 0x0F);
 }
 
-// MANUAL, ACRO, AIR, ANGLE, HRZN, ALTHOLD, POSHOLD, RTH, WP, CRUISE, LAUNCH, FAILSAFE
-static uint8_t flightModeToIBusTelemetryMode1[FLM_COUNT] = { 0, 1, 1, 3, 2, 5, 6, 7, 4, 4, 8, 9 };
-static uint8_t flightModeToIBusTelemetryMode2[FLM_COUNT] = { 5, 1, 1, 0, 7, 2, 8, 6, 3, 3, 4, 9 };
+static uint8_t flightModeToIBusTelemetryMode1[FLM_COUNT] = {
+    [FLM_MANUAL]        = 0,
+    [FLM_ACRO]          = 1,
+    [FLM_ACRO_AIR]      = 1,
+    [FLM_ANGLE]         = 3,
+    [FLM_HORIZON]       = 2,
+    [FLM_ALTITUDE_HOLD] = 5,
+    [FLM_POSITION_HOLD] = 6,
+    [FLM_RTH]           = 7,
+    [FLM_MISSION]       = 4,
+    [FLM_COURSE_HOLD]   = 4,
+    [FLM_CRUISE]        = 8,
+    [FLM_LAUNCH]        = 9,
+    [FLM_FAILSAFE]      = 0,
+    [FLM_ANGLEHOLD]     = 3,
+    [FLM_LEVEL]         = 3,
+};
+static uint8_t flightModeToIBusTelemetryMode2[FLM_COUNT] = {
+    [FLM_MANUAL]        = 5,
+    [FLM_ACRO]          = 1,
+    [FLM_ACRO_AIR]      = 1,
+    [FLM_ANGLE]         = 0,
+    [FLM_HORIZON]       = 7,
+    [FLM_ALTITUDE_HOLD] = 2,
+    [FLM_POSITION_HOLD] = 8,
+    [FLM_RTH]           = 6,
+    [FLM_MISSION]       = 3,
+    [FLM_COURSE_HOLD]   = 3,
+    [FLM_CRUISE]        = 4,
+    [FLM_LAUNCH]        = 9,
+    [FLM_FAILSAFE]      = 0,
+    [FLM_ANGLEHOLD]     = 0,
+    [FLM_LEVEL]         = 0,
+};
 static uint8_t dispatchMeasurementRequest(ibusAddress_t address) {
 #if defined(USE_GPS)
     uint8_t fix = 0;

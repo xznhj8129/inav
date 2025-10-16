@@ -179,7 +179,7 @@ void ltm_sframe(sbuf_t *dst)
         lt_flightmode = LTM_MODE_ALTHOLD;
     else if (FLIGHT_MODE(HEADFREE_MODE) || FLIGHT_MODE(HEADING_MODE))
         lt_flightmode = LTM_MODE_HEADHOLD;
-    else if (FLIGHT_MODE(ANGLE_MODE))
+    else if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(LEVEL_MODE))
         lt_flightmode = LTM_MODE_ANGLE;
     else if (FLIGHT_MODE(HORIZON_MODE))
         lt_flightmode = LTM_MODE_HORIZON;

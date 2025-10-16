@@ -350,6 +350,8 @@ static void crsfFrameFlightMode(sbuf_t *dst)
             flightMode = "AH";
         } else if (FLIGHT_MODE(ANGLE_MODE)) {
             flightMode = "ANGL";
+        } else if (FLIGHT_MODE(LEVEL_MODE)) {
+            flightMode = "LEVL";
         } else if (FLIGHT_MODE(HORIZON_MODE)) {
             flightMode = "HOR";
         } else if (FLIGHT_MODE(ANGLEHOLD_MODE)) {

@@ -109,6 +109,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { .boxId = BOXGIMBALRLOCK,      .boxName = "GIMBAL LEVEL ROLL", .permanentId = 66 },
     { .boxId = BOXGIMBALCENTER,     .boxName = "GIMBAL CENTER",     .permanentId = 67 },
     { .boxId = BOXGIMBALHTRK,       .boxName = "GIMBAL HEADTRACKER", .permanentId = 68 },
+    { .boxId = BOXLEVEL,            .boxName = "LEVEL",             .permanentId = 69 },
     { .boxId = CHECKBOX_ITEM_COUNT, .boxName = NULL,                .permanentId = 0xFF }
 };
 
@@ -196,6 +197,7 @@ void initActiveBoxIds(void)
 
     if (sensors(SENSOR_ACC) && STATE(ALTITUDE_CONTROL)) {
         ADD_ACTIVE_BOX(BOXANGLE);
+        ADD_ACTIVE_BOX(BOXLEVEL);
         ADD_ACTIVE_BOX(BOXHORIZON);
         ADD_ACTIVE_BOX(BOXTURNASSIST);
     }
@@ -392,6 +394,7 @@ void packBoxModeFlags(boxBitmask_t * mspBoxModeFlags)
     // Requires new Multiwii protocol version to fix
     // It would be preferable to setting the enabled bits based on BOXINDEX.
     CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(ANGLE_MODE)),               BOXANGLE);
+    CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(LEVEL_MODE)),               BOXLEVEL);
     CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HORIZON_MODE)),             BOXHORIZON);
     CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADING_MODE)),             BOXHEADINGHOLD);
     CHECK_ACTIVE_BOX(IS_ENABLED(FLIGHT_MODE(HEADFREE_MODE)),            BOXHEADFREE);

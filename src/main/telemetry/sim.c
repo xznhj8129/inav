@@ -122,7 +122,23 @@ static uint8_t simModuleState = SIM_MODULE_NOT_DETECTED;
 static int simRssi;
 static uint8_t accEvent = ACC_EVENT_NONE;
 static char* accEventDescriptions[] = { "", "HIT! ", "DROP ", "HIT " };
-static char* modeDescriptions[] = { "MAN", "ACR", "AIR", "ANG", "HOR", "ALH", "POS", "RTH", "WP", "CRS", "LAU", "FS", "ANH" };
+static char* modeDescriptions[] = {
+    [FLM_MANUAL]        = "MAN",
+    [FLM_ACRO]          = "ACR",
+    [FLM_ACRO_AIR]      = "AIR",
+    [FLM_ANGLE]         = "ANG",
+    [FLM_HORIZON]       = "HOR",
+    [FLM_ALTITUDE_HOLD] = "ALH",
+    [FLM_POSITION_HOLD] = "POS",
+    [FLM_RTH]           = "RTH",
+    [FLM_MISSION]       = "WP",
+    [FLM_COURSE_HOLD]   = "CRS",
+    [FLM_CRUISE]        = "CRU",
+    [FLM_LAUNCH]        = "LAU",
+    [FLM_FAILSAFE]      = "FS",
+    [FLM_ANGLEHOLD]     = "ANH",
+    [FLM_LEVEL]         = "LVL",
+};
 static const char gpsFixIndicators[] = { '!', '*', ' ' };
 
 static bool checkGroundStationNumber(uint8_t* rv)

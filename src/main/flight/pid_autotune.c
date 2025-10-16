@@ -186,8 +186,10 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
     static timeMs_t previousSampleTimeMs = 0;
     const timeDelta_t timeSincePreviousSample = currentTimeMs - previousSampleTimeMs;
 
-    // Use different max rate in ANLGE mode
-    if (FLIGHT_MODE(ANGLE_MODE)) {
+    const bool angleModeActiveForAxis = FLIGHT_MODE(ANGLE_MODE) || (FLIGHT_MODE(LEVEL_MODE) && axis == FD_ROLL);
+
+    // Use different max rate in ANGLE/LEVEL mode
+    if (angleModeActiveForAxis) {
         float maxDesiredRateInAngleMode = DECIDEGREES_TO_DEGREES(pidProfile()->max_angle_inclination[axis] * 1.0f) * pidBank()->pid[PID_LEVEL].P * FP_PID_LEVEL_P_MULTIPLIER;
         maxDesiredRate = MIN(maxRateSetting, maxDesiredRateInAngleMode);
     }
@@ -202,7 +204,7 @@ void autotuneFixedWingUpdate(const flight_dynamics_index_t axis, float desiredRa
         tuneCurrent[axis].absPidOutputAccum += (absPidOutput - tuneCurrent[axis].absPidOutputAccum) / MIN(tuneCurrent[axis].updateCount, (uint32_t)AUTOTUNE_FIXED_WING_SAMPLES);
 
         if ((tuneCurrent[axis].updateCount & 25) == 0 && tuneCurrent[axis].updateCount >= AUTOTUNE_FIXED_WING_MIN_SAMPLES) {
-            if (pidAutotuneConfig()->fw_rate_adjustment != FIXED  && !FLIGHT_MODE(ANGLE_MODE)) { // Rate discovery is not possible in ANGLE mode
+            if (pidAutotuneConfig()->fw_rate_adjustment != FIXED  && !angleModeActiveForAxis) { // Rate discovery is not possible in ANGLE/LEVEL mode
 
                 // Target 80% control surface deflection to leave some room for P and I to work
                 float pidSumTarget = (pidAutotuneConfig()->fw_max_rate_deflection / 100.0f) * pidSumLimit;

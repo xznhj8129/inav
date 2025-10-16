@@ -1225,7 +1225,9 @@ void FAST_CODE pidController(float dT)
     angleHoldIsLevel = false;
 
     for (uint8_t axis = FD_ROLL; axis <= FD_PITCH; axis++) {
-        if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || FLIGHT_MODE(ANGLEHOLD_MODE) || isFlightAxisAngleOverrideActive(axis)) {
+        const bool levelModeActiveForAxis = FLIGHT_MODE(LEVEL_MODE) && axis == FD_ROLL;
+
+        if (levelModeActiveForAxis || FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE) || FLIGHT_MODE(ANGLEHOLD_MODE) || isFlightAxisAngleOverrideActive(axis)) {
             // If axis angle override, get the correct angle from Logic Conditions
             float angleTarget = getFlightAxisAngleOverride(axis, computePidLevelTarget(axis));
 
@@ -1247,7 +1249,7 @@ void FAST_CODE pidController(float dT)
     }
 
     // Apply Turn Assistance
-    if (FLIGHT_MODE(TURN_ASSISTANT) && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+    if (FLIGHT_MODE(TURN_ASSISTANT) && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(LEVEL_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
         float bankAngleTarget = DECIDEGREES_TO_RADIANS(pidRcCommandToAngle(rcCommand[FD_ROLL], pidProfile()->max_angle_inclination[FD_ROLL]));
         float pitchAngleTarget = DECIDEGREES_TO_RADIANS(pidRcCommandToAngle(rcCommand[FD_PITCH], pidProfile()->max_angle_inclination[FD_PITCH]));
         pidTurnAssistant(pidState, bankAngleTarget, pitchAngleTarget);

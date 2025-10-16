@@ -85,6 +85,7 @@ typedef enum {
     BOXGIMBALRLOCK   = 57,
     BOXGIMBALCENTER  = 58,
     BOXGIMBALHTRK    = 59,
+    BOXLEVEL,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

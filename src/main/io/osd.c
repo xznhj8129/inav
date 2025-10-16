@@ -2423,6 +2423,8 @@ static bool osdDrawSingleElement(uint8_t item)
             }
             else if (FLIGHT_MODE(ANGLE_MODE))
                 p = "ANGL";
+            else if (FLIGHT_MODE(LEVEL_MODE))
+                p = "LEVL";
             else if (FLIGHT_MODE(HORIZON_MODE))
                 p = "HOR ";
             else if (FLIGHT_MODE(ANGLEHOLD_MODE))

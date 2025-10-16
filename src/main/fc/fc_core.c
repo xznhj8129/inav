@@ -685,12 +685,15 @@ void processRx(timeUs_t currentTimeUs)
     /* Disable stabilised modes initially, will be enabled as required with priority ANGLE > HORIZON > ANGLEHOLD
      * MANUAL mode has priority over these modes except when ANGLE auto enabled */
     DISABLE_FLIGHT_MODE(ANGLE_MODE);
+    DISABLE_FLIGHT_MODE(LEVEL_MODE);
     DISABLE_FLIGHT_MODE(HORIZON_MODE);
     DISABLE_FLIGHT_MODE(ANGLEHOLD_MODE);
 
     if (sensors(SENSOR_ACC) && (!FLIGHT_MODE(MANUAL_MODE) || autoEnableAngle)) {
         if (IS_RC_MODE_ACTIVE(BOXANGLE) || autoEnableAngle) {
             ENABLE_FLIGHT_MODE(ANGLE_MODE);
+        } else if (IS_RC_MODE_ACTIVE(BOXLEVEL)) {
+            ENABLE_FLIGHT_MODE(LEVEL_MODE);
         } else if (IS_RC_MODE_ACTIVE(BOXHORIZON)) {
             ENABLE_FLIGHT_MODE(HORIZON_MODE);
         } else if (STATE(AIRPLANE) && IS_RC_MODE_ACTIVE(BOXANGLEHOLD)) {
@@ -698,7 +701,7 @@ void processRx(timeUs_t currentTimeUs)
         }
     }
 
-    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
+    if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(LEVEL_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
         LED1_ON;
     } else {
         LED1_OFF;
@@ -868,7 +871,7 @@ static void applyThrottleTiltCompensation(void)
         if (navigationRequiresThrottleTiltCompensation()) {
             thrTiltCompStrength = 100;
         }
-        else if (systemConfig()->throttle_tilt_compensation_strength && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
+        else if (systemConfig()->throttle_tilt_compensation_strength && (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(LEVEL_MODE) || FLIGHT_MODE(HORIZON_MODE))) {
             thrTiltCompStrength = systemConfig()->throttle_tilt_compensation_strength;
         }
 

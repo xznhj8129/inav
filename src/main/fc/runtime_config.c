@@ -151,6 +151,9 @@ flightModeForTelemetry_e getFlightModeForTelemetry(void)
     if (FLIGHT_MODE(NAV_ALTHOLD_MODE))
         return FLM_ALTITUDE_HOLD;
 
+    if (FLIGHT_MODE(LEVEL_MODE))
+        return FLM_LEVEL;
+
     if (FLIGHT_MODE(ANGLE_MODE))
         return FLM_ANGLE;
 
