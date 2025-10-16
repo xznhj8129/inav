@@ -644,6 +644,51 @@ static int logicConditionGetWaypointOperandValue(int operand) {
             return ((posControl.waypointList[NAV_Status.activeWpIndex].p3 & NAV_WP_USER4) == NAV_WP_USER4);
             break;
 
+        case LOGIC_CONDITION_OPERAND_WAYPOINTS_BEARING:
+            {
+                int32_t bearing = 0;
+                if (posControl.waypointListValid && 
+                    posControl.waypointCount > 0 &&
+                    NAV_Status.activeWpIndex < (uint8_t)posControl.waypointCount &&
+                    NAV_Status.activeWpIndex < NAV_MAX_WAYPOINTS) {
+                    fpVector3_t poi;
+                    gpsLocation_t wp;
+                    wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
+                    wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
+                    wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
+                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, GEO_ALT_RELATIVE);
+
+                    const int32_t waypointBearingCd = calculateBearingToDestination(&poi);
+                    const int32_t headingCd = DECIDEGREES_TO_CENTIDEGREES(attitude.values.yaw);
+                    bearing = wrap_18000(waypointBearingCd - headingCd);
+                }
+
+                return bearing;
+            }
+            break;
+
+        case LOGIC_CONDITION_OPERAND_WAYPOINTS_ELEVATION:
+        {
+            int32_t elevation = 0;
+            if (posControl.waypointListValid && 
+                posControl.waypointCount > 0 &&
+                NAV_Status.activeWpIndex < (uint8_t)posControl.waypointCount &&
+                NAV_Status.activeWpIndex < NAV_MAX_WAYPOINTS) {
+
+                fpVector3_t poi;
+                gpsLocation_t wp;
+                wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
+                wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
+                wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
+                geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, GEO_ALT_RELATIVE);
+
+                const int32_t waypointElevationCd = calculateElevationToDestination(&poi);
+                const int32_t pitchCd = wrap_18000(DECIDEGREES_TO_CENTIDEGREES(attitude.values.pitch));
+                elevation = wrap_18000(waypointElevationCd - pitchCd);
+            }
+            return elevation;
+        }
+
         default:
             return 0;
             break;
