@@ -229,6 +229,11 @@ main_sources(COMMON_SRC
     drivers/pwm_mapping.h
     drivers/pwm_output.c
     drivers/pwm_output.h
+    drivers/dshot.c
+    drivers/dshot.h
+    drivers/dshot_bitbang_decode.c
+    drivers/dshot_bitbang_decode.h
+    drivers/dshot_bitbang.h
     drivers/pinio.c
     drivers/pinio.h
 

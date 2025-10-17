@@ -41,6 +41,7 @@
 #define USE_SERIALRX_IBUS       // Cheap FlySky & Turnigy receivers
 #define USE_SERIALRX_FPORT
 #define USE_SERIALRX_FPORT2
+#define USE_DSHOT_TELEMETRY
 
 //#define USE_DEV_TOOLS           // tools for dev use only. Undefine for release builds.
 

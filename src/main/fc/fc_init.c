@@ -62,6 +62,7 @@
 #include "drivers/pwm_esc_detect.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
+#include "drivers/dshot.h"
 #include "drivers/sensor.h"
 #include "drivers/serial.h"
 #include "drivers/serial_softserial.h"
@@ -694,6 +695,10 @@ void init(void)
 
 #ifdef USE_DSHOT
     initDShotCommands();
+#endif
+
+#ifdef USE_DSHOT_TELEMETRY
+    initDshotTelemetry(getLooptime());
 #endif
 
 #ifdef USE_SERIAL_GIMBAL

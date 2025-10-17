@@ -79,6 +79,17 @@ typedef struct reversibleMotorsConfig_s {
 
 PG_DECLARE(reversibleMotorsConfig_t, reversibleMotorsConfig);
 
+typedef enum {
+    DSHOT_EDT_OFF = 0,
+    DSHOT_EDT_ON = 1,
+    DSHOT_EDT_FORCE = 2,
+} dshotEdtMode_e;
+
+typedef struct motorDevConfig_s {
+    uint8_t useDshotTelemetry;
+    uint8_t useDshotEdt;
+} motorDevConfig_t;
+
 typedef struct motorConfig_s {
     // PWM values, in milliseconds, common range is 1000-2000 (1ms to 2ms)
     uint16_t mincommand;                    // This is the value for the ESCs when they are not armed. In some cases, this value must be lowered down to 900 for some specific ESCs
@@ -86,6 +97,7 @@ typedef struct motorConfig_s {
     uint8_t  motorPwmProtocol;
     uint16_t digitalIdleOffsetValue;
     uint8_t motorPoleCount;                 // Magnetic poles in the motors for calculating actual RPM from eRPM provided by ESC telemetry
+    motorDevConfig_t dev;
 } motorConfig_t;
 
 PG_DECLARE(motorConfig_t, motorConfig);

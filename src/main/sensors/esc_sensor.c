@@ -42,6 +42,9 @@
 
 #include "flight/mixer.h"
 #include "drivers/pwm_output.h"
+#ifdef USE_DSHOT
+#include "drivers/dshot.h"
+#endif
 #include "sensors/esc_sensor.h"
 #include "io/serial.h"
 #include "fc/config.h"
@@ -114,6 +117,16 @@ static void escSensorIncreaseDataAge(void)
 
 static bool escSensorDecodeFrame(void)
 {
+#ifdef USE_DSHOT
+    if (useDshotTelemetry) {
+        updateDshotTelemetry();
+        if (getDshotSensorData(&escSensorData[escSensorMotor], escSensorMotor)) {
+            escSensorDataNeedsUpdate = true;
+            return ESC_SENSOR_FRAME_COMPLETE;
+        }
+        return ESC_SENSOR_FRAME_PENDING;
+    }
+#endif
     // Receive bytes
     while (serialRxBytesWaiting(escSensorPort) > 0) {
         uint8_t c = serialRead(escSensorPort);
@@ -156,9 +169,15 @@ escSensorData_t NOINLINE * getEscTelemetry(uint8_t esc)
 
 escSensorData_t * escSensorGetData(void)
 {
+#ifdef USE_DSHOT
+    if (!escSensorPort && !useDshotTelemetry) {
+        return NULL;
+    }
+#else
     if (!escSensorPort) {
         return NULL;
     }
+#endif
 
     if (escSensorDataNeedsUpdate) {
         escSensorDataCombined.dataAge = 0;
@@ -212,6 +231,17 @@ bool escSensorInitialize(void)
         return false;
     }
 
+#ifdef USE_DSHOT
+    if (useDshotTelemetry) {
+        dshotCleanTelemetryData();
+        for (int i = 0; i < MAX_SUPPORTED_MOTORS; i++) {
+            escSensorData[i].dataAge = ESC_DATA_INVALID;
+        }
+        ENABLE_STATE(ESC_SENSOR_ENABLED);
+        return true;
+    }
+#endif
+
     // FUNCTION_ESCSERIAL is shared between SERIALSHOT and ESC_SENSOR telemetry
     // They are mutually exclusive
     serialPortConfig_t * portConfig = findSerialPortConfig(FUNCTION_ESCSERIAL);
@@ -235,9 +265,15 @@ bool escSensorInitialize(void)
 
 void escSensorUpdate(timeUs_t currentTimeUs)
 {
+#ifdef USE_DSHOT
+    if (!escSensorPort && !useDshotTelemetry) {
+        return;
+    }
+#else
     if (!escSensorPort) {
         return;
     }
+#endif
 
     const timeMs_t currentTimeMs = currentTimeUs / 1000;
 

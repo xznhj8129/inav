@@ -64,7 +64,7 @@
 #include "telemetry/srxl.h"
 
 #include "drivers/vtx_common.h"
-//#include "drivers/dshot.h"
+#include "drivers/dshot.h"
 
 #include "io/vtx_tramp.h"
 #include "io/vtx_smartaudio.h"
@@ -196,17 +196,17 @@ uint16_t getMotorAveragePeriod(void)
 #endif
 
 #if defined(USE_DSHOT_TELEMETRY)
-    if (useDshotTelemetry) {
-        uint16_t motors = getMotorCount();
+            if (useDshotTelemetry) {
+                uint16_t motors = getMotorCount();
 
-        if (motors > 0) {
-            for (int motor = 0; motor < motors; motor++) {
-                rpm += getDshotTelemetry(motor);
+                if (motors > 0) {
+                    for (int motor = 0; motor < motors; motor++) {
+                        rpm += getDshotErpm(motor);
+                    }
+                    rpm = 100.0f / (motorConfig()->motorPoleCount / 2.0f) * rpm;  // convert erpm freq to RPM.
+                    rpm /= motors;           // Average combined rpm
+                }
             }
-            rpm = 100.0f / (motorConfig()->motorPoleCount / 2.0f) * rpm;  // convert erpm freq to RPM.
-            rpm /= motors;           // Average combined rpm
-        }
-    }
 #endif
 
     if (rpm > SPEKTRUM_MIN_RPM && rpm < SPEKTRUM_MAX_RPM) {
