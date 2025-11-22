@@ -658,9 +658,7 @@ static int logicConditionGetWaypointOperandValue(int operand) {
                     wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
                     geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, GEO_ALT_RELATIVE);
 
-                    const int32_t waypointBearingCd = calculateBearingToDestination(&poi);
-                    const int32_t headingCd = DECIDEGREES_TO_CENTIDEGREES(attitude.values.yaw);
-                    bearing = wrap_18000(waypointBearingCd - headingCd);
+                    bearing = calculateBearingToDestination(&poi);
                 }
 
                 return bearing;
@@ -675,16 +673,17 @@ static int logicConditionGetWaypointOperandValue(int operand) {
                 NAV_Status.activeWpIndex < (uint8_t)posControl.waypointCount &&
                 NAV_Status.activeWpIndex < NAV_MAX_WAYPOINTS) {
 
-                fpVector3_t poi;
-                gpsLocation_t wp;
-                wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
-                wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
-                wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
-                geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, GEO_ALT_RELATIVE);
+                    fpVector3_t poi;
+                    gpsLocation_t wp;
+                    uint8_t wpp3;
+                    wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
+                    wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
+                    wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
+                    wpp3 = posControl.waypointList[NAV_Status.activeWpIndex].p3;
+                    const geoAltitudeConversionMode_e altConv = (wpp3 & NAV_WP_MSL_DATUM) ? GEO_ALT_ABSOLUTE : GEO_ALT_RELATIVE;
+                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, altConv);
 
-                const int32_t waypointElevationCd = calculateElevationToDestination(&poi);
-                const int32_t pitchCd = wrap_18000(DECIDEGREES_TO_CENTIDEGREES(attitude.values.pitch));
-                elevation = wrap_18000(waypointElevationCd - pitchCd);
+                    elevation = calculateElevationToDestination(&poi);
             }
             return elevation;
         }
