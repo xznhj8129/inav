@@ -3285,6 +3285,11 @@ groups:
         min: 1
         max: 255
         default_value: 1
+      - name: mavlink_high_latency
+        field: mavlink.high_latency
+        description: "Enable MAVLink high-latency mode (send HIGH_LATENCY2 instead of normal streams)"
+        type: bool
+        default_value: OFF
 
   - name: PG_OSD_CONFIG
     type: osdConfig_t

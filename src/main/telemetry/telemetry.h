@@ -88,6 +88,7 @@ typedef struct telemetryConfig_s {
         uint8_t min_txbuff;
         uint8_t radio_type;
         uint8_t sysid;
+        bool high_latency;
     } mavlink;
 } telemetryConfig_t;
 

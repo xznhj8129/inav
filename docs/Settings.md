@@ -2732,6 +2732,16 @@ MAVLink System ID
 
 ---
 
+### mavlink_high_latency
+
+Enable MAVLink high-latency mode (send HIGH_LATENCY2 instead of normal streams)
+
+| Default | Min | Max |
+| --- | --- | --- |
+| OFF | OFF | ON |
+
+---
+
 ### mavlink_version
 
 Version of MAVLink to use
@@ -6751,4 +6761,3 @@ Defines rotation rate on YAW axis that UAV will try to archive on max. stick def
 | 20 | 1 | 180 |
 
 ---
-
