@@ -256,6 +256,7 @@
 - [rthTrackbackMode_e](#enum-rthtrackbackmode_e)
 - [rxFrameState_e](#enum-rxframestate_e)
 - [rxLink_e](#enum-rxlink_e)
+- [rxReceiverRole_e](#enum-rxreceiverrole_e)
 - [rxReceiverType_e](#enum-rxreceivertype_e)
 - [rxSerialReceiverType_e](#enum-rxserialreceivertype_e)
 - [safehomeUsageMode_e](#enum-safehomeusagemode_e)
@@ -2762,6 +2763,7 @@
 | `LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_FLIGHT_AXIS` | (1 << 10) |  |
 | `LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_GPS_FIX` | (1 << 11) | USE_GPS_FIX_ESTIMATION |
 | `LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_MIN_GROUND_SPEED` | (1 << 12) |  |
+| `LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_RX_LINK` | (1 << 13) |  |
 
 ---
 ## <a id="enum-logicflightmodeoperands_e"></a>`logicFlightModeOperands_e`
@@ -2910,7 +2912,8 @@
 | `LOGIC_CONDITION_RESET_MAG_CALIBRATION` | 54 |  |
 | `LOGIC_CONDITION_SET_GIMBAL_SENSITIVITY` | 55 |  |
 | `LOGIC_CONDITION_OVERRIDE_MIN_GROUND_SPEED` | 56 |  |
-| `LOGIC_CONDITION_LAST` | 57 |  |
+| `LOGIC_CONDITION_RX_SELECT_OVERRIDE` | 57 |  |
+| `LOGIC_CONDITION_LAST` | 58 |  |
 
 ---
 ## <a id="enum-logicwaypointoperands_e"></a>`logicWaypointOperands_e`
@@ -4656,6 +4659,16 @@
 | `RX_LINK_COUNT` | 2 |  |
 
 ---
+## <a id="enum-rxreceiverrole_e"></a>`rxReceiverRole_e`
+
+> Source: ../../../src/main/rx/rx.h
+
+| Enumerator | Value | Condition |
+|---|---:|---|
+| `RX_ROLE_PRIMARY` | 0 |  |
+| `RX_ROLE_SECONDARY` | 1 |  |
+
+---
 ## <a id="enum-rxreceivertype_e"></a>`rxReceiverType_e`
 
 > Source: ../../../src/main/rx/rx.h
@@ -4885,7 +4898,7 @@
 | `FUNCTION_RCDEVICE` | (1 << 10) |  |
 | `FUNCTION_VTX_SMARTAUDIO` | (1 << 11) |  |
 | `FUNCTION_VTX_TRAMP` | (1 << 12) |  |
-| `FUNCTION_UNUSED_1` | (1 << 13) |  |
+| `FUNCTION_RX_SERIAL_SECONDARY` | (1 << 13) |  |
 | `FUNCTION_OPTICAL_FLOW` | (1 << 14) |  |
 | `FUNCTION_LOG` | (1 << 15) |  |
 | `FUNCTION_RANGEFINDER` | (1 << 16) |  |

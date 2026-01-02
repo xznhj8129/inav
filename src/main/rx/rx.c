@@ -549,6 +549,12 @@ static void rxSelectActiveLink(void)
         return;
     }
 
+    if (LOGIC_CONDITION_GLOBAL_FLAG(LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_RX_LINK)) {
+        const rxLink_e forcedLink = logicConditionValuesByType[LOGIC_CONDITION_RX_SELECT_OVERRIDE] == RX_LINK_SECONDARY ? RX_LINK_SECONDARY : RX_LINK_PRIMARY;
+        rxApplyActiveLink(forcedLink);
+        return;
+    }
+
     const bool primaryValid = rxLinkHasValidSignal(&rxLinks[RX_LINK_PRIMARY]);
     const bool secondaryValid = rxLinkHasValidSignal(&rxLinks[RX_LINK_SECONDARY]);
 

@@ -1,0 +1,1 @@
+Added `activeRX` to `MSP2_INAV_MISC` (enum `rxReceiverRole_e`) to report the current active RX link when dual RX is enabled.

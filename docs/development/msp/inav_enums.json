@@ -1726,7 +1726,8 @@
             "(1 << 11)",
             "USE_GPS_FIX_ESTIMATION"
         ],
-        "LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_MIN_GROUND_SPEED": "(1 << 12)"
+        "LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_MIN_GROUND_SPEED": "(1 << 12)",
+        "LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_RX_LINK": "(1 << 13)"
     },
     "logicFlightModeOperands_e": {
         "_source": "../../../src/main/programming/logic_condition.h",
@@ -1860,7 +1861,8 @@
         "LOGIC_CONDITION_RESET_MAG_CALIBRATION": "54",
         "LOGIC_CONDITION_SET_GIMBAL_SENSITIVITY": "55",
         "LOGIC_CONDITION_OVERRIDE_MIN_GROUND_SPEED": "56",
-        "LOGIC_CONDITION_LAST": "57"
+        "LOGIC_CONDITION_RX_SELECT_OVERRIDE": "57",
+        "LOGIC_CONDITION_LAST": "58"
     },
     "logicWaypointOperands_e": {
         "_source": "../../../src/main/programming/logic_condition.h",
@@ -3099,6 +3101,11 @@
         "RX_LINK_SECONDARY": "1",
         "RX_LINK_COUNT": "2"
     },
+    "rxReceiverRole_e": {
+        "_source": "../../../src/main/rx/rx.h",
+        "RX_ROLE_PRIMARY": "0",
+        "RX_ROLE_SECONDARY": "1"
+    },
     "rxReceiverType_e": {
         "_source": "../../../src/main/rx/rx.h",
         "RX_TYPE_NONE": "0",
@@ -3243,7 +3250,7 @@
         "FUNCTION_RCDEVICE": "(1 << 10)",
         "FUNCTION_VTX_SMARTAUDIO": "(1 << 11)",
         "FUNCTION_VTX_TRAMP": "(1 << 12)",
-        "FUNCTION_UNUSED_1": "(1 << 13)",
+        "FUNCTION_RX_SERIAL_SECONDARY": "(1 << 13)",
         "FUNCTION_OPTICAL_FLOW": "(1 << 14)",
         "FUNCTION_LOG": "(1 << 15)",
         "FUNCTION_RANGEFINDER": "(1 << 16)",
