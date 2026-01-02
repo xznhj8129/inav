@@ -234,20 +234,23 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeConfig_t *rxRuntimeConfig)
             const crsfPayloadLinkStatistics_t* linkStats = (crsfPayloadLinkStatistics_t*)&crsfFrame.frame.payload;
             const uint8_t crsftxpowerindex = (linkStats->uplinkTXPower < CRSF_POWER_COUNT) ? linkStats->uplinkTXPower : 0;
 
-            rxLinkStatistics.uplinkRSSI = -1* (linkStats->activeAntenna ? linkStats->uplinkRSSIAnt2 : linkStats->uplinkRSSIAnt1);
-            rxLinkStatistics.uplinkLQ = linkStats->uplinkLQ;
-            rxLinkStatistics.uplinkSNR = linkStats->uplinkSNR;
-            rxLinkStatistics.rfMode = linkStats->rfMode;
-            rxLinkStatistics.uplinkTXPower = crsfTxPowerStatesmW[crsftxpowerindex];
-            rxLinkStatistics.activeAntenna = linkStats->activeAntenna;
+            rxLinkStatistics_t *statistics = rxRuntimeConfig->linkStatistics;
+            if (statistics) {
+                statistics->uplinkRSSI = -1* (linkStats->activeAntenna ? linkStats->uplinkRSSIAnt2 : linkStats->uplinkRSSIAnt1);
+                statistics->uplinkLQ = linkStats->uplinkLQ;
+                statistics->uplinkSNR = linkStats->uplinkSNR;
+                statistics->rfMode = linkStats->rfMode;
+                statistics->uplinkTXPower = crsfTxPowerStatesmW[crsftxpowerindex];
+                statistics->activeAntenna = linkStats->activeAntenna;
+            }
 
 #ifdef USE_OSD
-            if (rxLinkStatistics.uplinkLQ > 0) {
+            if (statistics && statistics->uplinkLQ > 0) {
                 int16_t uplinkStrength;   // RSSI dBm converted to %
-                uplinkStrength = constrain((100 * sq((osdConfig()->rssi_dbm_max - osdConfig()->rssi_dbm_min)) - (100 * sq((osdConfig()->rssi_dbm_max  - rxLinkStatistics.uplinkRSSI)))) / sq((osdConfig()->rssi_dbm_max - osdConfig()->rssi_dbm_min)),0,100);
-                if (rxLinkStatistics.uplinkRSSI >= osdConfig()->rssi_dbm_max )
+                uplinkStrength = constrain((100 * sq((osdConfig()->rssi_dbm_max - osdConfig()->rssi_dbm_min)) - (100 * sq((osdConfig()->rssi_dbm_max  - statistics->uplinkRSSI)))) / sq((osdConfig()->rssi_dbm_max - osdConfig()->rssi_dbm_min)),0,100);
+                if (statistics->uplinkRSSI >= osdConfig()->rssi_dbm_max )
                     uplinkStrength = 99;
-                else if (rxLinkStatistics.uplinkRSSI < osdConfig()->rssi_dbm_min)
+                else if (statistics->uplinkRSSI < osdConfig()->rssi_dbm_min)
                     uplinkStrength = 0;
                 lqTrackerSet(rxRuntimeConfig->lqTracker, scaleRange(uplinkStrength, 0, 99, 0, RSSI_MAX_VALUE));
             } else {

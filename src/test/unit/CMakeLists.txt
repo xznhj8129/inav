@@ -1,6 +1,4 @@
-# XXX: This should come from main project once everything
-# uses cmake
-set(MAIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../src/main")
+set(MAIN_SRC_ROOT "${MAIN_SRC_DIR}")
 
 # Keep these alphabetically sorted by test name
 
@@ -22,6 +20,13 @@ set_property(SOURCE rcdevice_unittest.cc PROPERTY definitions USE_RCDEVICE)
 set_property(SOURCE rcdevice_unittest.cc PROPERTY depends
     "common/bitarray.c" "common/crc.c" "io/rcdevice.c" "io/rcdevice_cam.c"
     "fc/rc_modes.c" "common/maths.c")
+
+set_property(SOURCE rx_rx_unittest.cc PROPERTY depends
+    "rx/rx.c"
+    "fc/rc_modes.c"
+    "common/bitarray.c"
+    "common/maths.c"
+)
 
 set_property(SOURCE sensor_gyro_unittest.cc PROPERTY depends
     "build/debug.c" "common/maths.c" "common/calibration.c" "common/filter.c"
@@ -55,11 +60,11 @@ function(unit_test src)
     if (defs)
         list(APPEND test_definitions ${defs})
     endif()
-    list(TRANSFORM deps PREPEND "${MAIN_DIR}/")
+    list(TRANSFORM deps PREPEND "${MAIN_SRC_ROOT}/")
     add_executable(${name} ${src} ${deps})
     set(gen_name ${name}_gen)
     get_generated_files_dir(gen ${gen_name})
-    target_include_directories(${name} PRIVATE . ${MAIN_DIR} ${gen})
+    target_include_directories(${name} PRIVATE . ${MAIN_SRC_ROOT} ${gen} ${MAIN_LIB_DIR}/main/MAVLink)
     target_compile_definitions(${name} PRIVATE ${test_definitions})
     target_compile_options(${name} PRIVATE -pthread -Wall -Wextra -Wno-extern-c-compat -ggdb3 -O0)
     enable_settings(${name} ${gen_name} OUTPUTS setting_files SETTINGS_CXX g++)

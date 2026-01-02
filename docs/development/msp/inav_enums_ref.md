@@ -255,6 +255,7 @@
 - [rthTargetMode_e](#enum-rthtargetmode_e)
 - [rthTrackbackMode_e](#enum-rthtrackbackmode_e)
 - [rxFrameState_e](#enum-rxframestate_e)
+- [rxLink_e](#enum-rxlink_e)
 - [rxReceiverType_e](#enum-rxreceivertype_e)
 - [rxSerialReceiverType_e](#enum-rxserialreceivertype_e)
 - [safehomeUsageMode_e](#enum-safehomeusagemode_e)
@@ -4032,7 +4033,8 @@
 | `OSD_NAV_FW_ALT_CONTROL_RESPONSE` | 166 |  |
 | `OSD_NAV_MIN_GROUND_SPEED` | 167 |  |
 | `OSD_THROTTLE_GAUGE` | 168 |  |
-| `OSD_ITEM_COUNT` | 169 |  |
+| `OSD_ACTIVE_RX_LINK` | 169 |  |
+| `OSD_ITEM_COUNT` | 170 |  |
 
 ---
 ## <a id="enum-osd_sidebar_arrow_e"></a>`osd_sidebar_arrow_e`
@@ -4641,6 +4643,17 @@
 | `RX_FRAME_FAILSAFE` | (1 << 1) |  |
 | `RX_FRAME_PROCESSING_REQUIRED` | (1 << 2) |  |
 | `RX_FRAME_DROPPED` | (1 << 3) |  |
+
+---
+## <a id="enum-rxlink_e"></a>`rxLink_e`
+
+> Source: ../../../src/main/rx/rx.h
+
+| Enumerator | Value | Condition |
+|---|---:|---|
+| `RX_LINK_PRIMARY` | 0 |  |
+| `RX_LINK_SECONDARY` | 1 |  |
+| `RX_LINK_COUNT` | 2 |  |
 
 ---
 ## <a id="enum-rxreceivertype_e"></a>`rxReceiverType_e`
