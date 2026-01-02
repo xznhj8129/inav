@@ -747,6 +747,11 @@ groups:
         default_value: 30
         min: 1
         max: 100
+      - name: dual_rx_enabled
+        description: "Enable dual receiver (RX) handling. When OFF, only the primary receiver is used even if secondary settings are configured."
+        type: bool
+        default_value: OFF
+        field: dualRxEnabled
       - name: serialrx_provider
         description: "When feature SERIALRX is enabled, this allows connection to several receivers which output data via digital interface resembling serial. See RX section."
         default_value: :target

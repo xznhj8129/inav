@@ -822,6 +822,16 @@ Defines the type of stage 1 D-term LPF filter. Possible values: `PT1`, `BIQUAD`,
 
 ---
 
+### dual_rx_enabled
+
+Enable dual receiver (RX) handling. When OFF, only the primary receiver is used even if secondary settings are configured.
+
+| Default | Min | Max |
+| --- | --- | --- |
+| OFF | OFF | ON |
+
+---
+
 ### dynamic_gyro_notch_3d_q
 
 Q factor for 3D dynamic notches

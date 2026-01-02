@@ -80,6 +80,7 @@ static bool rxSignalReceived = false;
 static bool rxFlightChannelsValid = false;
 
 static bool isRxSuspended = false;
+static bool dualRxEnabled = false;
 
 typedef struct rxLinkState_s {
     rxRuntimeConfig_t runtimeConfig;
@@ -122,6 +123,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(rxConfig_t, rxConfig, PG_RX_CONFIG, 13);
 #define RX_MIN_USEX 885
 PG_RESET_TEMPLATE(rxConfig_t, rxConfig,
     .receiverType = DEFAULT_RX_TYPE,
+    .dualRxEnabled = 0,
     .rcmap = {0, 1, 3, 2},      // Default to AETR map
     .halfDuplex = SETTING_SERIALRX_HALFDUPLEX_DEFAULT,
     .receiverTypeSecondary = RX_TYPE_NONE,
@@ -285,71 +287,71 @@ static void populateLinkConfig(rxConfig_t *dst, const rxConfig_t *src, rxLink_e 
 }
 
 #ifdef USE_SERIAL_RX
-bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig)
+bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, serialPortFunction_e portFunction)
 {
     bool enabled = false;
     switch (rxConfig->serialrx_provider) {
 #ifdef USE_SERIALRX_SRXL2
     case SERIALRX_SRXL2:
-        enabled = srxl2RxInit(rxConfig, rxRuntimeConfig);
+        enabled = srxl2RxInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_SPEKTRUM
     case SERIALRX_SPEKTRUM1024:
     case SERIALRX_SPEKTRUM2048:
-        enabled = spektrumInit(rxConfig, rxRuntimeConfig);
+        enabled = spektrumInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_SBUS
     case SERIALRX_SBUS2:
     case SERIALRX_SBUS:
-        enabled = sbusInit(rxConfig, rxRuntimeConfig);
+        enabled = sbusInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
     case SERIALRX_SBUS_FAST:
-        enabled = sbusInitFast(rxConfig, rxRuntimeConfig);
+        enabled = sbusInitFast(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_SUMD
     case SERIALRX_SUMD:
-        enabled = sumdInit(rxConfig, rxRuntimeConfig);
+        enabled = sumdInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_IBUS
     case SERIALRX_IBUS:
-        enabled = ibusInit(rxConfig, rxRuntimeConfig);
+        enabled = ibusInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_JETIEXBUS
     case SERIALRX_JETIEXBUS:
-        enabled = jetiExBusInit(rxConfig, rxRuntimeConfig);
+        enabled = jetiExBusInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_CRSF
     case SERIALRX_CRSF:
-        enabled = crsfRxInit(rxConfig, rxRuntimeConfig);
+        enabled = crsfRxInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_FPORT
     case SERIALRX_FPORT:
-        enabled = fportRxInit(rxConfig, rxRuntimeConfig);
+        enabled = fportRxInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_FPORT2
     case SERIALRX_FPORT2:
-        enabled = fport2RxInit(rxConfig, rxRuntimeConfig, false);
+        enabled = fport2RxInit(rxConfig, rxRuntimeConfig, false, portFunction);
         break;
     case SERIALRX_FBUS:
-        enabled = fport2RxInit(rxConfig, rxRuntimeConfig, true);
+        enabled = fport2RxInit(rxConfig, rxRuntimeConfig, true, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_GHST
     case SERIALRX_GHST:
-        enabled = ghstRxInit(rxConfig, rxRuntimeConfig);
+        enabled = ghstRxInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
 #ifdef USE_SERIALRX_MAVLINK
     case SERIALRX_MAVLINK:
-        enabled = mavlinkRxInit(rxConfig, rxRuntimeConfig);
+        enabled = mavlinkRxInit(rxConfig, rxRuntimeConfig, portFunction);
         break;
 #endif
     default:
@@ -363,6 +365,10 @@ bool serialRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig
 void rxInit(void)
 {
     rcSampleIndex = 0;
+    dualRxEnabled = rxConfig()->dualRxEnabled;
+    if (rxConfig()->receiverType == RX_TYPE_MSP || rxConfig()->receiverTypeSecondary == RX_TYPE_MSP) {
+        dualRxEnabled = false;
+    }
 
     const timeMs_t nowMs = millis();
 
@@ -374,6 +380,10 @@ void rxInit(void)
     populateLinkConfig(&linkConfigs[RX_LINK_PRIMARY], rxConfig(), RX_LINK_PRIMARY);
     populateLinkConfig(&linkConfigs[RX_LINK_SECONDARY], rxConfig(), RX_LINK_SECONDARY);
 
+    if (!dualRxEnabled) {
+        linkConfigs[RX_LINK_SECONDARY].receiverType = RX_TYPE_NONE;
+    }
+
     for (int linkIndex = 0; linkIndex < RX_LINK_COUNT; linkIndex++) {
         rxLinkState_t *link = &rxLinks[linkIndex];
         rxConfig_t *linkConfig = &linkConfigs[linkIndex];
@@ -383,7 +393,9 @@ void rxInit(void)
 
 #ifdef USE_SERIAL_RX
         case RX_TYPE_SERIAL:
-            if (!serialRxInit(linkConfig, &link->runtimeConfig)) {
+        {
+            const serialPortFunction_e linkPortFunction = linkIndex == RX_LINK_PRIMARY ? FUNCTION_RX_SERIAL : FUNCTION_RX_SERIAL_SECONDARY;
+            if (!serialRxInit(linkConfig, &link->runtimeConfig, linkPortFunction)) {
                 if (linkIndex == RX_LINK_PRIMARY) {
                     rxConfigMutable()->receiverType = RX_TYPE_NONE;
                 } else {
@@ -395,6 +407,7 @@ void rxInit(void)
                 link->runtimeConfig.rcProcessFrameFn = nullProcessFrame;
             }
             break;
+        }
 #endif
 
 #ifdef USE_RX_MSP
@@ -522,11 +535,20 @@ void rxSetActiveLink(rxLink_e link)
         return;
     }
 
+    if (!dualRxEnabled && link != RX_LINK_PRIMARY) {
+        return;
+    }
+
     rxApplyActiveLink(link);
 }
 
 static void rxSelectActiveLink(void)
 {
+    if (!dualRxEnabled) {
+        rxApplyActiveLink(RX_LINK_PRIMARY);
+        return;
+    }
+
     const bool primaryValid = rxLinkHasValidSignal(&rxLinks[RX_LINK_PRIMARY]);
     const bool secondaryValid = rxLinkHasValidSignal(&rxLinks[RX_LINK_SECONDARY]);
 
@@ -557,7 +579,8 @@ bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 
     bool result = false;
 
-    for (int linkIndex = 0; linkIndex < RX_LINK_COUNT; linkIndex++) {
+    const int linkCount = dualRxEnabled ? RX_LINK_COUNT : 1;
+    for (int linkIndex = 0; linkIndex < linkCount; linkIndex++) {
         rxLinkState_t *link = &rxLinks[linkIndex];
 
         if (link->signalReceived && currentTimeUs >= link->needRxSignalBefore) {
@@ -613,7 +636,8 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
     bool processed = false;
 
-    for (int linkIndex = 0; linkIndex < RX_LINK_COUNT; linkIndex++) {
+    const int linkCount = dualRxEnabled ? RX_LINK_COUNT : 1;
+    for (int linkIndex = 0; linkIndex < linkCount; linkIndex++) {
         rxLinkState_t *link = &rxLinks[linkIndex];
 
         if (link->auxiliaryProcessingRequired) {
@@ -680,7 +704,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
     }
 #endif
 
-    if (rxIsLinkReceivingSignal(RX_LINK_PRIMARY) || rxIsLinkReceivingSignal(RX_LINK_SECONDARY)) {
+    if (rxIsLinkReceivingSignal(RX_LINK_PRIMARY) || (dualRxEnabled && rxIsLinkReceivingSignal(RX_LINK_SECONDARY))) {
         failsafeOnValidDataReceived();
     } else {
         failsafeOnValidDataFailed();

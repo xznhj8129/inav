@@ -158,6 +158,7 @@ protected:
         cfg->serialrx_provider = 0;
         cfg->serialrx_inverted = 0;
         cfg->halfDuplex = SETTING_SERIALRX_HALFDUPLEX_DEFAULT;
+        cfg->dualRxEnabled = true;
         cfg->mincheck = SETTING_MIN_CHECK_DEFAULT;
         cfg->maxcheck = SETTING_MAX_CHECK_DEFAULT;
         cfg->rx_min_usec = SETTING_RX_MIN_USEC_DEFAULT;
