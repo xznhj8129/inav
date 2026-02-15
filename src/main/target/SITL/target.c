@@ -44,6 +44,8 @@
 #include "target.h"
 
 #include "fc/runtime_config.h"
+#include "fc/config.h"
+#include "config/feature.h"
 #include "common/utils.h"
 #include "scheduler/scheduler.h"
 #include "drivers/system.h"
@@ -53,9 +55,13 @@
 #include "drivers/serial_tcp.h"
 #include "config/config_streamer.h"
 #include "build/version.h"
+#include "sensors/gyro.h"
+#include "sensors/pitotmeter.h"
+#include "io/gps.h"
 
 #include "target/SITL/sim/realFlight.h"
 #include "target/SITL/sim/xplane.h"
+#include "target/SITL/sim/gazebo.h"
 
 #include "target/SITL/serial_proxy.h"
 
@@ -74,8 +80,31 @@ static uint8_t mappingCount = 0;
 static bool useImu = false;
 static char *simIp = NULL;
 static int simPort = 0;
+static char *simWorld = NULL;
+static char *simModel = NULL;
 
 static char **c_argv;
+
+void validateAndFixTargetConfig(void)
+{
+    if (gyroConfig()->gravity_cmss_cal < 0.0f) {
+        gyroConfigMutable()->gravity_cmss_cal = 0.0f;
+    }
+
+    if (sitlSim == SITL_SIM_GAZEBO) {
+#ifdef USE_GPS_FAKE
+        if (gpsConfig()->provider != GPS_FAKE) {
+            gpsConfigMutable()->provider = GPS_FAKE;
+        }
+        featureSet(FEATURE_GPS);
+#endif
+#ifdef USE_PITOT_FAKE
+        if (pitotmeterConfig()->pitot_hardware == PITOT_VIRTUAL) {
+            pitotmeterConfigMutable()->pitot_hardware = PITOT_FAKE;
+        }
+#endif
+    }
+}
 
 static void printVersion(void) {
     fprintf(stderr, "INAV %d.%d.%d SITL (%s)\n", FC_VERSION_MAJOR, FC_VERSION_MINOR, FC_VERSION_PATCH_LEVEL, shortGitRevision);
@@ -130,6 +159,18 @@ void systemInit(void) {
                 fprintf(stderr, "[SIM] Connection with X-PLane NOT established.\n");
             }
             break;
+        case SITL_SIM_GAZEBO:
+            if (mappingCount > GZ_MAX_PWM_OUTS) {
+                fprintf(stderr, "[SIM] Mapping error. Gazebo supports a maximum of %i PWM outputs.", GZ_MAX_PWM_OUTS);
+                sitlSim = SITL_SIM_NONE;
+                break;
+            }
+            if (simGazeboInit(simWorld, simModel, pwmMapping, mappingCount, useImu)) {
+                fprintf(stderr, "[SIM] Connection with Gazebo successfully established.\n");
+            } else {
+                fprintf(stderr, "[SIM] Connection with Gazebo NOT established.\n");
+            }
+            break;
         default:
           fprintf(stderr, "[SIM] No interface specified. Configurator only.\n");
           break;
@@ -141,7 +182,7 @@ void systemInit(void) {
 bool parseMapping(char* mapStr)
 {
     char *split = strtok(mapStr, ",");
-    char numBuf[2];
+    char numBuf[3];
     while(split)
     {
         if (strlen(split) != 6) {
@@ -150,17 +191,25 @@ bool parseMapping(char* mapStr)
 
         if (split[0] == 'M' || split[0] == 'S') {
             memcpy(numBuf, &split[1], 2);
+            numBuf[2] = '\0';
             int pwmOut = atoi(numBuf);
             memcpy(numBuf, &split[4], 2);
+            numBuf[2] = '\0';
             int rOut = atoi(numBuf);
-            if (pwmOut < 0 || rOut < 1) {
+            if (rOut < 1 || rOut > (int)ARRAYLEN(pwmMapping)) {
                 return false;
             }
             if (split[0] == 'M') {
+                if (pwmOut < 1) {
+                    return false;
+                }
                 pwmMapping[rOut - 1] = pwmOut - 1;
                 pwmMapping[rOut - 1] |= 0x80;
                 mappingCount++;
             } else if (split[0] == 'S') {
+                if (pwmOut < 1) {
+                    return false;
+                }
                 pwmMapping[rOut - 1] = pwmOut;
                 mappingCount++;
             }
@@ -200,9 +249,11 @@ void printCmdLineOptions(void)
     printVersion();
     fprintf(stderr, "Avaiable options:\n");
     fprintf(stderr, "--path=[path]                  Path and filename of eeprom.bin. If not specified 'eeprom.bin' in program directory is used.\n");
-    fprintf(stderr, "--sim=[rf|xp]                  Simulator interface: rf = RealFligt, xp = XPlane. Example: --sim=rf\n");
+    fprintf(stderr, "--sim=[rf|xp|gz]               Simulator interface: rf = RealFligt, xp = XPlane, gz = Gazebo. Example: --sim=gz\n");
     fprintf(stderr, "--simip=[ip]                   IP-Address oft the simulator host. If not specified localhost (127.0.0.1) is used.\n");
     fprintf(stderr, "--simport=[port]               Port oft the simulator host.\n");
+    fprintf(stderr, "--simworld=[world]             Gazebo world name (default: forest).\n");
+    fprintf(stderr, "--simmodel=[model]             Gazebo model name (default: x500_mono_camera).\n");
     fprintf(stderr, "--useimu                       Use IMU sensor data from the simulator instead of using attitude data from the simulator directly (experimental, not recommended).\n");
     fprintf(stderr, "--serialuart=[uart]            UART number on which serial receiver is configured in SITL, f.e. 3 for UART3\n");
     fprintf(stderr, "--serialport=[serialport]      Host's serial port to which serial receiver/proxy FC is connected, f.e. COM3, /dev/ttyACM3\n");
@@ -242,6 +293,8 @@ void parseArguments(int argc, char *argv[])
             {"parity", required_argument, 0, '4'},
             {"fcproxy", no_argument, 0, '5'},
             {"tcpbaseport", required_argument, 0, '6'},
+            {"simworld", required_argument, 0, '7'},
+            {"simmodel", required_argument, 0, '8'},
             {NULL, 0, NULL, 0}
         };
 
@@ -255,6 +308,8 @@ void parseArguments(int argc, char *argv[])
                     sitlSim = SITL_SIM_REALFLIGHT;
                 } else if (strcmp(optarg, "xp") == 0){
                     sitlSim = SITL_SIM_XPLANE;
+                } else if (strcmp(optarg, "gz") == 0){
+                    sitlSim = SITL_SIM_GAZEBO;
                 } else {
                     fprintf(stderr, "[SIM] Unsupported simulator %s.\n", optarg);
                 }
@@ -337,6 +392,12 @@ void parseArguments(int argc, char *argv[])
                 tcpBasePort = (uint16_t)basePort;
                 break;
             }
+            case '7':
+                simWorld = optarg;
+                break;
+            case '8':
+                simModel = optarg;
+                break;
 
             default:
                 printCmdLineOptions();
@@ -347,6 +408,14 @@ void parseArguments(int argc, char *argv[])
     if (simIp == NULL) {
         simIp = malloc(10);
         strcpy(simIp, "127.0.0.1");
+    }
+    if (simWorld == NULL) {
+        simWorld = malloc(8);
+        strcpy(simWorld, "forest");
+    }
+    if (simModel == NULL) {
+        simModel = malloc(5);
+        strcpy(simModel, "x500_mono_camera");
     }
 }
 

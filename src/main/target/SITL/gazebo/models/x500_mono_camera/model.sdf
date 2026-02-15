@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='x500_mono_camera'>
+    <include merge='true'>
+      <uri>x500_mono_cam</uri>
+    </include>
+  </model>
+</sdf>

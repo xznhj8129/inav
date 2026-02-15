@@ -149,11 +149,15 @@ If SITL is started without command line options, only a serial MSP / CLI connect
 
 ```--path``` Path and file name to config file. If not present, eeprom.bin in the current directory is used. Example: ```C:\INAV_SITL\flying-wing.bin```, ```/home/user/sitl-eeproms/test-eeprom.bin```.
 
-```--sim=[sim]``` Select the simulator. xp = X-Plane, rf = RealFlight. Example: ```--sim=xp```. If not specified, configurator-only mode is started. Omit for usage with INAV-X-Plane-HITL plugin.
+```--sim=[sim]``` Select the simulator. xp = X-Plane, rf = RealFlight, gz = Gazebo. Example: ```--sim=xp```. If not specified, configurator-only mode is started. Omit for usage with INAV-X-Plane-HITL plugin.
 
 ```--simip=[ip]``` Hostname or IP address of the simulator, if you specify a simulator with "--sim" and omit this option IPv4 localhost (`127.0.0.1`) will be used. Example: ```--simip=172.65.21.15```, ```--simip acme-sims.org```, ```--sim ::1```.
 
 ```--simport=[port]``` Port number of the simulator, not necessary for all simulators. Example: ```--simport=4900```. For the X-Plane protocol, the default port is `49000`.
+
+```--simworld=[world]``` Gazebo world name. Default: ```forest```.
+
+```--simmodel=[model]``` Gazebo model name. Default: ```x500_mono_camera```.
 
 ```--useimu``` Use IMU sensor data from the simulator instead of using attitude data directly from the simulator. Not recommended, use only for debugging.
 
@@ -189,6 +193,23 @@ It is recommended to start the tools in the following order:
 For INav-X-Plane-HITL plugin:
 1. SITL (Run in configurator-only mode)
 2. X-Plane
+
+### Gazebo quick start
+
+INAV includes a built-in Gazebo world and model for SITL at:
+`src/main/target/SITL/gazebo`.
+
+Start Gazebo + SITL together with:
+
+`cmake/run_sitl_gazebo.sh --build`
+
+This script:
+- starts Gazebo headless with bundled resources and server config
+- starts SITL with matching `--sim=gz`, `--simworld` and `--simmodel` options
+- uses persistent state in `src/utils/gazebo/state` (`eeprom.bin`, SITL build, logs)
+
+Reusable Gazebo SITL helpers and diff live in:
+`src/utils/gazebo/`
 
 # #Forwarding serial data for other UART
 

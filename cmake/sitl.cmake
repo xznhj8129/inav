@@ -15,6 +15,10 @@ main_sources(SITL_SRC
     config/config_streamer_file.c
     drivers/serial_tcp.c
     drivers/serial_tcp.h
+    target/SITL/sim/gazebo.c
+    target/SITL/sim/gazebo.h
+    target/SITL/sim/gazebo_native.cpp
+    target/SITL/sim/gazebo_native.h
     target/SITL/sim/realFlight.c
     target/SITL/sim/realFlight.h
     target/SITL/sim/simHelper.c
@@ -24,6 +28,37 @@ main_sources(SITL_SRC
     target/SITL/sim/xplane.c
     target/SITL/sim/xplane.h
 )
+
+set(SITL_GAZEBO_LIBRARIES)
+set(SITL_GAZEBO_DEFINITIONS)
+set(SITL_GAZEBO_INCLUDE_DIRS)
+set(SITL_GAZEBO_LIBRARY_DIRS)
+
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    pkg_search_module(GZ_TRANSPORT QUIET
+        gz-transport13
+        gz-transport12
+        gz-transport11
+    )
+    pkg_search_module(GZ_MSGS QUIET
+        gz-msgs10
+        gz-msgs9
+        gz-msgs8
+    )
+
+    if (GZ_TRANSPORT_FOUND AND GZ_MSGS_FOUND)
+        list(APPEND SITL_GAZEBO_DEFINITIONS USE_GAZEBO_NATIVE)
+        list(APPEND SITL_GAZEBO_INCLUDE_DIRS ${GZ_TRANSPORT_INCLUDE_DIRS} ${GZ_MSGS_INCLUDE_DIRS})
+        list(APPEND SITL_GAZEBO_LIBRARY_DIRS ${GZ_TRANSPORT_LIBRARY_DIRS} ${GZ_MSGS_LIBRARY_DIRS})
+        list(APPEND SITL_GAZEBO_LIBRARIES ${GZ_TRANSPORT_LIBRARIES} ${GZ_MSGS_LIBRARIES})
+        message(STATUS "SITL Gazebo backend enabled (${GZ_TRANSPORT_MODULE_NAME}, ${GZ_MSGS_MODULE_NAME})")
+    else()
+        message(STATUS "SITL Gazebo backend disabled (gz-transport / gz-msgs development packages not found)")
+    endif()
+else()
+    message(STATUS "SITL Gazebo backend disabled (pkg-config not found)")
+endif()
 
 
 if(CMAKE_HOST_APPLE)
@@ -47,6 +82,8 @@ set(SITL_LINK_LIBRARIS
 if(NOT MACOSX)
     set(SITL_LINK_LIBRARIS ${SITL_LINK_LIBRARIS} -lrt)
 endif()
+
+set(SITL_LINK_LIBRARIS ${SITL_LINK_LIBRARIS} ${SITL_GAZEBO_LIBRARIES})
 
 set(SITL_COMPILE_OPTIONS
     -Wno-format #Fixme: Compile for 32bit, but settings.rb has to be adjusted
@@ -74,6 +111,7 @@ endif()
 
 set(SITL_DEFINITIONS
     SITL_BUILD
+    ${SITL_GAZEBO_DEFINITIONS}
 )
 
 function (target_sitl name)
@@ -114,6 +152,8 @@ function (target_sitl name)
     add_executable(${exe_target})
     target_sources(${exe_target} PRIVATE ${target_sources} ${COMMON_SRC})
     target_include_directories(${exe_target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_include_directories(${exe_target} SYSTEM PRIVATE ${SITL_GAZEBO_INCLUDE_DIRS})
+    target_link_directories(${exe_target} PRIVATE ${SITL_GAZEBO_LIBRARY_DIRS})
     target_compile_definitions(${exe_target} PRIVATE ${target_definitions})
 
 
@@ -122,6 +162,7 @@ function (target_sitl name)
     endif()
 
     target_compile_options(${exe_target} PRIVATE ${SITL_COMPILE_OPTIONS})
+    set_source_files_properties(${MAIN_SRC_DIR}/target/SITL/sim/gazebo_native.cpp PROPERTIES COMPILE_OPTIONS "-std=gnu++17;-Wno-error")
 
     target_link_libraries(${exe_target} PRIVATE ${SITL_LINK_LIBRARIS})
     target_link_options(${exe_target} PRIVATE ${SITL_LINK_OPTIONS})

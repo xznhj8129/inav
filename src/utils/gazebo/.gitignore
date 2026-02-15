@@ -1,0 +1,6 @@
+__pycache__/
+state/build/
+state/logs/
+state/eeprom.bin
+state/eeprom.bin.bak.*
+state/*.pre_apply.*
