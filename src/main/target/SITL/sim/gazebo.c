@@ -64,14 +64,8 @@ static uint32_t gazeboTxDroppedCount;
 static uint32_t gazeboRxSampleCount;
 static timeMs_t gazeboLastStatsMs;
 static uint32_t gazeboLastImuSeq;
-/* INAV QUADX motor order is RR,FR,RL,FL while Gazebo x500/x3 expects FR,RL,FL,RR.
-        #0 = front right
-        #1 = rear left
-        #2 = front left
-        #3 = rear right
-        */
+
 static const uint8_t defaultGazeboMotorOrder[GZ_MAX_PWM_OUTS] = {0, 3, 2, 1};
-//static const uint8_t defaultGazeboMotorOrder[GZ_MAX_PWM_OUTS] = {1, 2, 3, 0};
 
 static float clampUnit(float value)
 {
@@ -100,7 +94,6 @@ static void getMotorCommands(float *motorRadS)
         motorRadS[i] = clampUnit(PWM_TO_FLOAT_0_1(motor[inavMotorIndex])) * 1000.0f;
     }
 }
-
 static void convertQuaternionToRPY(const float *quatWxyz, int16_t *rollInav, int16_t *pitchInav, int16_t *yawInav)
 {
     const float qw = quatWxyz[0];
@@ -118,9 +111,14 @@ static void convertQuaternionToRPY(const float *quatWxyz, int16_t *rollInav, int
 
     const float sinyCosp = 2.0f * (qw * qz + qx * qy);
     const float cosyCosp = 1.0f - 2.0f * (qy * qy + qz * qz);
-    float yaw = atan2f(sinyCosp, cosyCosp) * (180.0f / M_PIf);
-    if (yaw < 0.0f) {
+    // Gazebo IMU orientation is ENU/FLU. INAV heading uses 0=N and +clockwise (NED-style heading). DOES IT?? ARE YOU SURE?? ARE YOU FUCKING CERTAIN???
+    float yawEnu = atan2f(sinyCosp, cosyCosp) * (180.0f / M_PIf);
+    float yaw = 90.0f + yawEnu;
+    while (yaw < 0.0f) {
         yaw += 360.0f;
+    }
+    while (yaw >= 360.0f) {
+        yaw -= 360.0f;
     }
 
     *rollInav = constrainToInt16(roll * (1800.0f / M_PIf));
