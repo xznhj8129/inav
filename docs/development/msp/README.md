@@ -461,6 +461,9 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 [8744 - MSP2_INAV_TIMESYNC](#msp2_inav_timesync)  
 [8752 - MSP2_INAV_SET_AUX_RC](#msp2_inav_set_aux_rc)  
 [8753 - MSP2_INAV_WIND](#msp2_inav_wind)  
+[8754 - MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)  
+[8755 - MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)  
+[8756 - MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)  
 [12288 - MSP2_BETAFLIGHT_BIND](#msp2_betaflight_bind)  
 [12289 - MSP2_RX_BIND](#msp2_rx_bind)  
 
@@ -4877,6 +4880,53 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 | `flags` | `uint8_t` | 1 | - | Validity flags. Bit 0: wind estimate valid (`isEstimatedWindSpeedValid()`). Remaining bits reserved. |
 
 **Notes:** Requires `USE_WIND_ESTIMATOR`; returns zeroes when wind estimation is not compiled in or not yet valid. Check bit 0 of `flags` before using speed/angle values.
+
+## <a id="msp2_inav_nav_roi"></a>`MSP2_INAV_NAV_ROI (8754 / 0x2232)`
+**Description:** Gets the active navigation ROI.  
+
+**Request Payload:** **None**  
+  
+**Reply Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `lat` | `int32_t` | 4 | 1e-7 deg | ROI latitude (`posControl.roi.lat`) |
+| `lon` | `int32_t` | 4 | 1e-7 deg | ROI longitude (`posControl.roi.lon`) |
+| `alt` | `int32_t` | 4 | cm | ROI altitude (`posControl.roi.alt`) |
+| `p1` | `int16_t` | 2 | - | ROI parameter 1 (`posControl.roi.p1`) |
+| `p2` | `int16_t` | 2 | - | ROI parameter 2 (`posControl.roi.p2`) |
+| `p3` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield (`posControl.roi.p3`) |
+| `action` | `uint8_t` | 1 | - | ROI action field (`posControl.roi.action`) |
+| `flag` | `uint8_t` | 1 | enum | ROI state flag (`posControl.roi.flag`): 0 empty, 1 volatile, 2 persistent |
+
+**Notes:** Returns the active navigation ROI slot.
+
+## <a id="msp2_inav_set_nav_roi"></a>`MSP2_INAV_SET_NAV_ROI (8755 / 0x2233)`
+**Description:** Sets or clears the active navigation ROI.  
+  
+**Request Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `lat` | `int32_t` | 4 | 1e-7 deg | ROI latitude |
+| `lon` | `int32_t` | 4 | 1e-7 deg | ROI longitude |
+| `alt` | `int32_t` | 4 | cm | ROI altitude |
+| `p1` | `int16_t` | 2 | - | ROI parameter 1 |
+| `p2` | `int16_t` | 2 | - | ROI parameter 2 |
+| `p3` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield |
+| `action` | `uint8_t` | 1 | - | ROI action field |
+| `flag` | `uint8_t` | 1 | enum | Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1) |
+
+**Reply Payload:** **None**  
+
+**Notes:** Expects exactly 19 bytes.
+
+## <a id="msp2_inav_goto_roi"></a>`MSP2_INAV_GOTO_ROI (8756 / 0x2234)`
+**Description:** Commands navigation to move guided desired position to the active ROI.  
+
+**Request Payload:** **None**  
+
+**Reply Payload:** **None**  
+
+**Notes:** Calls `navGotoROI()`. Returns error if ROI is not set or guided mode preconditions are not met.
 
 ## <a id="msp2_betaflight_bind"></a>`MSP2_BETAFLIGHT_BIND (12288 / 0x3000)`
 **Description:** Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).  
