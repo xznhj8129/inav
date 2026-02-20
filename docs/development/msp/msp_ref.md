@@ -10,7 +10,8 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 For current generation code, see [documentation project](https://github.com/xznhj8129/msp_documentation) (temporary until official implementation)  
 
 
-**JSON file rev: 4**
+**JSON file rev: 5
+**
 
 **Warning: Verification needed, exercise caution until completely verified for accuracy and cleared, especially for integer signs. Source-based generation/validation is forthcoming. Refer to source for absolute certainty** 
 
@@ -413,6 +414,9 @@ For current generation code, see [documentation project](https://github.com/xznh
 [8723 - MSP2_INAV_SET_GEOZONE_VERTEX](#msp2_inav_set_geozone_vertex)  
 [8724 - MSP2_INAV_SET_GVAR](#msp2_inav_set_gvar)  
 [8736 - MSP2_INAV_FULL_LOCAL_POSE](#msp2_inav_full_local_pose)  
+[8752 - MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)  
+[8753 - MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)  
+[8754 - MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)  
 [12288 - MSP2_BETAFLIGHT_BIND](#msp2_betaflight_bind)  
 
 ## <a id="msp_api_version"></a>`MSP_API_VERSION (1 / 0x1)`
@@ -4525,6 +4529,53 @@ For current generation code, see [documentation project](https://github.com/xznh
 | `localVelocityUp` | `int16_t` | 2 | cm/s | Estimated Up component of velocity in local NEU frame (`posControl.actualState.abs.vel.z`) |
 
 **Notes:** All attitude angles are in deci-degrees.
+
+## <a id="msp2_inav_nav_roi"></a>`MSP2_INAV_NAV_ROI (8752 / 0x2230)`
+**Description:** Gets the active navigation ROI.  
+
+**Request Payload:** **None**  
+  
+**Reply Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `lat` | `int32_t` | 4 | 1e-7 deg | ROI latitude (`posControl.roi.lat`) |
+| `lon` | `int32_t` | 4 | 1e-7 deg | ROI longitude (`posControl.roi.lon`) |
+| `alt` | `int32_t` | 4 | cm | ROI altitude (`posControl.roi.alt`) |
+| `p1` | `int16_t` | 2 | - | ROI parameter 1 (`posControl.roi.p1`) |
+| `p2` | `int16_t` | 2 | - | ROI parameter 2 (`posControl.roi.p2`) |
+| `p3` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield (`posControl.roi.p3`) |
+| `action` | `uint8_t` | 1 | - | ROI action field (`posControl.roi.action`) |
+| `flag` | `uint8_t` | 1 | enum | ROI state flag (`posControl.roi.flag`): 0 empty, 1 volatile, 2 persistent |
+
+**Notes:** Returns the active navigation ROI slot.
+
+## <a id="msp2_inav_set_nav_roi"></a>`MSP2_INAV_SET_NAV_ROI (8753 / 0x2231)`
+**Description:** Sets or clears the active navigation ROI.  
+  
+**Request Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `lat` | `int32_t` | 4 | 1e-7 deg | ROI latitude |
+| `lon` | `int32_t` | 4 | 1e-7 deg | ROI longitude |
+| `alt` | `int32_t` | 4 | cm | ROI altitude |
+| `p1` | `int16_t` | 2 | - | ROI parameter 1 |
+| `p2` | `int16_t` | 2 | - | ROI parameter 2 |
+| `p3` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield |
+| `action` | `uint8_t` | 1 | - | ROI action field |
+| `flag` | `uint8_t` | 1 | enum | Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1) |
+
+**Reply Payload:** **None**  
+
+**Notes:** Expects exactly 19 bytes.
+
+## <a id="msp2_inav_goto_roi"></a>`MSP2_INAV_GOTO_ROI (8754 / 0x2232)`
+**Description:** Commands navigation to move guided desired position to the active ROI.  
+
+**Request Payload:** **None**  
+
+**Reply Payload:** **None**  
+
+**Notes:** Calls `navGotoROI()`. Returns error if ROI is not set or guided mode preconditions are not met.
 
 ## <a id="msp2_betaflight_bind"></a>`MSP2_BETAFLIGHT_BIND (12288 / 0x3000)`
 **Description:** Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).  

@@ -379,6 +379,9 @@ static void serializeDataflashReadReply(sbuf_t *dst, uint32_t address, uint16_t 
 }
 #endif
 
+static void mspFcNavROIOutCommand(sbuf_t *dst);
+static mspResult_e mspFcNavROIInCommand(sbuf_t *src);
+
 /*
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
@@ -696,6 +699,10 @@ static bool mspFcProcessOutCommand(uint16_t cmdMSP, sbuf_t *dst, mspPostProcessF
             sbufWriteU32(dst, (int32_t)lrintf(absoluteActualState->pos.v[axis]));
             sbufWriteU16(dst, (int16_t)lrintf(absoluteActualState->vel.v[axis]));
         }
+        break;
+
+    case MSP2_INAV_NAV_ROI:
+        mspFcNavROIOutCommand(dst);
         break;
 
     case MSP_SONAR_ALTITUDE:
@@ -1906,6 +1913,45 @@ static mspResult_e mspFcLogicConditionCommand(sbuf_t *dst, sbuf_t *src) {
     }
 }
 
+static void mspFcNavROIOutCommand(sbuf_t *dst)
+{
+    navROI_t roi;
+    navGetROI(&roi);
+    sbufWriteU32(dst, (uint32_t)roi.lat);
+    sbufWriteU32(dst, (uint32_t)roi.lon);
+    sbufWriteU32(dst, (uint32_t)roi.alt);
+    sbufWriteU16(dst, (uint16_t)roi.p1);
+    sbufWriteU16(dst, (uint16_t)roi.p2);
+    sbufWriteU8(dst, roi.p3);
+    sbufWriteU8(dst, roi.action);
+    sbufWriteU8(dst, roi.flag);
+}
+
+static mspResult_e mspFcNavROIInCommand(sbuf_t *src)
+{
+    if (sbufBytesRemaining(src) != 19) {
+        return MSP_RESULT_ERROR;
+    }
+
+    navROI_t roi;
+    roi.lat = (int32_t)sbufReadU32(src);
+    roi.lon = (int32_t)sbufReadU32(src);
+    roi.alt = (int32_t)sbufReadU32(src);
+    roi.p1 = (int16_t)sbufReadU16(src);
+    roi.p2 = (int16_t)sbufReadU16(src);
+    roi.p3 = sbufReadU8(src);
+    roi.action = sbufReadU8(src);
+    roi.flag = sbufReadU8(src);
+
+    if (roi.flag == 0) {
+        navClearROI();
+    } else {
+        navSetROI(&roi);
+    }
+
+    return MSP_RESULT_ACK;
+}
+
 static void mspFcWaypointOutCommand(sbuf_t *dst, sbuf_t *src)
 {
     const uint8_t msp_wp_no = sbufReadU8(src);    // get the wp number
@@ -2405,6 +2451,12 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
         }
         break;
 #endif
+    case MSP2_INAV_SET_NAV_ROI:
+        return mspFcNavROIInCommand(src);
+
+    case MSP2_INAV_GOTO_ROI:
+        return navGotoROI() ? MSP_RESULT_ACK : MSP_RESULT_ERROR;
+
     case MSP2_COMMON_SET_MOTOR_MIXER:
         sbufReadU8Safe(&tmp_u8, src);
         if ((dataSize == 9) && (tmp_u8 < MAX_SUPPORTED_MOTORS)) {
