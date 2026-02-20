@@ -4894,7 +4894,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 | `alt` | `int32_t` | 4 | cm | ROI altitude (`posControl.roi.alt`) |
 | `p1` | `int16_t` | 2 | - | ROI parameter 1 (`posControl.roi.p1`) |
 | `p2` | `int16_t` | 2 | - | ROI parameter 2 (`posControl.roi.p2`) |
-| `p3` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield (`posControl.roi.p3`) |
+| `alt_datum` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield (`posControl.roi.alt_datum`) |
 | `action` | `uint8_t` | 1 | - | ROI action field (`posControl.roi.action`) |
 | `flag` | `uint8_t` | 1 | enum | ROI state flag (`posControl.roi.flag`): 0 empty, 1 volatile, 2 persistent |
 
@@ -4911,7 +4911,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 | `alt` | `int32_t` | 4 | cm | ROI altitude |
 | `p1` | `int16_t` | 2 | - | ROI parameter 1 |
 | `p2` | `int16_t` | 2 | - | ROI parameter 2 |
-| `p3` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield |
+| `alt_datum` | `uint8_t` | 1 | bitfield | ROI altitude datum bitfield |
 | `action` | `uint8_t` | 1 | - | ROI action field |
 | `flag` | `uint8_t` | 1 | enum | Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1) |
 
