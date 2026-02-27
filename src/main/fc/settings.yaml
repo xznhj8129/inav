@@ -3225,79 +3225,263 @@ groups:
         min: INT16_MIN
         max: INT16_MAX
       - name: mavlink_ext_status_rate
-        field: mavlink.extended_status_rate
+        field: mavlink[0].extended_status_rate
         description: "Rate of the extended status message for MAVLink telemetry"
         type: uint8_t
         min: 0
         max: 255
         default_value: 2
       - name: mavlink_autopilot_type
-        field: mavlink.autopilot_type
+        field: mavlink[0].autopilot_type
         description: "Autopilot type to advertise for MAVLink telemetry"
         table: mavlink_autopilot_type
         default_value: "GENERIC"
         type: uint8_t
       - name: mavlink_rc_chan_rate
         description: "Rate of the RC channels message for MAVLink telemetry"
-        field: mavlink.rc_channels_rate
+        field: mavlink[0].rc_channels_rate
         type: uint8_t
         min: 0
         max: 255
         default_value: 1
       - name: mavlink_pos_rate
         description: "Rate of the position message for MAVLink telemetry"
-        field: mavlink.position_rate
+        field: mavlink[0].position_rate
         type: uint8_t
         min: 0
         max: 255
         default_value: 2
       - name: mavlink_extra1_rate
         description: "Rate of the extra1 message for MAVLink telemetry"
-        field: mavlink.extra1_rate
+        field: mavlink[0].extra1_rate
         type: uint8_t
         min: 0
         max: 255
         default_value: 2
       - name: mavlink_extra2_rate
         description: "Rate of the extra2 message for MAVLink telemetry"
-        field: mavlink.extra2_rate
+        field: mavlink[0].extra2_rate
         type: uint8_t
         min: 0
         max: 255
         default_value: 2
       - name: mavlink_extra3_rate
         description: "Rate of the extra3 message for MAVLink telemetry"
-        field: mavlink.extra3_rate
+        field: mavlink[0].extra3_rate
         type: uint8_t
         min: 0
         max: 255
         default_value: 1
       - name: mavlink_version
-        field: mavlink.version
+        field: mavlink[0].version
         description: "Version of MAVLink to use"
         type: uint8_t
         min: 1
         max: 2
         default_value: 2
       - name: mavlink_min_txbuffer
-        field: mavlink.min_txbuff
+        field: mavlink[0].min_txbuff
         description: "Minimum percent of TX buffer space free, before attempting to transmit telemetry. Requuires RADIO_STATUS messages to be processed. 0 = always transmits."
         default_value: 33
         min: 0
         max: 100
       - name: mavlink_radio_type
         description: "Mavlink radio type. Affects how RSSI and LQ are reported on OSD."
-        field: mavlink.radio_type
+        field: mavlink[0].radio_type
         table: mavlink_radio_type
         default_value: "GENERIC"
         type: uint8_t
       - name: mavlink_sysid
-        field: mavlink.sysid
+        field: mavlink[0].sysid
         description: "MAVLink System ID"
         type: uint8_t
         min: 1
         max: 255
         default_value: 1
+      - name: mavlink_port1_compid
+        field: mavlink[0].compid
+        description: "MAVLink Component ID for MAVLink port 1"
+        type: uint8_t
+        min: 1
+        max: 255
+        default_value: 1
+      - name: mavlink_port1_high_latency
+        field: mavlink[0].high_latency
+        description: "Enable MAVLink high-latency mode on port 1"
+        type: bool
+        default_value: OFF
+      - name: mavlink_port2_ext_status_rate
+        field: mavlink[1].extended_status_rate
+        description: "Rate of the extended status message for MAVLink telemetry on port 2"
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port2_autopilot_type
+        field: mavlink[1].autopilot_type
+        description: "Autopilot type to advertise for MAVLink telemetry on port 2"
+        table: mavlink_autopilot_type
+        default_value: "GENERIC"
+        type: uint8_t
+      - name: mavlink_port2_rc_chan_rate
+        description: "Rate of the RC channels message for MAVLink telemetry on port 2"
+        field: mavlink[1].rc_channels_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 1
+      - name: mavlink_port2_pos_rate
+        description: "Rate of the position message for MAVLink telemetry on port 2"
+        field: mavlink[1].position_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port2_extra1_rate
+        description: "Rate of the extra1 message for MAVLink telemetry on port 2"
+        field: mavlink[1].extra1_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port2_extra2_rate
+        description: "Rate of the extra2 message for MAVLink telemetry on port 2"
+        field: mavlink[1].extra2_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port2_extra3_rate
+        description: "Rate of the extra3 message for MAVLink telemetry on port 2"
+        field: mavlink[1].extra3_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 1
+      - name: mavlink_port2_version
+        field: mavlink[1].version
+        description: "Version of MAVLink to use on port 2"
+        type: uint8_t
+        min: 1
+        max: 2
+        default_value: 2
+      - name: mavlink_port2_min_txbuffer
+        field: mavlink[1].min_txbuff
+        description: "Minimum percent of TX buffer space free for MAVLink port 2. Requires RADIO_STATUS messages."
+        default_value: 33
+        min: 0
+        max: 100
+      - name: mavlink_port2_radio_type
+        description: "MAVLink radio type for port 2. Affects RSSI and LQ reporting on OSD."
+        field: mavlink[1].radio_type
+        table: mavlink_radio_type
+        default_value: "GENERIC"
+        type: uint8_t
+      - name: mavlink_port2_sysid
+        field: mavlink[1].sysid
+        description: "MAVLink System ID for MAVLink port 2"
+        type: uint8_t
+        min: 1
+        max: 255
+        default_value: 1
+      - name: mavlink_port2_compid
+        field: mavlink[1].compid
+        description: "MAVLink Component ID for MAVLink port 2"
+        type: uint8_t
+        min: 1
+        max: 255
+        default_value: 1
+      - name: mavlink_port2_high_latency
+        field: mavlink[1].high_latency
+        description: "Enable MAVLink high-latency mode on port 2"
+        type: bool
+        default_value: OFF
+      - name: mavlink_port3_ext_status_rate
+        field: mavlink[2].extended_status_rate
+        description: "Rate of the extended status message for MAVLink telemetry on port 3"
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port3_autopilot_type
+        field: mavlink[2].autopilot_type
+        description: "Autopilot type to advertise for MAVLink telemetry on port 3"
+        table: mavlink_autopilot_type
+        default_value: "GENERIC"
+        type: uint8_t
+      - name: mavlink_port3_rc_chan_rate
+        description: "Rate of the RC channels message for MAVLink telemetry on port 3"
+        field: mavlink[2].rc_channels_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 1
+      - name: mavlink_port3_pos_rate
+        description: "Rate of the position message for MAVLink telemetry on port 3"
+        field: mavlink[2].position_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port3_extra1_rate
+        description: "Rate of the extra1 message for MAVLink telemetry on port 3"
+        field: mavlink[2].extra1_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port3_extra2_rate
+        description: "Rate of the extra2 message for MAVLink telemetry on port 3"
+        field: mavlink[2].extra2_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 2
+      - name: mavlink_port3_extra3_rate
+        description: "Rate of the extra3 message for MAVLink telemetry on port 3"
+        field: mavlink[2].extra3_rate
+        type: uint8_t
+        min: 0
+        max: 255
+        default_value: 1
+      - name: mavlink_port3_version
+        field: mavlink[2].version
+        description: "Version of MAVLink to use on port 3"
+        type: uint8_t
+        min: 1
+        max: 2
+        default_value: 2
+      - name: mavlink_port3_min_txbuffer
+        field: mavlink[2].min_txbuff
+        description: "Minimum percent of TX buffer space free for MAVLink port 3. Requires RADIO_STATUS messages."
+        default_value: 33
+        min: 0
+        max: 100
+      - name: mavlink_port3_radio_type
+        description: "MAVLink radio type for port 3. Affects RSSI and LQ reporting on OSD."
+        field: mavlink[2].radio_type
+        table: mavlink_radio_type
+        default_value: "GENERIC"
+        type: uint8_t
+      - name: mavlink_port3_sysid
+        field: mavlink[2].sysid
+        description: "MAVLink System ID for MAVLink port 3"
+        type: uint8_t
+        min: 1
+        max: 255
+        default_value: 1
+      - name: mavlink_port3_compid
+        field: mavlink[2].compid
+        description: "MAVLink Component ID for MAVLink port 3"
+        type: uint8_t
+        min: 1
+        max: 255
+        default_value: 1
+      - name: mavlink_port3_high_latency
+        field: mavlink[2].high_latency
+        description: "Enable MAVLink high-latency mode on port 3"
+        type: bool
+        default_value: OFF
 
   - name: PG_OSD_CONFIG
     type: osdConfig_t

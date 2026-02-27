@@ -30,6 +30,10 @@
 
 #include "io/serial.h"
 
+#ifndef MAX_MAVLINK_PORTS
+#define MAX_MAVLINK_PORTS 3
+#endif
+
 typedef enum {
     LTM_RATE_NORMAL,
     LTM_RATE_MEDIUM,
@@ -52,6 +56,22 @@ typedef enum {
     SMARTPORT_FUEL_UNIT_MAH,
     SMARTPORT_FUEL_UNIT_MWH
 } smartportFuelUnit_e;
+
+typedef struct mavlinkTelemetryPortConfig_s {
+    uint8_t autopilot_type;
+    uint8_t extended_status_rate;
+    uint8_t rc_channels_rate;
+    uint8_t position_rate;
+    uint8_t extra1_rate;
+    uint8_t extra2_rate;
+    uint8_t extra3_rate;
+    uint8_t version;
+    uint8_t min_txbuff;
+    uint8_t radio_type;
+    uint8_t sysid;
+    uint8_t compid;
+    bool high_latency;
+} mavlinkTelemetryPortConfig_t;
 
 typedef struct telemetryConfig_s {
     uint8_t telemetry_switch;               // Use aux channel to change serial output & baudrate( MSP / Telemetry ). It disables automatic switching to Telemetry when armed.
@@ -76,19 +96,7 @@ typedef struct telemetryConfig_s {
     uint16_t accEventThresholdLow;
     uint16_t accEventThresholdNegX;
 #endif
-    struct {
-        uint8_t autopilot_type;
-        uint8_t extended_status_rate;
-        uint8_t rc_channels_rate;
-        uint8_t position_rate;
-        uint8_t extra1_rate;
-        uint8_t extra2_rate;
-        uint8_t extra3_rate;
-        uint8_t version;
-        uint8_t min_txbuff;
-        uint8_t radio_type;
-        uint8_t sysid;
-    } mavlink;
+    mavlinkTelemetryPortConfig_t mavlink[MAX_MAVLINK_PORTS];
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);

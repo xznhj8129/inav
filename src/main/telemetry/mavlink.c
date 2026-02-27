@@ -58,6 +58,7 @@
 #include "flight/mixer_profile.h"
 #include "flight/pid.h"
 #include "flight/servos.h"
+#include "flight/wind_estimator.h"
 
 #include "io/adsb.h"
 #include "io/gps.h"
@@ -91,17 +92,22 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
-#define MAVLINK_COMM_NUM_BUFFERS 1
+#ifndef MAVLINK_COMM_NUM_BUFFERS
+#define MAVLINK_COMM_NUM_BUFFERS MAX_MAVLINK_PORTS
+#endif
 #include "common/mavlink.h"
 #pragma GCC diagnostic pop
 
 #define TELEMETRY_MAVLINK_PORT_MODE     MODE_RXTX
 #define TELEMETRY_MAVLINK_MAXRATE       50
 #define TELEMETRY_MAVLINK_DELAY         ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
+#define TELEMETRY_MAVLINK_HIGH_LATENCY_INTERVAL_US (5 * 1000 * 1000)
 #define MAV_DATA_STREAM_EXTENDED_SYS_STATE     (MAV_DATA_STREAM_EXTRA3 + 1)
 #define ARDUPILOT_VERSION_MAJOR 4
 #define ARDUPILOT_VERSION_MINOR 6
 #define ARDUPILOT_VERSION_PATCH 3
+#define MAVLINK_MAX_ROUTES 32
+#define MAVLINK_PORT_MASK(portIndex) (1U << (portIndex))
 
 typedef enum {
     MAV_FRAME_SUPPORTED_NONE = 0,
@@ -181,16 +187,14 @@ typedef enum APM_COPTER_MODE
    COPTER_MODE_ENUM_END=29,
 } APM_COPTER_MODE;
 
-static serialPort_t *mavlinkPort = NULL;
-static serialPortConfig_t *portConfig;
-
-static bool mavlinkTelemetryEnabled =  false;
-static portSharing_e mavlinkPortSharing;
-static uint8_t txbuff_free = 100;
-static bool txbuff_valid = false;
+typedef struct mavlinkRouteEntry_s {
+    uint8_t sysid;
+    uint8_t compid;
+    uint8_t ingressPortIndex;
+} mavlinkRouteEntry_t;
 
 /* MAVLink datastream rates in Hz */
-static uint8_t mavRates[] = {
+static const uint8_t mavDefaultRates[] = {
     [MAV_DATA_STREAM_EXTENDED_STATUS] = 2,      // 2Hz
     [MAV_DATA_STREAM_RC_CHANNELS] = 1,          // 1Hz
     [MAV_DATA_STREAM_POSITION] = 2,             // 2Hz
@@ -200,16 +204,36 @@ static uint8_t mavRates[] = {
     [MAV_DATA_STREAM_EXTENDED_SYS_STATE] = 1    // 1Hz
 };
 
-#define MAXSTREAMS (sizeof(mavRates) / sizeof(mavRates[0]))
+typedef struct mavlinkPortRuntime_s {
+    serialPort_t *port;
+    const serialPortConfig_t *portConfig;
+    portSharing_e portSharing;
+    bool telemetryEnabled;
+    bool txbuffValid;
+    uint8_t txbuffFree;
+    timeUs_t lastMavlinkMessageUs;
+    timeUs_t lastHighLatencyMessageUs;
+    bool highLatencyEnabled;
+    uint8_t mavRates[ARRAYLEN(mavDefaultRates)];
+    uint8_t mavRatesConfigured[ARRAYLEN(mavDefaultRates)];
+    uint8_t mavTicks[ARRAYLEN(mavDefaultRates)];
+    mavlink_message_t mavRecvMsg;
+    mavlink_status_t mavRecvStatus;
+} mavlinkPortRuntime_t;
 
-static timeUs_t lastMavlinkMessage = 0;
-static uint8_t mavRatesConfigured[MAXSTREAMS];
-static uint8_t mavTicks[MAXSTREAMS];
+#define MAXSTREAMS (ARRAYLEN(mavDefaultRates))
+
+static mavlinkPortRuntime_t mavPortStates[MAX_MAVLINK_PORTS];
+static uint8_t mavPortCount = 0;
+static mavlinkRouteEntry_t mavRouteTable[MAVLINK_MAX_ROUTES];
+static uint8_t mavRouteCount = 0;
+static uint8_t mavSendMask = 0;
+static mavlinkPortRuntime_t *mavActivePort = NULL;
+static const mavlinkTelemetryPortConfig_t *mavActiveConfig = NULL;
 static mavlink_message_t mavSendMsg;
 static mavlink_message_t mavRecvMsg;
-static mavlink_status_t mavRecvStatus;
 
-// Set mavSystemId from telemetryConfig()->mavlink.sysid
+// Set active MAV identity from active port settings.
 static uint8_t mavSystemId = 1;
 static uint8_t mavAutopilotType;
 static uint8_t mavComponentId = MAV_COMP_ID_AUTOPILOT1;
@@ -328,40 +352,73 @@ static mavlinkModeSelection_t selectMavlinkMode(bool isPlane)
     return modeSelection;
 }
 
+static const mavlinkTelemetryPortConfig_t *mavlinkGetPortConfig(uint8_t portIndex)
+{
+    return &telemetryConfig()->mavlink[portIndex];
+}
+
+static void mavlinkApplyActivePortOutputVersion(void)
+{
+    mavlink_status_t *chanState = mavlink_get_channel_status(MAVLINK_COMM_0);
+    if (mavActiveConfig->version == 1) {
+        chanState->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+    } else {
+        chanState->flags &= ~MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+    }
+}
+
+static void mavlinkSetActivePortContext(uint8_t portIndex)
+{
+    mavActivePort = &mavPortStates[portIndex];
+    mavActiveConfig = mavlinkGetPortConfig(portIndex);
+    mavAutopilotType = mavActiveConfig->autopilot_type;
+    mavSystemId = mavActiveConfig->sysid;
+    mavComponentId = mavActiveConfig->compid;
+    mavlinkApplyActivePortOutputVersion();
+}
+
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
-    uint8_t rate = (uint8_t) mavRates[streamNum];
+    if (!mavActivePort || streamNum >= MAXSTREAMS) {
+        return 0;
+    }
+
+    uint8_t rate = mavActivePort->mavRates[streamNum];
     if (rate == 0) {
         return 0;
     }
 
-    if (mavTicks[streamNum] == 0) {
+    if (mavActivePort->mavTicks[streamNum] == 0) {
         // we're triggering now, setup the next trigger point
         if (rate > TELEMETRY_MAVLINK_MAXRATE) {
             rate = TELEMETRY_MAVLINK_MAXRATE;
         }
 
-        mavTicks[streamNum] = (TELEMETRY_MAVLINK_MAXRATE / rate);
+        mavActivePort->mavTicks[streamNum] = (TELEMETRY_MAVLINK_MAXRATE / rate);
         return 1;
     }
 
     // count down at TASK_RATE_HZ
-    mavTicks[streamNum]--;
+    mavActivePort->mavTicks[streamNum]--;
     return 0;
 }
 
 static void mavlinkSetStreamRate(uint8_t streamNum, uint8_t rate)
 {
-    if (streamNum >= MAXSTREAMS) {
+    if (!mavActivePort || streamNum >= MAXSTREAMS) {
         return;
     }
-    mavRates[streamNum] = rate;
-    mavTicks[streamNum] = 0;
+    mavActivePort->mavRates[streamNum] = rate;
+    mavActivePort->mavTicks[streamNum] = 0;
 }
 
 static int32_t mavlinkStreamIntervalUs(uint8_t streamNum)
 {
-    uint8_t rate = mavRates[streamNum];
+    if (!mavActivePort || streamNum >= MAXSTREAMS) {
+        return -1;
+    }
+
+    uint8_t rate = mavActivePort->mavRates[streamNum];
     if (rate == 0) {
         return -1;
     }
@@ -369,91 +426,153 @@ static int32_t mavlinkStreamIntervalUs(uint8_t streamNum)
     return 1000000 / rate;
 }
 
+static void configureMAVLinkStreamRates(uint8_t portIndex)
+{
+    mavlinkSetActivePortContext(portIndex);
+    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTENDED_STATUS, mavActiveConfig->extended_status_rate);
+    mavlinkSetStreamRate(MAV_DATA_STREAM_RC_CHANNELS, mavActiveConfig->rc_channels_rate);
+    mavlinkSetStreamRate(MAV_DATA_STREAM_POSITION, mavActiveConfig->position_rate);
+    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA1, mavActiveConfig->extra1_rate);
+    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA2, mavActiveConfig->extra2_rate);
+    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA3, mavActiveConfig->extra3_rate);
+    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTENDED_SYS_STATE, mavActiveConfig->extra3_rate);
+    memcpy(mavActivePort->mavRatesConfigured, mavActivePort->mavRates, sizeof(mavActivePort->mavRatesConfigured));
+}
+
+static void freeMAVLinkTelemetryPortByIndex(uint8_t portIndex)
+{
+    mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+
+    if (state->port) {
+        closeSerialPort(state->port);
+    }
+
+    state->port = NULL;
+    state->telemetryEnabled = false;
+    state->txbuffValid = false;
+    state->txbuffFree = 100;
+    state->lastMavlinkMessageUs = 0;
+    state->lastHighLatencyMessageUs = 0;
+    state->highLatencyEnabled = mavlinkGetPortConfig(portIndex)->high_latency;
+    memset(&state->mavRecvStatus, 0, sizeof(state->mavRecvStatus));
+    memset(&state->mavRecvMsg, 0, sizeof(state->mavRecvMsg));
+}
+
 void freeMAVLinkTelemetryPort(void)
 {
-    closeSerialPort(mavlinkPort);
-    mavlinkPort = NULL;
-    mavlinkTelemetryEnabled = false;
+    for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+        freeMAVLinkTelemetryPortByIndex(portIndex);
+    }
+
+    mavSendMask = 0;
+    mavRouteCount = 0;
 }
 
 void initMAVLinkTelemetry(void)
 {
-    portConfig = findSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
-    mavlinkPortSharing = determinePortSharing(portConfig, FUNCTION_TELEMETRY_MAVLINK);
-    memcpy(mavRatesConfigured, mavRates, sizeof(mavRatesConfigured));
+    memset(mavPortStates, 0, sizeof(mavPortStates));
+    memset(mavRouteTable, 0, sizeof(mavRouteTable));
+    mavPortCount = 0;
+    mavRouteCount = 0;
+    mavSendMask = 0;
+
+    const serialPortConfig_t *serialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
+    while (serialPortConfig && mavPortCount < MAX_MAVLINK_PORTS) {
+        mavlinkPortRuntime_t *state = &mavPortStates[mavPortCount];
+        state->portConfig = serialPortConfig;
+        state->portSharing = determinePortSharing(serialPortConfig, FUNCTION_TELEMETRY_MAVLINK);
+        state->txbuffFree = 100;
+        state->highLatencyEnabled = mavlinkGetPortConfig(mavPortCount)->high_latency;
+        configureMAVLinkStreamRates(mavPortCount);
+
+        mavPortCount++;
+        serialPortConfig = findNextSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
+    }
+
+    mavActivePort = NULL;
+    mavActiveConfig = NULL;
 }
 
-void configureMAVLinkTelemetryPort(void)
+static void configureMAVLinkTelemetryPort(uint8_t portIndex)
 {
-    if (!portConfig) {
+    mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+
+    if (!state->portConfig) {
         return;
     }
 
-    baudRate_e baudRateIndex = portConfig->telemetry_baudrateIndex;
+    baudRate_e baudRateIndex = state->portConfig->telemetry_baudrateIndex;
     if (baudRateIndex == BAUD_AUTO) {
         // default rate for minimOSD
         baudRateIndex = BAUD_57600;
     }
 
-    mavlinkPort = openSerialPort(portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_PORT_MODE, SERIAL_NOT_INVERTED);
-    mavAutopilotType = telemetryConfig()->mavlink.autopilot_type;
-    mavSystemId = telemetryConfig()->mavlink.sysid;
-
-    if (!mavlinkPort) {
+    state->port = openSerialPort(state->portConfig->identifier, FUNCTION_TELEMETRY_MAVLINK, NULL, NULL, baudRates[baudRateIndex], TELEMETRY_MAVLINK_PORT_MODE, SERIAL_NOT_INVERTED);
+    if (!state->port) {
         return;
     }
 
-    mavlinkTelemetryEnabled = true;
-}
-
-static void configureMAVLinkStreamRates(void)
-{
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTENDED_STATUS, telemetryConfig()->mavlink.extended_status_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_RC_CHANNELS, telemetryConfig()->mavlink.rc_channels_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_POSITION, telemetryConfig()->mavlink.position_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA1, telemetryConfig()->mavlink.extra1_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA2, telemetryConfig()->mavlink.extra2_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA3, telemetryConfig()->mavlink.extra3_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTENDED_SYS_STATE, telemetryConfig()->mavlink.extra3_rate);
-    memcpy(mavRatesConfigured, mavRates, sizeof(mavRates));
+    state->telemetryEnabled = true;
+    state->txbuffValid = false;
+    state->txbuffFree = 100;
+    state->lastMavlinkMessageUs = 0;
+    state->lastHighLatencyMessageUs = 0;
+    state->highLatencyEnabled = mavlinkGetPortConfig(portIndex)->high_latency;
+    memset(&state->mavRecvStatus, 0, sizeof(state->mavRecvStatus));
+    memset(&state->mavRecvMsg, 0, sizeof(state->mavRecvMsg));
 }
 
 void checkMAVLinkTelemetryState(void)
 {
-    bool newTelemetryEnabledValue = telemetryDetermineEnabledState(mavlinkPortSharing);
+    for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+        mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
 
-    if (newTelemetryEnabledValue == mavlinkTelemetryEnabled) {
-        return;
+        bool newTelemetryEnabledValue = telemetryDetermineEnabledState(state->portSharing);
+        if ((state->portConfig->functionMask & FUNCTION_RX_SERIAL) &&
+            rxConfig()->receiverType == RX_TYPE_SERIAL &&
+            rxConfig()->serialrx_provider == SERIALRX_MAVLINK) {
+            newTelemetryEnabledValue = true;
+        }
+
+        if (newTelemetryEnabledValue == state->telemetryEnabled) {
+            continue;
+        }
+
+        if (newTelemetryEnabledValue) {
+            configureMAVLinkTelemetryPort(portIndex);
+            if (state->telemetryEnabled) {
+                configureMAVLinkStreamRates(portIndex);
+            }
+        } else {
+            freeMAVLinkTelemetryPortByIndex(portIndex);
+        }
     }
-
-    if (newTelemetryEnabledValue) {
-        configureMAVLinkTelemetryPort();
-        configureMAVLinkStreamRates();
-    } else
-        freeMAVLinkTelemetryPort();
 }
 
 static void mavlinkSendMessage(void)
 {
     uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-
-    mavlink_status_t* chan_state = mavlink_get_channel_status(MAVLINK_COMM_0);
-    if (telemetryConfig()->mavlink.version == 1) {
-        chan_state->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
-    } else {
-        chan_state->flags &= ~MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
-    }
-
     int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavSendMsg);
 
-    for (int i = 0; i < msgLength; i++) {
-        serialWrite(mavlinkPort, mavBuffer[i]);
+    for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+        if ((mavSendMask & MAVLINK_PORT_MASK(portIndex)) == 0) {
+            continue;
+        }
+
+        mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+        if (!state->telemetryEnabled || !state->port) {
+            continue;
+        }
+
+        for (int i = 0; i < msgLength; i++) {
+            serialWrite(state->port, mavBuffer[i]);
+        }
     }
 }
 
 static void mavlinkSendAutopilotVersion(void)
 {
-    if (telemetryConfig()->mavlink.version == 1) return;
+    if (mavActiveConfig->version == 1) return;
 
     // Capabilities aligned with what we actually support.
     uint64_t capabilities = 0;
@@ -486,11 +605,11 @@ static void mavlinkSendAutopilotVersion(void)
 
 static void mavlinkSendProtocolVersion(void)
 {
-    if (telemetryConfig()->mavlink.version == 1) return;
+    if (mavActiveConfig->version == 1) return;
 
     uint8_t specHash[8] = {0};
     uint8_t libHash[8] = {0};
-    const uint16_t protocolVersion = (uint16_t)telemetryConfig()->mavlink.version * 100;
+    const uint16_t protocolVersion = (uint16_t)mavActiveConfig->version * 100;
 
     mavlink_msg_protocol_version_pack(
         mavSystemId,
@@ -903,7 +1022,7 @@ void mavlinkSendSystemStatus(void)
 void mavlinkSendRCChannelsAndRSSI(void)
 {
 #define GET_CHANNEL_VALUE(x) ((rxRuntimeConfig.channelCount >= (x + 1)) ? rxGetChannelValue(x) : 0)
-    if (telemetryConfig()->mavlink.version == 1) {
+    if (mavActiveConfig->version == 1) {
         mavlink_msg_rc_channels_raw_pack(mavSystemId, mavComponentId, &mavSendMsg,
             // time_boot_ms Timestamp (milliseconds since system boot)
             millis(),
@@ -1329,8 +1448,200 @@ void mavlinkSendBatteryTemperatureStatusText(void)
 
 }
 
+static uint8_t mavlinkGetAutopilotEnum(void)
+{
+    if (mavAutopilotType == MAVLINK_AUTOPILOT_ARDUPILOT) {
+        return MAV_AUTOPILOT_ARDUPILOTMEGA;
+    }
+
+    return MAV_AUTOPILOT_GENERIC;
+}
+
+static uint8_t mavlinkHeadingDeg2FromCd(int32_t headingCd)
+{
+    return (uint8_t)(wrap_36000(headingCd) / 200);
+}
+
+static uint16_t mavlinkComputeHighLatencyFailures(void)
+{
+    uint16_t flags = 0;
+
+#if defined(USE_GPS)
+    if (!(sensors(SENSOR_GPS)
+#ifdef USE_GPS_FIX_ESTIMATION
+        || STATE(GPS_ESTIMATED_FIX)
+#endif
+        ) || gpsSol.fixType == GPS_NO_FIX) {
+        flags |= HL_FAILURE_FLAG_GPS;
+    }
+#endif
+
+#ifdef USE_PITOT
+    if (getHwPitotmeterStatus() != HW_SENSOR_OK) {
+        flags |= HL_FAILURE_FLAG_DIFFERENTIAL_PRESSURE;
+    }
+#endif
+
+    if (getHwBarometerStatus() != HW_SENSOR_OK) {
+        flags |= HL_FAILURE_FLAG_ABSOLUTE_PRESSURE;
+    }
+
+    if (getHwAccelerometerStatus() != HW_SENSOR_OK) {
+        flags |= HL_FAILURE_FLAG_3D_ACCEL;
+    }
+
+    if (getHwGyroStatus() != HW_SENSOR_OK) {
+        flags |= HL_FAILURE_FLAG_3D_GYRO;
+    }
+
+    if (getHwCompassStatus() != HW_SENSOR_OK) {
+        flags |= HL_FAILURE_FLAG_3D_MAG;
+    }
+
+    if (getHwRangefinderStatus() != HW_SENSOR_OK) {
+        flags |= HL_FAILURE_FLAG_TERRAIN;
+    }
+
+    const batteryState_e batteryState = getBatteryState();
+    if (batteryState == BATTERY_WARNING || batteryState == BATTERY_CRITICAL) {
+        flags |= HL_FAILURE_FLAG_BATTERY;
+    }
+
+    if (!rxIsReceivingSignal() || !rxAreFlightChannelsValid()) {
+        flags |= HL_FAILURE_FLAG_RC_RECEIVER;
+    }
+
+    return flags;
+}
+
+static void mavlinkSendHighLatency2(timeUs_t currentTimeUs)
+{
+    const bool isPlane = (STATE(FIXED_WING_LEGACY) || mixerConfig()->platformType == PLATFORM_AIRPLANE);
+    const mavlinkModeSelection_t modeSelection = selectMavlinkMode(isPlane);
+
+    int32_t latitude = 0;
+    int32_t longitude = 0;
+    int16_t altitude = (int16_t)constrain((int32_t)(getEstimatedActualPosition(Z) / 100), INT16_MIN, INT16_MAX);
+    int16_t targetAltitude = (int16_t)constrain((int32_t)(posControl.desiredState.pos.z / 100), INT16_MIN, INT16_MAX);
+    uint16_t targetDistance = 0;
+    uint16_t wpNum = 0;
+    uint8_t heading = mavlinkHeadingDeg2FromCd(DECIDEGREES_TO_CENTIDEGREES(attitude.values.yaw));
+    uint8_t targetHeading = mavlinkHeadingDeg2FromCd(posControl.desiredState.yaw);
+    uint8_t groundspeed = 0;
+    uint8_t airspeed = 0;
+    uint8_t airspeedSp = 0;
+    uint8_t windspeed = 0;
+    uint8_t windHeading = 0;
+    uint8_t eph = UINT8_MAX;
+    uint8_t epv = UINT8_MAX;
+    int8_t temperatureAir = 0;
+    int8_t climbRate = (int8_t)constrain(lrintf(getEstimatedActualVelocity(Z) / 10.0f), INT8_MIN, INT8_MAX);
+    int8_t battery = feature(FEATURE_VBAT) ? (int8_t)calculateBatteryPercentage() : -1;
+
+#if defined(USE_GPS)
+    if (sensors(SENSOR_GPS)
+#ifdef USE_GPS_FIX_ESTIMATION
+        || STATE(GPS_ESTIMATED_FIX)
+#endif
+        ) {
+        latitude = gpsSol.llh.lat;
+        longitude = gpsSol.llh.lon;
+        altitude = (int16_t)constrain((int32_t)(gpsSol.llh.alt / 100), INT16_MIN, INT16_MAX);
+
+        const int32_t desiredAltCm = lrintf(posControl.desiredState.pos.z);
+        const int32_t targetAltCm = GPS_home.alt + desiredAltCm;
+        targetAltitude = (int16_t)constrain(targetAltCm / 100, INT16_MIN, INT16_MAX);
+
+        groundspeed = (uint8_t)constrain(lrintf(gpsSol.groundSpeed / 20.0f), 0, UINT8_MAX);
+
+        if (gpsSol.flags.validEPE) {
+            eph = (uint8_t)constrain((gpsSol.eph + 5) / 10, 0, UINT8_MAX);
+            epv = (uint8_t)constrain((gpsSol.epv + 5) / 10, 0, UINT8_MAX);
+        }
+
+        if (posControl.activeWaypointIndex >= 0) {
+            wpNum = (uint16_t)posControl.activeWaypointIndex;
+            targetDistance = (uint16_t)constrain(lrintf(posControl.wpDistance / 1000.0f), 0, UINT16_MAX);
+        }
+    }
+#endif
+
+#if defined(USE_PITOT)
+    if (sensors(SENSOR_PITOT) && pitotIsHealthy()) {
+        airspeed = (uint8_t)constrain(lrintf(getAirspeedEstimate() / 20.0f), 0, UINT8_MAX);
+        airspeedSp = airspeed;
+    }
+#endif
+
+    if (airspeedSp == 0) {
+        const float desiredVelXY = calc_length_pythagorean_2D(posControl.desiredState.vel.x, posControl.desiredState.vel.y);
+        airspeedSp = (uint8_t)constrain(lrintf(desiredVelXY / 20.0f), 0, UINT8_MAX);
+    }
+
+    if (airspeed == 0) {
+        airspeed = groundspeed;
+    }
+
+#ifdef USE_WIND_ESTIMATOR
+    if (isEstimatedWindSpeedValid()) {
+        uint16_t windAngleCd = 0;
+        const float windHoriz = getEstimatedHorizontalWindSpeed(&windAngleCd);
+        windspeed = (uint8_t)constrain(lrintf(windHoriz / 20.0f), 0, UINT8_MAX);
+        windHeading = mavlinkHeadingDeg2FromCd(windAngleCd);
+    }
+#endif
+
+    int16_t temperature;
+    sensors(SENSOR_BARO) ? getBaroTemperature(&temperature) : getIMUTemperature(&temperature);
+    temperatureAir = (int8_t)constrain(temperature, INT8_MIN, INT8_MAX);
+
+    const uint16_t failureFlags = mavlinkComputeHighLatencyFailures();
+
+    mavlink_msg_high_latency2_pack(
+        mavSystemId,
+        mavComponentId,
+        &mavSendMsg,
+        (uint32_t)(currentTimeUs / 1000),
+        mavlinkGetVehicleType(),
+        mavlinkGetAutopilotEnum(),
+        modeSelection.customMode,
+        latitude,
+        longitude,
+        altitude,
+        targetAltitude,
+        heading,
+        targetHeading,
+        targetDistance,
+        (uint8_t)constrain(getThrottlePercent(osdUsingScaledThrottle()), 0, 100),
+        airspeed,
+        airspeedSp,
+        groundspeed,
+        windspeed,
+        windHeading,
+        eph,
+        epv,
+        temperatureAir,
+        climbRate,
+        battery,
+        wpNum,
+        failureFlags,
+        0,
+        0,
+        0);
+
+    mavlinkSendMessage();
+}
+
 void processMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
+    if (mavActivePort->highLatencyEnabled && mavActiveConfig->version != 1) {
+        if ((currentTimeUs - mavActivePort->lastHighLatencyMessageUs) >= TELEMETRY_MAVLINK_HIGH_LATENCY_INTERVAL_US) {
+            mavlinkSendHighLatency2(currentTimeUs);
+            mavActivePort->lastHighLatencyMessageUs = currentTimeUs;
+        }
+        return;
+    }
+
     // is executed @ TELEMETRY_MAVLINK_MAXRATE rate
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
         mavlinkSendSystemStatus();
@@ -1897,7 +2208,7 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
 
                 if (mavlinkMessageToStream((uint16_t)param1, &stream)) {
                     if (param2 == 0.0f) {
-                        mavlinkSetStreamRate(stream, mavRatesConfigured[stream]);
+                        mavlinkSetStreamRate(stream, mavActivePort->mavRatesConfigured[stream]);
                         result = MAV_RESULT_ACCEPTED;
                     } else if (param2 < 0.0f) {
                         mavlinkSetStreamRate(stream, 0);
@@ -1939,8 +2250,24 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
                 mavlinkSendCommandAck(command, MAV_RESULT_ACCEPTED, ackTargetSystem, ackTargetComponent);
                 return true;
             }
+        case MAV_CMD_CONTROL_HIGH_LATENCY:
+            if (param1 == 0.0f || param1 == 1.0f) {
+                if (mavActiveConfig->version == 1 && param1 > 0.5f) {
+                    mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
+                    return true;
+                }
+
+                mavActivePort->highLatencyEnabled = param1 > 0.5f;
+                if (mavActivePort->highLatencyEnabled) {
+                    mavActivePort->lastHighLatencyMessageUs = 0;
+                }
+                mavlinkSendCommandAck(command, MAV_RESULT_ACCEPTED, ackTargetSystem, ackTargetComponent);
+            } else {
+                mavlinkSendCommandAck(command, MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
+            }
+            return true;
         case MAV_CMD_REQUEST_PROTOCOL_VERSION:
-            if (telemetryConfig()->mavlink.version == 1) {
+            if (mavActiveConfig->version == 1) {
                 mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
             } else {
                 mavlinkSendProtocolVersion();
@@ -1948,7 +2275,7 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
             }
             return true;
         case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
-            if (telemetryConfig()->mavlink.version == 1) {
+            if (mavActiveConfig->version == 1) {
                 mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
             } else {
                 mavlinkSendAutopilotVersion();
@@ -1966,13 +2293,13 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
                         sent = true;
                         break;
                     case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
-                        if (telemetryConfig()->mavlink.version != 1) {
+                        if (mavActiveConfig->version != 1) {
                             mavlinkSendAutopilotVersion();
                             sent = true;
                         }
                         break;
                     case MAVLINK_MSG_ID_PROTOCOL_VERSION:
-                        if (telemetryConfig()->mavlink.version != 1) {
+                        if (mavActiveConfig->version != 1) {
                             mavlinkSendProtocolVersion();
                             sent = true;
                         }
@@ -2283,7 +2610,7 @@ static bool handleIncoming_PARAM_REQUEST_LIST(void) {
 }
 
 static void mavlinkParseRxStats(const mavlink_radio_status_t *msg) {
-    switch(telemetryConfig()->mavlink.radio_type) {
+    switch(mavActiveConfig->radio_type) {
         case MAVLINK_RADIO_SIK:
             // rssi scaling info from: https://ardupilot.org/rover/docs/common-3dr-radio-advanced-configuration-and-technical-information.html
             rxLinkStatistics.uplinkRSSI = (msg->rssi / 1.9) - 127;
@@ -2307,8 +2634,13 @@ static void mavlinkParseRxStats(const mavlink_radio_status_t *msg) {
 static bool handleIncoming_RADIO_STATUS(void) {
     mavlink_radio_status_t msg;
     mavlink_msg_radio_status_decode(&mavRecvMsg, &msg);
-    txbuff_valid = true;
-    txbuff_free = msg.txbuf;
+    if (msg.txbuf > 0) {
+        mavActivePort->txbuffValid = true;
+        mavActivePort->txbuffFree = msg.txbuf;
+    } else {
+        mavActivePort->txbuffValid = false;
+        mavActivePort->txbuffFree = 100;
+    }
        
     if (rxConfig()->receiverType == RX_TYPE_SERIAL &&
         rxConfig()->serialrx_provider == SERIALRX_MAVLINK) {
@@ -2360,14 +2692,164 @@ static bool handleIncoming_ADSB_VEHICLE(void) {
 }
 #endif
 
-// Returns whether a message was processed
-static bool processMAVLinkIncomingTelemetry(void)
+static bool mavlinkIsFromLocalIdentity(uint8_t sysid, uint8_t compid)
 {
-    while (serialRxBytesWaiting(mavlinkPort) > 0) {
+    for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+        const mavlinkTelemetryPortConfig_t *cfg = mavlinkGetPortConfig(portIndex);
+        if (cfg->sysid == sysid && cfg->compid == compid) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void mavlinkLearnRoute(uint8_t ingressPortIndex)
+{
+    if (mavRecvMsg.sysid == 0 || mavlinkIsFromLocalIdentity(mavRecvMsg.sysid, mavRecvMsg.compid)) {
+        return;
+    }
+
+    for (uint8_t routeIndex = 0; routeIndex < mavRouteCount; routeIndex++) {
+        mavlinkRouteEntry_t *route = &mavRouteTable[routeIndex];
+        if (route->sysid == mavRecvMsg.sysid && route->compid == mavRecvMsg.compid) {
+            route->ingressPortIndex = ingressPortIndex;
+            return;
+        }
+    }
+
+    if (mavRouteCount >= MAVLINK_MAX_ROUTES) {
+        return;
+    }
+
+    mavRouteTable[mavRouteCount].sysid = mavRecvMsg.sysid;
+    mavRouteTable[mavRouteCount].compid = mavRecvMsg.compid;
+    mavRouteTable[mavRouteCount].ingressPortIndex = ingressPortIndex;
+    mavRouteCount++;
+}
+
+static void mavlinkExtractTargets(const mavlink_message_t *msg, int16_t *targetSystem, int16_t *targetComponent)
+{
+    *targetSystem = -1;
+    *targetComponent = -1;
+
+    const mavlink_msg_entry_t *msgEntry = mavlink_get_msg_entry(msg->msgid);
+    if (!msgEntry) {
+        return;
+    }
+
+    if (msgEntry->flags & MAV_MSG_ENTRY_FLAG_HAVE_TARGET_SYSTEM) {
+        *targetSystem = _MAV_RETURN_uint8_t(msg, msgEntry->target_system_ofs);
+    }
+
+    if (msgEntry->flags & MAV_MSG_ENTRY_FLAG_HAVE_TARGET_COMPONENT) {
+        *targetComponent = _MAV_RETURN_uint8_t(msg, msgEntry->target_component_ofs);
+    }
+}
+
+static bool mavlinkRouteMatchesTargetOnPort(uint8_t portIndex, int16_t targetSystem, int16_t targetComponent)
+{
+    for (uint8_t routeIndex = 0; routeIndex < mavRouteCount; routeIndex++) {
+        const mavlinkRouteEntry_t *route = &mavRouteTable[routeIndex];
+        if (route->ingressPortIndex != portIndex || route->sysid != targetSystem) {
+            continue;
+        }
+
+        if (targetComponent <= 0 || route->compid == targetComponent) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void mavlinkForwardMessage(uint8_t ingressPortIndex, int16_t targetSystem, int16_t targetComponent)
+{
+    if (mavRecvMsg.msgid == MAVLINK_MSG_ID_RADIO_STATUS) {
+        return;
+    }
+
+    uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
+    const int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavRecvMsg);
+
+    for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+        if (portIndex == ingressPortIndex) {
+            continue;
+        }
+
+        const mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+        if (!state->telemetryEnabled || !state->port) {
+            continue;
+        }
+
+        bool shouldForward = false;
+        if (targetSystem <= 0) {
+            shouldForward = true;
+        } else if (mavlinkRouteMatchesTargetOnPort(portIndex, targetSystem, targetComponent)) {
+            shouldForward = true;
+        }
+
+        if (!shouldForward) {
+            continue;
+        }
+
+        for (int i = 0; i < msgLength; i++) {
+            serialWrite(state->port, mavBuffer[i]);
+        }
+    }
+}
+
+static int8_t mavlinkResolveLocalPortForTarget(int16_t targetSystem, int16_t targetComponent, uint8_t ingressPortIndex)
+{
+    if (targetSystem <= 0) {
+        return ingressPortIndex;
+    }
+
+    for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+        const mavlinkTelemetryPortConfig_t *cfg = mavlinkGetPortConfig(portIndex);
+        if (cfg->sysid != targetSystem) {
+            continue;
+        }
+
+        if (targetComponent <= 0 || cfg->compid == targetComponent) {
+            return portIndex;
+        }
+    }
+
+    return -1;
+}
+
+// Returns whether a message was processed
+static bool processMAVLinkIncomingTelemetry(uint8_t ingressPortIndex)
+{
+    mavlinkPortRuntime_t *state = &mavPortStates[ingressPortIndex];
+
+    while (serialRxBytesWaiting(state->port) > 0) {
         // Limit handling to one message per cycle
-        char c = serialRead(mavlinkPort);
-        uint8_t result = mavlink_parse_char(0, c, &mavRecvMsg, &mavRecvStatus);
+        const char c = serialRead(state->port);
+        const uint8_t result = mavlink_parse_char(ingressPortIndex, c, &state->mavRecvMsg, &state->mavRecvStatus);
         if (result == MAVLINK_FRAMING_OK) {
+            mavRecvMsg = state->mavRecvMsg;
+
+            if (mavlinkIsFromLocalIdentity(mavRecvMsg.sysid, mavRecvMsg.compid)) {
+                return false;
+            }
+
+            mavlinkLearnRoute(ingressPortIndex);
+
+            int16_t targetSystem;
+            int16_t targetComponent;
+            mavlinkExtractTargets(&mavRecvMsg, &targetSystem, &targetComponent);
+            mavlinkForwardMessage(ingressPortIndex, targetSystem, targetComponent);
+
+            const int8_t localPortIndex = mavlinkResolveLocalPortForTarget(targetSystem, targetComponent, ingressPortIndex);
+            if (localPortIndex < 0) {
+                return false;
+            }
+
+            mavlinkSetActivePortContext((uint8_t)localPortIndex);
+            mavSendMask = MAVLINK_PORT_MASK(ingressPortIndex);
+
             switch (mavRecvMsg.msgid) {
                 case MAVLINK_MSG_ID_HEARTBEAT:
                    return handleIncoming_HEARTBEAT();
@@ -2424,32 +2906,40 @@ static bool isMAVLinkTelemetryHalfDuplex(void) {
 
 void handleMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
-    if (!mavlinkTelemetryEnabled) {
-        return;
-    }
+    for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+        mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+        if (!state->telemetryEnabled || !state->port) {
+            continue;
+        }
 
-    if (!mavlinkPort) {
-        return;
-    }
+        mavlinkSetActivePortContext(portIndex);
 
-    // Process incoming MAVLink
-    bool receivedMessage = processMAVLinkIncomingTelemetry();
-    bool shouldSendTelemetry = false;
+        // Process incoming MAVLink on this port and forward when needed.
+        const bool receivedMessage = processMAVLinkIncomingTelemetry(portIndex);
 
-    // Determine whether to send telemetry back based on flow control / pacing
-    if (txbuff_valid) {
-        // Use flow control if available
-        shouldSendTelemetry = txbuff_free >= telemetryConfig()->mavlink.min_txbuff;
-    } else {
-        // If not, use blind frame pacing - and back off for collision avoidance if half-duplex
-        bool halfDuplexBackoff = (isMAVLinkTelemetryHalfDuplex() && receivedMessage);
-        shouldSendTelemetry = ((currentTimeUs - lastMavlinkMessage) >= TELEMETRY_MAVLINK_DELAY) && !halfDuplexBackoff;
-    }
+        // Restore context back to this port before periodic send decisions.
+        mavlinkSetActivePortContext(portIndex);
+        bool shouldSendTelemetry = false;
 
-    if (shouldSendTelemetry) {
+        if (state->txbuffValid) {
+            // Use flow control if available.
+            shouldSendTelemetry = state->txbuffFree >= mavActiveConfig->min_txbuff;
+        } else {
+            // If not, use blind frame pacing and half-duplex backoff after RX activity.
+            const bool halfDuplexBackoff = isMAVLinkTelemetryHalfDuplex() && receivedMessage;
+            shouldSendTelemetry = ((currentTimeUs - state->lastMavlinkMessageUs) >= TELEMETRY_MAVLINK_DELAY) && !halfDuplexBackoff;
+        }
+
+        if (!shouldSendTelemetry) {
+            continue;
+        }
+
+        mavSendMask = MAVLINK_PORT_MASK(portIndex);
         processMAVLinkTelemetry(currentTimeUs);
-        lastMavlinkMessage = currentTimeUs;
+        state->lastMavlinkMessageUs = currentTimeUs;
     }
+
+    mavSendMask = 0;
 }
 
 #endif
