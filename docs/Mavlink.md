@@ -16,9 +16,9 @@ INAV has a partial implementation of MAVLink that is intended primarily for simp
 - `mavlink_sysid` – system ID used in every outbound packet (default 1); most inbound handlers only act on packets targeted to this system ID.
 - `mavlink_autopilot_type` – heartbeat autopilot ID (`GENERIC` or `ARDUPILOT`).
 - `mavlink_version` – force MAVLink v1 when set to 1.
-- Stream rates (Hz): `mavlink_ext_status_rate`, `mavlink_rc_chan_rate`, `mavlink_pos_rate`, `mavlink_extra1_rate`, `mavlink_extra2_rate`, `mavlink_extra3_rate`. Each group is polled up to 50 Hz; a rate of 0 disables the group.
-- `mavlink_min_txbuffer` – minimum remote TX buffer level before sending when `RADIO_STATUS` provides flow control.
-- `mavlink_radio_type` – scales `RADIO_STATUS` RSSI/SNR for **generic**, **ELRS**, or **SiK** links.
+- Stream rates (Hz): `mavlink_port1_ext_status_rate`, `mavlink_port1_rc_chan_rate`, `mavlink_port1_pos_rate`, `mavlink_port1_extra1_rate`, `mavlink_port1_extra2_rate`, `mavlink_port1_extra3_rate`. Each group is polled up to 50 Hz; a rate of 0 disables the group.
+- `mavlink_port1_min_txbuffer` – minimum remote TX buffer level before sending when `RADIO_STATUS` provides flow control.
+- `mavlink_port1_radio_type` – scales `RADIO_STATUS` RSSI/SNR for **generic**, **ELRS**, or **SiK** links.
 
 ## Supported Outgoing Messages
 
@@ -46,10 +46,10 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 - `MISSION_REQUEST_LIST`, `MISSION_REQUEST`, `MISSION_REQUEST_INT`: downloads active mission items; returns `MISSION_ACK` on bad sequence.
 - `MISSION_CLEAR_ALL`: clears stored mission.
 - `COMMAND_LONG` / `COMMAND_INT`: command transport for supported `MAV_CMD_*` handlers.
-- `REQUEST_DATA_STREAM`: legacy stream-rate control per stream group. `MAV_DATA_STREAM_ALL` (0) applies to all INAV-scheduled groups (`EXTENDED_STATUS`, `RC_CHANNELS`, `POSITION`, `EXTRA1`, `EXTRA2`, `EXTRA3`, `EXTENDED_SYS_STATE`); `start_stop==0` stops the addressed stream(s).
-- `SET_POSITION_TARGET_GLOBAL_INT`: requires matching `target_system` and `target_component` (`0` or local component), validates frame/type-mask semantics, updates guided WP255 for XY targets, and supports altitude-only control (`X/Y ignore`, `Z set`) using the same datum logic as `MAV_CMD_DO_CHANGE_ALTITUDE`.
-- `RC_CHANNELS_OVERRIDE` passes channel values to the MAVLink serial receiver backend when targeted to the local system ID.
-- `RADIO_STATUS` updates remote TX buffer level and scales RSSI/SNR according to `mavlink_radio_type` (also feeds link stats for MAVLink RX receivers).
+- `REQUEST_DATA_STREAM`: legacy stream-rate control per stream group.
+- `SET_POSITION_TARGET_GLOBAL_INT`: writes the GCS-guided waypoint when the frame is supported.
+- `RC_CHANNELS_OVERRIDE` passes channel values to the MAVLink serial receiver backend.
+- `RADIO_STATUS` updates remote TX buffer level and scales RSSI/SNR according to `mavlink_port1_radio_type` (also feeds link stats for MAVLink RX receivers).
 - `ADSB_VEHICLE` populates the internal traffic list when ADS‑B is enabled.
 - `PARAM_REQUEST_LIST` elicits a stub `PARAM_VALUE` response so ground stations stop requesting parameters (INAV does not expose parameters over MAVLink).
 
@@ -59,7 +59,6 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 Limited implementation of the Command protocol.
 
 - `MAV_CMD_DO_REPOSITION`: sets the Follow Me/GCS Nav waypoint when GCS NAV is valid. Accepts `MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`; otherwise `UNSUPPORTED`.
-- `MAV_CMD_DO_CHANGE_ALTITUDE`: supported when barometer support is compiled (`USE_BARO`); accepts global/global-int (MSL datum) and global-relative/global-relative-int (takeoff-relative datum), then calls navigation altitude-target update.
 - `MAV_CMD_SET_MESSAGE_INTERVAL` / `MAV_CMD_GET_MESSAGE_INTERVAL`: adjust or query telemetry stream output for supported message IDs (streamed messages only; intervals slower than 1 Hz are not accepted).
 - `MAV_CMD_GET_HOME_POSITION`: replies with `HOME_POSITION` when home fix exists.
 - `MAV_CMD_REQUEST_MESSAGE`: emits one selected message (`HEARTBEAT`, `SYS_STATUS`, `ATTITUDE`, `VFR_HUD`, `AVAILABLE_MODES`, `CURRENT_MODE`, `EXTENDED_SYS_STATE`, RC channels, GPS/global/origin, battery/pressure, and `HOME_POSITION` when available) or `UNSUPPORTED`.
@@ -105,12 +104,12 @@ Default rates (Hz) are shown; adjust with the CLI keys above.
 | `POSITION` | `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN` | 2 Hz |
 | `EXTRA1` | `ATTITUDE` | 3 Hz |
 | `EXTRA2` | `VFR_HUD`, `HEARTBEAT` | 2 Hz |
-| `EXT_SYS_STATE` | `EXTENDED_SYS_STATE` | 1 Hz (defaults to `mavlink_extra3_rate`) |
+| `EXT_SYS_STATE` | `EXTENDED_SYS_STATE` | 1 Hz (defaults to `mavlink_port1_extra3_rate`) |
 | `EXTRA3` | `BATTERY_STATUS`, `SCALED_PRESSURE`, `STATUSTEXT` (when present) | 1 Hz |
 
 ## Operating tips
 
-- Set `mavlink_radio_type` to **ELRS** or **SiK** if you use those links to get accurate link quality scaling in `RADIO_STATUS`.
+- Set `mavlink_port1_radio_type` to **ELRS** or **SiK** if you use those links to get accurate link quality scaling in `RADIO_STATUS`.
 - If you rely on RC override via MAVLink, ensure the serial receiver type is set to `SERIALRX_MAVLINK` and consider enabling `telemetry_halfduplex` when RX shares the port.
 - To reduce bandwidth, lower the stream rates for groups you do not need, or disable them entirely by setting the rate to 0.
 

@@ -90,111 +90,8 @@
 
 #include "scheduler/scheduler.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-#ifndef MAVLINK_COMM_NUM_BUFFERS
-#define MAVLINK_COMM_NUM_BUFFERS MAX_MAVLINK_PORTS
-#endif
-#include "common/mavlink.h"
-#pragma GCC diagnostic pop
-
-#define TELEMETRY_MAVLINK_PORT_MODE     MODE_RXTX
-#define TELEMETRY_MAVLINK_MAXRATE       50
-#define TELEMETRY_MAVLINK_DELAY         ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
-#define TELEMETRY_MAVLINK_HIGH_LATENCY_INTERVAL_US (5 * 1000 * 1000)
-#define MAV_DATA_STREAM_EXTENDED_SYS_STATE     (MAV_DATA_STREAM_EXTRA3 + 1)
-#define ARDUPILOT_VERSION_MAJOR 4
-#define ARDUPILOT_VERSION_MINOR 6
-#define ARDUPILOT_VERSION_PATCH 3
-#define MAVLINK_MAX_ROUTES 32
-#define MAVLINK_PORT_MASK(portIndex) (1U << (portIndex))
-
-typedef enum {
-    MAV_FRAME_SUPPORTED_NONE = 0,
-    MAV_FRAME_SUPPORTED_GLOBAL = (1 << 0),
-    MAV_FRAME_SUPPORTED_GLOBAL_RELATIVE_ALT = (1 << 1),
-    MAV_FRAME_SUPPORTED_GLOBAL_INT = (1 << 2),
-    MAV_FRAME_SUPPORTED_GLOBAL_RELATIVE_ALT_INT = (1 << 3),
-} mavFrameSupportMask_e;
-
-/**
- * MAVLink requires angles to be in the range -Pi..Pi.
- * This converts angles from a range of 0..Pi to -Pi..Pi
- */
-#define RADIANS_TO_MAVLINK_RANGE(angle) (angle > M_PIf) ? angle - (2 * M_PIf) : angle
-
-/** @brief A mapping of plane flight modes for custom_mode field of heartbeat. */
-typedef enum APM_PLANE_MODE
-{
-   PLANE_MODE_MANUAL=0,
-   PLANE_MODE_CIRCLE=1,
-   PLANE_MODE_STABILIZE=2,
-   PLANE_MODE_TRAINING=3,
-   PLANE_MODE_ACRO=4,
-   PLANE_MODE_FLY_BY_WIRE_A=5,
-   PLANE_MODE_FLY_BY_WIRE_B=6,
-   PLANE_MODE_CRUISE=7,
-   PLANE_MODE_AUTOTUNE=8,
-   PLANE_MODE_AUTO=10,
-   PLANE_MODE_RTL=11,
-   PLANE_MODE_LOITER=12,
-   PLANE_MODE_TAKEOFF=13,
-   PLANE_MODE_AVOID_ADSB=14,
-   PLANE_MODE_GUIDED=15,
-   PLANE_MODE_INITIALIZING=16,
-   PLANE_MODE_QSTABILIZE=17,
-   PLANE_MODE_QHOVER=18,
-   PLANE_MODE_QLOITER=19,
-   PLANE_MODE_QLAND=20,
-   PLANE_MODE_QRTL=21,
-   PLANE_MODE_QAUTOTUNE=22,
-   PLANE_MODE_QACRO=23,
-   PLANE_MODE_THERMAL=24,
-   PLANE_MODE_LOITER_ALT_QLAND=25,
-   PLANE_MODE_AUTOLAND=26,
-   PLANE_MODE_ENUM_END=27,
-} APM_PLANE_MODE;
-
-/** @brief A mapping of copter flight modes for custom_mode field of heartbeat. */
-typedef enum APM_COPTER_MODE
-{
-   COPTER_MODE_STABILIZE=0,
-   COPTER_MODE_ACRO=1,
-   COPTER_MODE_ALT_HOLD=2,
-   COPTER_MODE_AUTO=3,
-   COPTER_MODE_GUIDED=4,
-   COPTER_MODE_LOITER=5,
-   COPTER_MODE_RTL=6,
-   COPTER_MODE_CIRCLE=7,
-   COPTER_MODE_LAND=9,
-   COPTER_MODE_DRIFT=11,
-   COPTER_MODE_SPORT=13,
-   COPTER_MODE_FLIP=14,
-   COPTER_MODE_AUTOTUNE=15,
-   COPTER_MODE_POSHOLD=16,
-   COPTER_MODE_BRAKE=17,
-   COPTER_MODE_THROW=18,
-   COPTER_MODE_AVOID_ADSB=19,
-   COPTER_MODE_GUIDED_NOGPS=20,
-   COPTER_MODE_SMART_RTL=21,
-   COPTER_MODE_FLOWHOLD=22,
-   COPTER_MODE_FOLLOW=23,
-   COPTER_MODE_ZIGZAG=24,
-   COPTER_MODE_SYSTEMID=25,
-   COPTER_MODE_AUTOROTATE=26,
-   COPTER_MODE_AUTO_RTL=27,
-   COPTER_MODE_TURTLE=28,
-   COPTER_MODE_ENUM_END=29,
-} APM_COPTER_MODE;
-
-typedef struct mavlinkRouteEntry_s {
-    uint8_t sysid;
-    uint8_t compid;
-    uint8_t ingressPortIndex;
-} mavlinkRouteEntry_t;
-
 /* MAVLink datastream rates in Hz */
-static const uint8_t mavDefaultRates[] = {
+const uint8_t mavDefaultRates[MAVLINK_STREAM_COUNT] = {
     [MAV_DATA_STREAM_EXTENDED_STATUS] = 2,      // 2Hz
     [MAV_DATA_STREAM_RC_CHANNELS] = 1,          // 1Hz
     [MAV_DATA_STREAM_POSITION] = 2,             // 2Hz
@@ -203,25 +100,6 @@ static const uint8_t mavDefaultRates[] = {
     [MAV_DATA_STREAM_EXTRA3] = 1,               // 1Hz
     [MAV_DATA_STREAM_EXTENDED_SYS_STATE] = 1    // 1Hz
 };
-
-typedef struct mavlinkPortRuntime_s {
-    serialPort_t *port;
-    const serialPortConfig_t *portConfig;
-    portSharing_e portSharing;
-    bool telemetryEnabled;
-    bool txbuffValid;
-    uint8_t txbuffFree;
-    timeUs_t lastMavlinkMessageUs;
-    timeUs_t lastHighLatencyMessageUs;
-    bool highLatencyEnabled;
-    uint8_t mavRates[ARRAYLEN(mavDefaultRates)];
-    uint8_t mavRatesConfigured[ARRAYLEN(mavDefaultRates)];
-    uint8_t mavTicks[ARRAYLEN(mavDefaultRates)];
-    mavlink_message_t mavRecvMsg;
-    mavlink_status_t mavRecvStatus;
-} mavlinkPortRuntime_t;
-
-#define MAXSTREAMS (ARRAYLEN(mavDefaultRates))
 
 static mavlinkPortRuntime_t mavPortStates[MAX_MAVLINK_PORTS];
 static uint8_t mavPortCount = 0;
@@ -357,10 +235,20 @@ static const mavlinkTelemetryPortConfig_t *mavlinkGetPortConfig(uint8_t portInde
     return &telemetryConfig()->mavlink[portIndex];
 }
 
+static const mavlinkTelemetryCommonConfig_t *mavlinkGetCommonConfig(void)
+{
+    return &telemetryConfig()->mavlink_common;
+}
+
+static uint8_t mavlinkGetProtocolVersion(void)
+{
+    return mavlinkGetCommonConfig()->version;
+}
+
 static void mavlinkApplyActivePortOutputVersion(void)
 {
     mavlink_status_t *chanState = mavlink_get_channel_status(MAVLINK_COMM_0);
-    if (mavActiveConfig->version == 1) {
+    if (mavlinkGetProtocolVersion() == 1) {
         chanState->flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
     } else {
         chanState->flags &= ~MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
@@ -371,8 +259,9 @@ static void mavlinkSetActivePortContext(uint8_t portIndex)
 {
     mavActivePort = &mavPortStates[portIndex];
     mavActiveConfig = mavlinkGetPortConfig(portIndex);
-    mavAutopilotType = mavActiveConfig->autopilot_type;
-    mavSystemId = mavActiveConfig->sysid;
+    const mavlinkTelemetryCommonConfig_t *commonConfig = mavlinkGetCommonConfig();
+    mavAutopilotType = commonConfig->autopilot_type;
+    mavSystemId = commonConfig->sysid;
     mavComponentId = mavActiveConfig->compid;
     mavlinkApplyActivePortOutputVersion();
 }
@@ -572,7 +461,7 @@ static void mavlinkSendMessage(void)
 
 static void mavlinkSendAutopilotVersion(void)
 {
-    if (mavActiveConfig->version == 1) return;
+    if (mavlinkGetProtocolVersion() == 1) return;
 
     // Capabilities aligned with what we actually support.
     uint64_t capabilities = 0;
@@ -605,11 +494,11 @@ static void mavlinkSendAutopilotVersion(void)
 
 static void mavlinkSendProtocolVersion(void)
 {
-    if (mavActiveConfig->version == 1) return;
+    if (mavlinkGetProtocolVersion() == 1) return;
 
     uint8_t specHash[8] = {0};
     uint8_t libHash[8] = {0};
-    const uint16_t protocolVersion = (uint16_t)mavActiveConfig->version * 100;
+    const uint16_t protocolVersion = (uint16_t)mavlinkGetProtocolVersion() * 100;
 
     mavlink_msg_protocol_version_pack(
         mavSystemId,
@@ -692,12 +581,7 @@ static uint8_t navWaypointFrame(const navWaypoint_t *wp, bool useIntMessages)
     return useIntMessages ? MAV_FRAME_GLOBAL_RELATIVE_ALT_INT : MAV_FRAME_GLOBAL_RELATIVE_ALT;
 }
 
-typedef struct {
-    uint8_t customMode;
-    const char *name;
-} mavlinkModeDescriptor_t;
-
-static const mavlinkModeDescriptor_t planeModes[] = {
+const mavlinkModeDescriptor_t planeModes[] = {
     { PLANE_MODE_MANUAL,       "MANUAL" },
     { PLANE_MODE_ACRO,         "ACRO" },
     { PLANE_MODE_STABILIZE,    "STABILIZE" },
@@ -710,8 +594,9 @@ static const mavlinkModeDescriptor_t planeModes[] = {
     { PLANE_MODE_TAKEOFF,      "TAKEOFF" },
     { PLANE_MODE_GUIDED,       "GUIDED" },
 };
+const uint8_t planeModesCount = (uint8_t)ARRAYLEN(planeModes);
 
-static const mavlinkModeDescriptor_t copterModes[] = {
+const mavlinkModeDescriptor_t copterModes[] = {
     { COPTER_MODE_ACRO,       "ACRO" },
     { COPTER_MODE_STABILIZE,  "STABILIZE" },
     { COPTER_MODE_ALT_HOLD,   "ALT_HOLD" },
@@ -726,6 +611,7 @@ static const mavlinkModeDescriptor_t copterModes[] = {
     { COPTER_MODE_SMART_RTL,  "SMART_RTL" },
     { COPTER_MODE_DRIFT,      "DRIFT" },
 };
+const uint8_t copterModesCount = (uint8_t)ARRAYLEN(copterModes);
 
 static bool mavlinkPlaneModeIsConfigured(uint8_t customMode)
 {
@@ -1022,7 +908,7 @@ void mavlinkSendSystemStatus(void)
 void mavlinkSendRCChannelsAndRSSI(void)
 {
 #define GET_CHANNEL_VALUE(x) ((rxRuntimeConfig.channelCount >= (x + 1)) ? rxGetChannelValue(x) : 0)
-    if (mavActiveConfig->version == 1) {
+    if (mavlinkGetProtocolVersion() == 1) {
         mavlink_msg_rc_channels_raw_pack(mavSystemId, mavComponentId, &mavSendMsg,
             // time_boot_ms Timestamp (milliseconds since system boot)
             millis(),
@@ -1634,7 +1520,7 @@ static void mavlinkSendHighLatency2(timeUs_t currentTimeUs)
 
 void processMAVLinkTelemetry(timeUs_t currentTimeUs)
 {
-    if (mavActivePort->highLatencyEnabled && mavActiveConfig->version != 1) {
+    if (mavActivePort->highLatencyEnabled && mavlinkGetProtocolVersion() != 1) {
         if ((currentTimeUs - mavActivePort->lastHighLatencyMessageUs) >= TELEMETRY_MAVLINK_HIGH_LATENCY_INTERVAL_US) {
             mavlinkSendHighLatency2(currentTimeUs);
             mavActivePort->lastHighLatencyMessageUs = currentTimeUs;
@@ -1988,18 +1874,6 @@ static bool handleIncoming_MISSION_REQUEST_LIST(void)
     return false;
 }
 
-typedef struct {
-    uint8_t frame;
-    uint16_t command;
-    float param1;
-    float param2;
-    float param3;
-    float param4;
-    int32_t lat;
-    int32_t lon;
-    float alt;
-} mavlinkMissionItemData_t;
-
 static bool fillMavlinkMissionItemFromWaypoint(const navWaypoint_t *wp, bool useIntMessages, mavlinkMissionItemData_t *item)
 {
     mavlinkMissionItemData_t data = {0};
@@ -2252,7 +2126,7 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
             }
         case MAV_CMD_CONTROL_HIGH_LATENCY:
             if (param1 == 0.0f || param1 == 1.0f) {
-                if (mavActiveConfig->version == 1 && param1 > 0.5f) {
+                if (mavlinkGetProtocolVersion() == 1 && param1 > 0.5f) {
                     mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
                     return true;
                 }
@@ -2267,7 +2141,7 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
             }
             return true;
         case MAV_CMD_REQUEST_PROTOCOL_VERSION:
-            if (mavActiveConfig->version == 1) {
+            if (mavlinkGetProtocolVersion() == 1) {
                 mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
             } else {
                 mavlinkSendProtocolVersion();
@@ -2275,7 +2149,7 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
             }
             return true;
         case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES:
-            if (mavActiveConfig->version == 1) {
+            if (mavlinkGetProtocolVersion() == 1) {
                 mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
             } else {
                 mavlinkSendAutopilotVersion();
@@ -2293,13 +2167,13 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
                         sent = true;
                         break;
                     case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
-                        if (mavActiveConfig->version != 1) {
+                        if (mavlinkGetProtocolVersion() != 1) {
                             mavlinkSendAutopilotVersion();
                             sent = true;
                         }
                         break;
                     case MAVLINK_MSG_ID_PROTOCOL_VERSION:
-                        if (mavActiveConfig->version != 1) {
+                        if (mavlinkGetProtocolVersion() != 1) {
                             mavlinkSendProtocolVersion();
                             sent = true;
                         }
@@ -2321,9 +2195,9 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem
                             const bool isPlane = mixerConfig()->platformType == PLATFORM_AIRPLANE || STATE(FIXED_WING_LEGACY);
                             const mavlinkModeSelection_t modeSelection = selectMavlinkMode(isPlane);
                             if (isPlane) {
-                                mavlinkSendAvailableModes(planeModes, ARRAYLEN(planeModes), modeSelection.customMode, mavlinkPlaneModeIsConfigured);
+                                mavlinkSendAvailableModes(planeModes, planeModesCount, modeSelection.customMode, mavlinkPlaneModeIsConfigured);
                             } else {
-                                mavlinkSendAvailableModes(copterModes, ARRAYLEN(copterModes), modeSelection.customMode, mavlinkCopterModeIsConfigured);
+                                mavlinkSendAvailableModes(copterModes, copterModesCount, modeSelection.customMode, mavlinkCopterModeIsConfigured);
                             }
                             sent = true;
                         }
@@ -2694,9 +2568,14 @@ static bool handleIncoming_ADSB_VEHICLE(void) {
 
 static bool mavlinkIsFromLocalIdentity(uint8_t sysid, uint8_t compid)
 {
+    const uint8_t localSystemId = mavlinkGetCommonConfig()->sysid;
+    if (sysid != localSystemId) {
+        return false;
+    }
+
     for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
         const mavlinkTelemetryPortConfig_t *cfg = mavlinkGetPortConfig(portIndex);
-        if (cfg->sysid == sysid && cfg->compid == compid) {
+        if (cfg->compid == compid) {
             return true;
         }
     }
@@ -2805,12 +2684,12 @@ static int8_t mavlinkResolveLocalPortForTarget(int16_t targetSystem, int16_t tar
         return ingressPortIndex;
     }
 
+    if ((uint8_t)targetSystem != mavlinkGetCommonConfig()->sysid) {
+        return -1;
+    }
+
     for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
         const mavlinkTelemetryPortConfig_t *cfg = mavlinkGetPortConfig(portIndex);
-        if (cfg->sysid != targetSystem) {
-            continue;
-        }
-
         if (targetComponent <= 0 || cfg->compid == targetComponent) {
             return portIndex;
         }

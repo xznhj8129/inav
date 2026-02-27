@@ -29,10 +29,7 @@
 #include "config/parameter_group.h"
 
 #include "io/serial.h"
-
-#ifndef MAX_MAVLINK_PORTS
-#define MAX_MAVLINK_PORTS 3
-#endif
+#include "target/common.h"
 
 typedef enum {
     LTM_RATE_NORMAL,
@@ -51,6 +48,12 @@ typedef enum {
     MAVLINK_RADIO_SIK,
 } mavlinkRadio_e;
 
+typedef struct mavlinkTelemetryCommonConfig_s {
+    uint8_t autopilot_type;
+    uint8_t version;
+    uint8_t sysid;
+} mavlinkTelemetryCommonConfig_t;
+
 typedef enum {
     SMARTPORT_FUEL_UNIT_PERCENT,
     SMARTPORT_FUEL_UNIT_MAH,
@@ -58,17 +61,14 @@ typedef enum {
 } smartportFuelUnit_e;
 
 typedef struct mavlinkTelemetryPortConfig_s {
-    uint8_t autopilot_type;
     uint8_t extended_status_rate;
     uint8_t rc_channels_rate;
     uint8_t position_rate;
     uint8_t extra1_rate;
     uint8_t extra2_rate;
     uint8_t extra3_rate;
-    uint8_t version;
     uint8_t min_txbuff;
     uint8_t radio_type;
-    uint8_t sysid;
     uint8_t compid;
     bool high_latency;
 } mavlinkTelemetryPortConfig_t;
@@ -96,12 +96,13 @@ typedef struct telemetryConfig_s {
     uint16_t accEventThresholdLow;
     uint16_t accEventThresholdNegX;
 #endif
+    mavlinkTelemetryCommonConfig_t mavlink_common;
     mavlinkTelemetryPortConfig_t mavlink[MAX_MAVLINK_PORTS];
 } telemetryConfig_t;
 
 PG_DECLARE(telemetryConfig_t, telemetryConfig);
 
-#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_IBUS)
+#define TELEMETRY_SHAREABLE_PORT_FUNCTIONS_MASK (FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_IBUS | FUNCTION_TELEMETRY_MAVLINK)
 extern serialPort_t *telemetrySharedPort;
 
 void telemetryInit(void);

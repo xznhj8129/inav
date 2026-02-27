@@ -17,9 +17,7 @@
 
 #pragma once
 
-#ifndef MAX_MAVLINK_PORTS
-#define MAX_MAVLINK_PORTS 3
-#endif
+#include "target/common.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
