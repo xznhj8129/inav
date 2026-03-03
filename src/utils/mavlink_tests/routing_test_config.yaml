@@ -1,0 +1,58 @@
+timing:
+  connect_timeout_s: 10.0
+  settle_after_connect_s: 0.5
+  route_learn_settle_s: 0.5
+  drain_window_s: 0.15
+  observation_window_s: 0.8
+  inter_case_pause_s: 0.15
+
+network:
+  gcs_link: link_gcs
+  links:
+    link_gcs:
+      endpoint: tcp:127.0.0.1:5761
+      source_system: 255
+      source_component: 190
+    link_components_a:
+      endpoint: tcp:127.0.0.1:5762
+      source_system: 254
+      source_component: 200
+    link_camera:
+      endpoint: tcp:127.0.0.1:5763
+      source_system: 253
+      source_component: 201
+    link_gimbal:
+      endpoint: tcp:127.0.0.1:5764
+      source_system: 252
+      source_component: 202
+
+vehicle:
+  fc_system_id: 1
+
+tests:
+  marker_command_base: 31000
+  unknown_component_id: 199
+  unknown_system_id: 42
+  report_markdown: mydev/branch/mav_multi/ROUTING_TEST.md
+
+components:
+  - name: mav1_elrs_receiver
+    link: link_components_a
+    system_id: 1
+    component_id: 68
+    mav_type: 49
+  - name: mav2_companion_computer
+    link: link_components_a
+    system_id: 1
+    component_id: 191
+    mav_type: 18
+  - name: mav3_camera
+    link: link_camera
+    system_id: 1
+    component_id: 100
+    mav_type: 30
+  - name: mav4_gimbal
+    link: link_gimbal
+    system_id: 1
+    component_id: 154
+    mav_type: 26

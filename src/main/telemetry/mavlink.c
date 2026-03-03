@@ -2024,9 +2024,12 @@ static void mavlinkSendCommandAck(uint16_t command, MAV_RESULT result, uint8_t a
     mavlinkSendMessage();
 }
 
-static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t ackTargetSystem, uint8_t ackTargetComponent, uint16_t command, uint8_t frame, float param1, float param2, float param3, float param4, float latitudeDeg, float longitudeDeg, float altitudeMeters)
+static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t targetComponent, uint8_t ackTargetSystem, uint8_t ackTargetComponent, uint16_t command, uint8_t frame, float param1, float param2, float param3, float param4, float latitudeDeg, float longitudeDeg, float altitudeMeters)
 {
     if (targetSystem != mavSystemId) {
+        return false;
+    }
+    if (targetComponent != 0 && targetComponent != mavComponentId) {
         return false;
     }
     UNUSED(param3);
@@ -2276,7 +2279,7 @@ static bool handleIncoming_COMMAND_INT(void)
     mavlink_command_int_t msg;
     mavlink_msg_command_int_decode(&mavRecvMsg, &msg);
 
-    return handleIncoming_COMMAND(msg.target_system, mavRecvMsg.sysid, mavRecvMsg.compid, msg.command, msg.frame, msg.param1, msg.param2, msg.param3, msg.param4, (float)msg.x / 1e7f, (float)msg.y / 1e7f, msg.z);
+    return handleIncoming_COMMAND(msg.target_system, msg.target_component, mavRecvMsg.sysid, mavRecvMsg.compid, msg.command, msg.frame, msg.param1, msg.param2, msg.param3, msg.param4, (float)msg.x / 1e7f, (float)msg.y / 1e7f, msg.z);
 }
 
 static bool handleIncoming_COMMAND_LONG(void)
@@ -2285,7 +2288,7 @@ static bool handleIncoming_COMMAND_LONG(void)
     mavlink_msg_command_long_decode(&mavRecvMsg, &msg);
 
     // COMMAND_LONG has no frame field; location commands are WGS84 global by definition.
-    return handleIncoming_COMMAND(msg.target_system, mavRecvMsg.sysid, mavRecvMsg.compid, msg.command, MAV_FRAME_GLOBAL, msg.param1, msg.param2, msg.param3, msg.param4, msg.param5, msg.param6, msg.param7);
+    return handleIncoming_COMMAND(msg.target_system, msg.target_component, mavRecvMsg.sysid, mavRecvMsg.compid, msg.command, MAV_FRAME_GLOBAL, msg.param1, msg.param2, msg.param3, msg.param4, msg.param5, msg.param6, msg.param7);
 }
 
 static bool handleIncoming_MISSION_ITEM_INT(void)
@@ -2380,6 +2383,9 @@ static bool handleIncoming_REQUEST_DATA_STREAM(void)
     mavlink_msg_request_data_stream_decode(&mavRecvMsg, &msg);
 
     if (msg.target_system != mavSystemId) {
+        return false;
+    }
+    if (msg.target_component != 0 && msg.target_component != mavComponentId) {
         return false;
     }
 
@@ -2698,6 +2704,27 @@ static int8_t mavlinkResolveLocalPortForTarget(int16_t targetSystem, int16_t tar
     return -1;
 }
 
+static bool mavlinkShouldFanOutLocalBroadcast(const mavlink_message_t *msg)
+{
+    if (msg->msgid == MAVLINK_MSG_ID_REQUEST_DATA_STREAM) {
+        return true;
+    }
+
+    if (msg->msgid == MAVLINK_MSG_ID_COMMAND_LONG) {
+        mavlink_command_long_t cmd;
+        mavlink_msg_command_long_decode(msg, &cmd);
+        return cmd.command == MAV_CMD_SET_MESSAGE_INTERVAL || cmd.command == MAV_CMD_CONTROL_HIGH_LATENCY;
+    }
+
+    if (msg->msgid == MAVLINK_MSG_ID_COMMAND_INT) {
+        mavlink_command_int_t cmd;
+        mavlink_msg_command_int_decode(msg, &cmd);
+        return cmd.command == MAV_CMD_SET_MESSAGE_INTERVAL || cmd.command == MAV_CMD_CONTROL_HIGH_LATENCY;
+    }
+
+    return false;
+}
+
 // Returns whether a message was processed
 static bool processMAVLinkIncomingTelemetry(uint8_t ingressPortIndex)
 {
@@ -2726,52 +2753,89 @@ static bool processMAVLinkIncomingTelemetry(uint8_t ingressPortIndex)
                 return false;
             }
 
-            mavlinkSetActivePortContext((uint8_t)localPortIndex);
-            mavSendMask = MAVLINK_PORT_MASK(ingressPortIndex);
+            uint8_t localPortMask = MAVLINK_PORT_MASK((uint8_t)localPortIndex);
+            const bool isLocalOrSystemBroadcast = targetSystem == 0 || ((targetSystem > 0) && ((uint8_t)targetSystem == mavlinkGetCommonConfig()->sysid));
+            if (targetComponent == 0 && isLocalOrSystemBroadcast && mavlinkShouldFanOutLocalBroadcast(&mavRecvMsg)) {
+                localPortMask = 0;
+                for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+                    localPortMask |= MAVLINK_PORT_MASK(portIndex);
+                }
+            }
 
-            switch (mavRecvMsg.msgid) {
+            bool handled = false;
+            for (uint8_t localIndex = 0; localIndex < mavPortCount; localIndex++) {
+                if (!(localPortMask & MAVLINK_PORT_MASK(localIndex))) {
+                    continue;
+                }
+
+                mavlinkSetActivePortContext(localIndex);
+                mavSendMask = MAVLINK_PORT_MASK(ingressPortIndex);
+                bool localHandled = false;
+
+                switch (mavRecvMsg.msgid) {
                 case MAVLINK_MSG_ID_HEARTBEAT:
-                   return handleIncoming_HEARTBEAT();
+                    localHandled = handleIncoming_HEARTBEAT();
+                    break;
                 case MAVLINK_MSG_ID_PARAM_REQUEST_LIST:
-                    return handleIncoming_PARAM_REQUEST_LIST();
+                    localHandled = handleIncoming_PARAM_REQUEST_LIST();
+                    break;
                 case MAVLINK_MSG_ID_MISSION_CLEAR_ALL:
-                    return handleIncoming_MISSION_CLEAR_ALL();
+                    localHandled = handleIncoming_MISSION_CLEAR_ALL();
+                    break;
                 case MAVLINK_MSG_ID_MISSION_COUNT:
-                    return handleIncoming_MISSION_COUNT();
+                    localHandled = handleIncoming_MISSION_COUNT();
+                    break;
                 case MAVLINK_MSG_ID_MISSION_ITEM:
-                    return handleIncoming_MISSION_ITEM();
+                    localHandled = handleIncoming_MISSION_ITEM();
+                    break;
                 case MAVLINK_MSG_ID_MISSION_ITEM_INT:
-                    return handleIncoming_MISSION_ITEM_INT();
+                    localHandled = handleIncoming_MISSION_ITEM_INT();
+                    break;
                 case MAVLINK_MSG_ID_MISSION_REQUEST_LIST:
-                    return handleIncoming_MISSION_REQUEST_LIST();
-
+                    localHandled = handleIncoming_MISSION_REQUEST_LIST();
+                    break;
                 case MAVLINK_MSG_ID_COMMAND_LONG:
-                    return handleIncoming_COMMAND_LONG();
+                    localHandled = handleIncoming_COMMAND_LONG();
+                    break;
                 case MAVLINK_MSG_ID_COMMAND_INT: //7 parameters: parameters 1-4, 7 are floats, and parameters 5,6 are scaled integers
-                    return handleIncoming_COMMAND_INT();
+                    localHandled = handleIncoming_COMMAND_INT();
+                    break;
                 case MAVLINK_MSG_ID_MISSION_REQUEST:
-                    return handleIncoming_MISSION_REQUEST();
+                    localHandled = handleIncoming_MISSION_REQUEST();
+                    break;
                 case MAVLINK_MSG_ID_MISSION_REQUEST_INT:
-                    return handleIncoming_MISSION_REQUEST_INT();
+                    localHandled = handleIncoming_MISSION_REQUEST_INT();
+                    break;
                 case MAVLINK_MSG_ID_REQUEST_DATA_STREAM:
-                    return handleIncoming_REQUEST_DATA_STREAM();
+                    localHandled = handleIncoming_REQUEST_DATA_STREAM();
+                    break;
                 case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:
                     handleIncoming_RC_CHANNELS_OVERRIDE();
                     // Don't set that we handled a message, otherwise RC channel packets will block telemetry messages
-                    return false;
+                    localHandled = false;
+                    break;
                 case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT:
-                    return handleIncoming_SET_POSITION_TARGET_GLOBAL_INT();
+                    localHandled = handleIncoming_SET_POSITION_TARGET_GLOBAL_INT();
+                    break;
 #ifdef USE_ADSB
                 case MAVLINK_MSG_ID_ADSB_VEHICLE:
-                    return handleIncoming_ADSB_VEHICLE();
+                    localHandled = handleIncoming_ADSB_VEHICLE();
+                    break;
 #endif
                 case MAVLINK_MSG_ID_RADIO_STATUS:
                     handleIncoming_RADIO_STATUS();
                     // Don't set that we handled a message, otherwise radio status packets will block telemetry messages.
-                    return false;
+                    localHandled = false;
+                    break;
                 default:
-                    return false;
+                    localHandled = false;
+                    break;
+                }
+
+                handled = handled || localHandled;
             }
+
+            return handled;
         }
     }
 
