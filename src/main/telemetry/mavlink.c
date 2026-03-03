@@ -90,15 +90,16 @@
 
 #include "scheduler/scheduler.h"
 
-/* MAVLink datastream rates in Hz */
-const uint8_t mavDefaultRates[MAVLINK_STREAM_COUNT] = {
-    [MAV_DATA_STREAM_EXTENDED_STATUS] = 2,      // 2Hz
-    [MAV_DATA_STREAM_RC_CHANNELS] = 1,          // 1Hz
-    [MAV_DATA_STREAM_POSITION] = 2,             // 2Hz
-    [MAV_DATA_STREAM_EXTRA1] = 3,               // 3Hz
-    [MAV_DATA_STREAM_EXTRA2] = 2,               // 2Hz, HEARTBEATs are important
-    [MAV_DATA_STREAM_EXTRA3] = 1,               // 1Hz
-    [MAV_DATA_STREAM_EXTENDED_SYS_STATE] = 1    // 1Hz
+/* Secondary profile for ports 2..N: heartbeat only. */
+static const uint8_t mavSecondaryRates[MAVLINK_STREAM_COUNT] = {
+    [MAV_DATA_STREAM_EXTENDED_STATUS] = 0,
+    [MAV_DATA_STREAM_RC_CHANNELS] = 0,
+    [MAV_DATA_STREAM_POSITION] = 0,
+    [MAV_DATA_STREAM_EXTRA1] = 0,
+    [MAV_DATA_STREAM_EXTRA2] = 0,
+    [MAV_DATA_STREAM_EXTRA3] = 0,
+    [MAV_DATA_STREAM_EXTENDED_SYS_STATE] = 0,
+    [MAV_DATA_STREAM_HEARTBEAT] = 1
 };
 
 static mavlinkPortRuntime_t mavPortStates[MAX_MAVLINK_PORTS];
@@ -317,15 +318,26 @@ static int32_t mavlinkStreamIntervalUs(uint8_t streamNum)
 
 static void configureMAVLinkStreamRates(uint8_t portIndex)
 {
-    mavlinkSetActivePortContext(portIndex);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTENDED_STATUS, mavActiveConfig->extended_status_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_RC_CHANNELS, mavActiveConfig->rc_channels_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_POSITION, mavActiveConfig->position_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA1, mavActiveConfig->extra1_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA2, mavActiveConfig->extra2_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTRA3, mavActiveConfig->extra3_rate);
-    mavlinkSetStreamRate(MAV_DATA_STREAM_EXTENDED_SYS_STATE, mavActiveConfig->extra3_rate);
-    memcpy(mavActivePort->mavRatesConfigured, mavActivePort->mavRates, sizeof(mavActivePort->mavRatesConfigured));
+    const mavlinkTelemetryPortConfig_t *primaryConfig = &telemetryConfig()->mavlink[0];
+    const uint8_t mavPrimaryRates[MAVLINK_STREAM_COUNT] = {
+        [MAV_DATA_STREAM_EXTENDED_STATUS] = primaryConfig->extended_status_rate,
+        [MAV_DATA_STREAM_RC_CHANNELS] = primaryConfig->rc_channels_rate,
+        [MAV_DATA_STREAM_POSITION] = primaryConfig->position_rate,
+        [MAV_DATA_STREAM_EXTRA1] = primaryConfig->extra1_rate,
+        [MAV_DATA_STREAM_EXTRA2] = primaryConfig->extra2_rate,
+        [MAV_DATA_STREAM_EXTRA3] = primaryConfig->extra3_rate,
+        [MAV_DATA_STREAM_EXTENDED_SYS_STATE] = primaryConfig->extra3_rate,
+        [MAV_DATA_STREAM_HEARTBEAT] = 1
+    };
+
+    const uint8_t *selectedRates = (portIndex == 0) ? mavPrimaryRates : mavSecondaryRates;
+    mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+
+    for (uint8_t stream = 0; stream < MAVLINK_STREAM_COUNT; stream++) {
+        state->mavRates[stream] = selectedRates[stream];
+        state->mavRatesConfigured[stream] = selectedRates[stream];
+        state->mavTicks[stream] = 0;
+    }
 }
 
 static void freeMAVLinkTelemetryPortByIndex(uint8_t portIndex)
@@ -1549,6 +1561,9 @@ void processMAVLinkTelemetry(timeUs_t currentTimeUs)
 
     if (mavlinkStreamTrigger(MAV_DATA_STREAM_EXTRA2)) {
         mavlinkSendVfrHud();
+    }
+
+    if (mavlinkStreamTrigger(MAV_DATA_STREAM_HEARTBEAT)) {
         mavlinkSendHeartbeat();
     }
 
@@ -1980,6 +1995,8 @@ static bool mavlinkMessageToStream(uint16_t messageId, uint8_t *streamNum)
 {
     switch (messageId) {
         case MAVLINK_MSG_ID_HEARTBEAT:
+            *streamNum = MAV_DATA_STREAM_HEARTBEAT;
+            return true;
         case MAVLINK_MSG_ID_VFR_HUD:
             *streamNum = MAV_DATA_STREAM_EXTRA2;
             return true;
@@ -2491,6 +2508,8 @@ static bool handleIncoming_PARAM_REQUEST_LIST(void) {
 
 static void mavlinkParseRxStats(const mavlink_radio_status_t *msg) {
     switch(mavActiveConfig->radio_type) {
+        case MAVLINK_RADIO_NONE:
+            break;
         case MAVLINK_RADIO_SIK:
             // rssi scaling info from: https://ardupilot.org/rover/docs/common-3dr-radio-advanced-configuration-and-technical-information.html
             rxLinkStatistics.uplinkRSSI = (msg->rssi / 1.9) - 127;

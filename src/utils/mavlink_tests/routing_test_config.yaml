@@ -7,24 +7,24 @@ timing:
   inter_case_pause_s: 0.15
 
 network:
-  gcs_link: link_gcs
+  gcs_link: link_radio
   links:
-    link_gcs:
+    link_radio:
       endpoint: tcp:127.0.0.1:5761
-      source_system: 255
-      source_component: 190
-    link_components_a:
+      source_system: 1
+      source_component: 68
+    link_companion:
       endpoint: tcp:127.0.0.1:5762
-      source_system: 254
-      source_component: 200
+      source_system: 1
+      source_component: 191
     link_camera:
       endpoint: tcp:127.0.0.1:5763
-      source_system: 253
-      source_component: 201
+      source_system: 1
+      source_component: 100
     link_gimbal:
       endpoint: tcp:127.0.0.1:5764
-      source_system: 252
-      source_component: 202
+      source_system: 1
+      source_component: 154
 
 vehicle:
   fc_system_id: 1
@@ -33,19 +33,19 @@ tests:
   marker_command_base: 31000
   unknown_component_id: 199
   unknown_system_id: 42
-  report_markdown: mydev/branch/mav_multi/ROUTING_TEST.md
+  report_markdown: src/utils/mavlink_tests/ROUTING_TEST.md
 
 components:
-  - name: mav1_elrs_receiver
-    link: link_components_a
-    system_id: 1
-    component_id: 68
-    mav_type: 49
   - name: mav2_companion_computer
-    link: link_components_a
+    link: link_companion
     system_id: 1
     component_id: 191
     mav_type: 18
+  - name: mav1_elrs_receiver
+    link: link_radio
+    system_id: 1
+    component_id: 68
+    mav_type: 49
   - name: mav3_camera
     link: link_camera
     system_id: 1

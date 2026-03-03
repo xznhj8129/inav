@@ -2762,46 +2762,6 @@ MAVLink Component ID for MAVLink port 2
 
 ---
 
-### mavlink_port2_ext_status_rate
-
-Rate of the extended status message for MAVLink telemetry on port 2
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port2_extra1_rate
-
-Rate of the extra1 message for MAVLink telemetry on port 2
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port2_extra2_rate
-
-Rate of the extra2 message for MAVLink telemetry on port 2
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port2_extra3_rate
-
-Rate of the extra3 message for MAVLink telemetry on port 2
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 1 | 0 | 255 |
-
----
-
 ### mavlink_port2_high_latency
 
 Enable MAVLink high-latency mode on port 2
@@ -2822,16 +2782,6 @@ Minimum percent of TX buffer space free for MAVLink port 2. Requires RADIO_STATU
 
 ---
 
-### mavlink_port2_pos_rate
-
-Rate of the position message for MAVLink telemetry on port 2
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
 ### mavlink_port2_radio_type
 
 MAVLink radio type for port 2. Affects RSSI and LQ reporting on OSD.
@@ -2842,16 +2792,6 @@ MAVLink radio type for port 2. Affects RSSI and LQ reporting on OSD.
 
 ---
 
-### mavlink_port2_rc_chan_rate
-
-Rate of the RC channels message for MAVLink telemetry on port 2
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 1 | 0 | 255 |
-
----
-
 ### mavlink_port3_compid
 
 MAVLink Component ID for MAVLink port 3
@@ -2859,46 +2799,6 @@ MAVLink Component ID for MAVLink port 3
 | Default | Min | Max |
 | --- | --- | --- |
 | 1 | 1 | 255 |
-
----
-
-### mavlink_port3_ext_status_rate
-
-Rate of the extended status message for MAVLink telemetry on port 3
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port3_extra1_rate
-
-Rate of the extra1 message for MAVLink telemetry on port 3
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port3_extra2_rate
-
-Rate of the extra2 message for MAVLink telemetry on port 3
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port3_extra3_rate
-
-Rate of the extra3 message for MAVLink telemetry on port 3
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 1 | 0 | 255 |
 
 ---
 
@@ -2922,16 +2822,6 @@ Minimum percent of TX buffer space free for MAVLink port 3. Requires RADIO_STATU
 
 ---
 
-### mavlink_port3_pos_rate
-
-Rate of the position message for MAVLink telemetry on port 3
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
 ### mavlink_port3_radio_type
 
 MAVLink radio type for port 3. Affects RSSI and LQ reporting on OSD.
@@ -2942,16 +2832,6 @@ MAVLink radio type for port 3. Affects RSSI and LQ reporting on OSD.
 
 ---
 
-### mavlink_port3_rc_chan_rate
-
-Rate of the RC channels message for MAVLink telemetry on port 3
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 1 | 0 | 255 |
-
----
-
 ### mavlink_port4_compid
 
 MAVLink Component ID for MAVLink port 4
@@ -2959,46 +2839,6 @@ MAVLink Component ID for MAVLink port 4
 | Default | Min | Max |
 | --- | --- | --- |
 | 1 | 1 | 255 |
-
----
-
-### mavlink_port4_ext_status_rate
-
-Rate of the extended status message for MAVLink telemetry on port 4
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port4_extra1_rate
-
-Rate of the extra1 message for MAVLink telemetry on port 4
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port4_extra2_rate
-
-Rate of the extra2 message for MAVLink telemetry on port 4
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
-### mavlink_port4_extra3_rate
-
-Rate of the extra3 message for MAVLink telemetry on port 4
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 1 | 0 | 255 |
 
 ---
 
@@ -3022,16 +2862,6 @@ Minimum percent of TX buffer space free for MAVLink port 4. Requires RADIO_STATU
 
 ---
 
-### mavlink_port4_pos_rate
-
-Rate of the position message for MAVLink telemetry on port 4
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 2 | 0 | 255 |
-
----
-
 ### mavlink_port4_radio_type
 
 MAVLink radio type for port 4. Affects RSSI and LQ reporting on OSD.
@@ -3039,16 +2869,6 @@ MAVLink radio type for port 4. Affects RSSI and LQ reporting on OSD.
 | Default | Min | Max |
 | --- | --- | --- |
 | GENERIC |  |  |
-
----
-
-### mavlink_port4_rc_chan_rate
-
-Rate of the RC channels message for MAVLink telemetry on port 4
-
-| Default | Min | Max |
-| --- | --- | --- |
-| 1 | 0 | 255 |
 
 ---
 

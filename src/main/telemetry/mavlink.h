@@ -36,7 +36,8 @@
 #define TELEMETRY_MAVLINK_DELAY ((1000 * 1000) / TELEMETRY_MAVLINK_MAXRATE)
 #define TELEMETRY_MAVLINK_HIGH_LATENCY_INTERVAL_US (5 * 1000 * 1000)
 #define MAV_DATA_STREAM_EXTENDED_SYS_STATE (MAV_DATA_STREAM_EXTRA3 + 1)
-#define MAVLINK_STREAM_COUNT (MAV_DATA_STREAM_EXTENDED_SYS_STATE + 1)
+#define MAV_DATA_STREAM_HEARTBEAT (MAV_DATA_STREAM_EXTENDED_SYS_STATE + 1)
+#define MAVLINK_STREAM_COUNT (MAV_DATA_STREAM_HEARTBEAT + 1)
 #define ARDUPILOT_VERSION_MAJOR 4
 #define ARDUPILOT_VERSION_MINOR 6
 #define ARDUPILOT_VERSION_PATCH 3
@@ -127,8 +128,6 @@ typedef struct mavlinkRouteEntry_s {
     uint8_t compid;
     uint8_t ingressPortIndex;
 } mavlinkRouteEntry_t;
-
-extern const uint8_t mavDefaultRates[MAVLINK_STREAM_COUNT];
 
 typedef struct mavlinkPortRuntime_s {
     serialPort_t *port;

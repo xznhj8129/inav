@@ -95,7 +95,8 @@ Limited implementation of the Command protocol.
 
 ## Datastream groups and defaults
 
-Default rates (Hz) are shown; adjust with the CLI keys above.
+Default rates (Hz) are shown; adjust with the CLI keys above for port 1.
+Ports 2..N use a secondary startup profile (heartbeat at 1 Hz, other streams disabled).
 
 | Datastream group | Messages | Default rate |
 | --- | --- | --- |
@@ -103,7 +104,8 @@ Default rates (Hz) are shown; adjust with the CLI keys above.
 | `RC_CHANNELS` | `RC_CHANNELS_RAW` (v1) / `RC_CHANNELS` (v2) | 1 Hz |
 | `POSITION` | `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN` | 2 Hz |
 | `EXTRA1` | `ATTITUDE` | 3 Hz |
-| `EXTRA2` | `VFR_HUD`, `HEARTBEAT` | 2 Hz |
+| `EXTRA2` | `VFR_HUD` | 2 Hz |
+| `HEARTBEAT` | `HEARTBEAT` | 1 Hz (independent of stream groups) |
 | `EXT_SYS_STATE` | `EXTENDED_SYS_STATE` | 1 Hz (defaults to `mavlink_port1_extra3_rate`) |
 | `EXTRA3` | `BATTERY_STATUS`, `SCALED_PRESSURE`, `STATUSTEXT` (when present) | 1 Hz |
 

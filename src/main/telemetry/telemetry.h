@@ -46,6 +46,7 @@ typedef enum {
     MAVLINK_RADIO_GENERIC,
     MAVLINK_RADIO_ELRS,
     MAVLINK_RADIO_SIK,
+    MAVLINK_RADIO_NONE  // Not a radio
 } mavlinkRadio_e;
 
 typedef struct mavlinkTelemetryCommonConfig_s {

@@ -3310,48 +3310,6 @@ groups:
         description: "Enable MAVLink high-latency mode on port 1"
         type: bool
         default_value: OFF
-      - name: mavlink_port2_ext_status_rate
-        field: mavlink[1].extended_status_rate
-        description: "Rate of the extended status message for MAVLink telemetry on port 2"
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port2_rc_chan_rate
-        description: "Rate of the RC channels message for MAVLink telemetry on port 2"
-        field: mavlink[1].rc_channels_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 1
-      - name: mavlink_port2_pos_rate
-        description: "Rate of the position message for MAVLink telemetry on port 2"
-        field: mavlink[1].position_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port2_extra1_rate
-        description: "Rate of the extra1 message for MAVLink telemetry on port 2"
-        field: mavlink[1].extra1_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port2_extra2_rate
-        description: "Rate of the extra2 message for MAVLink telemetry on port 2"
-        field: mavlink[1].extra2_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port2_extra3_rate
-        description: "Rate of the extra3 message for MAVLink telemetry on port 2"
-        field: mavlink[1].extra3_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 1
       - name: mavlink_port2_min_txbuffer
         field: mavlink[1].min_txbuff
         description: "Minimum percent of TX buffer space free for MAVLink port 2. Requires RADIO_STATUS messages."
@@ -3376,48 +3334,6 @@ groups:
         description: "Enable MAVLink high-latency mode on port 2"
         type: bool
         default_value: OFF
-      - name: mavlink_port3_ext_status_rate
-        field: mavlink[2].extended_status_rate
-        description: "Rate of the extended status message for MAVLink telemetry on port 3"
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port3_rc_chan_rate
-        description: "Rate of the RC channels message for MAVLink telemetry on port 3"
-        field: mavlink[2].rc_channels_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 1
-      - name: mavlink_port3_pos_rate
-        description: "Rate of the position message for MAVLink telemetry on port 3"
-        field: mavlink[2].position_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port3_extra1_rate
-        description: "Rate of the extra1 message for MAVLink telemetry on port 3"
-        field: mavlink[2].extra1_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port3_extra2_rate
-        description: "Rate of the extra2 message for MAVLink telemetry on port 3"
-        field: mavlink[2].extra2_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port3_extra3_rate
-        description: "Rate of the extra3 message for MAVLink telemetry on port 3"
-        field: mavlink[2].extra3_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 1
       - name: mavlink_port3_min_txbuffer
         field: mavlink[2].min_txbuff
         description: "Minimum percent of TX buffer space free for MAVLink port 3. Requires RADIO_STATUS messages."
@@ -3442,48 +3358,6 @@ groups:
         description: "Enable MAVLink high-latency mode on port 3"
         type: bool
         default_value: OFF
-      - name: mavlink_port4_ext_status_rate
-        field: mavlink[3].extended_status_rate
-        description: "Rate of the extended status message for MAVLink telemetry on port 4"
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port4_rc_chan_rate
-        description: "Rate of the RC channels message for MAVLink telemetry on port 4"
-        field: mavlink[3].rc_channels_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 1
-      - name: mavlink_port4_pos_rate
-        description: "Rate of the position message for MAVLink telemetry on port 4"
-        field: mavlink[3].position_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port4_extra1_rate
-        description: "Rate of the extra1 message for MAVLink telemetry on port 4"
-        field: mavlink[3].extra1_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port4_extra2_rate
-        description: "Rate of the extra2 message for MAVLink telemetry on port 4"
-        field: mavlink[3].extra2_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 2
-      - name: mavlink_port4_extra3_rate
-        description: "Rate of the extra3 message for MAVLink telemetry on port 4"
-        field: mavlink[3].extra3_rate
-        type: uint8_t
-        min: 0
-        max: 255
-        default_value: 1
       - name: mavlink_port4_min_txbuffer
         field: mavlink[3].min_txbuff
         description: "Minimum percent of TX buffer space free for MAVLink port 4. Requires RADIO_STATUS messages."

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Usage:
-  conda run -n drone python mydev/branch/mav_multi/mavlink_routing_compliance_test.py --config mydev/branch/mav_multi/routing_test_config.yaml
+  conda run -n drone python src/utils/mavlink_tests/mavlink_routing_compliance_test.py --config src/utils/mavlink_tests/routing_test_config.yaml
 """
 
 from __future__ import annotations

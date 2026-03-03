@@ -638,6 +638,44 @@ TEST(MavlinkTelemetryTest, RequestDataStreamStopsStream)
     EXPECT_EQ(interval.interval_us, -1);
 }
 
+TEST(MavlinkTelemetryTest, HeartbeatIntervalIsIndependentFromExtra2Stream)
+{
+    initMavlinkTestState();
+
+    mavlink_message_t stopExtra2Msg;
+    mavlink_msg_request_data_stream_pack(
+        42, 200, &stopExtra2Msg,
+        1, MAV_COMP_ID_MISSIONPLANNER,
+        MAV_DATA_STREAM_EXTRA2, 0, 0);
+
+    pushRxMessage(&stopExtra2Msg);
+    handleMAVLinkTelemetry(1000);
+
+    serialTxLen = 0;
+
+    mavlink_message_t getMsg;
+    mavlink_msg_command_long_pack(
+        42, 200, &getMsg,
+        1, MAV_COMP_ID_MISSIONPLANNER,
+        MAV_CMD_GET_MESSAGE_INTERVAL,
+        0,
+        (float)MAVLINK_MSG_ID_HEARTBEAT,
+        0, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&getMsg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t intervalMsg;
+    ASSERT_TRUE(popTxMessage(&intervalMsg));
+    ASSERT_EQ(intervalMsg.msgid, MAVLINK_MSG_ID_MESSAGE_INTERVAL);
+
+    mavlink_message_interval_t interval;
+    mavlink_msg_message_interval_decode(&intervalMsg, &interval);
+
+    EXPECT_EQ(interval.message_id, MAVLINK_MSG_ID_HEARTBEAT);
+    EXPECT_EQ(interval.interval_us, 1000000);
+}
+
 TEST(MavlinkTelemetryTest, RequestProtocolVersionUsesConfiguredVersion)
 {
     initMavlinkTestState();

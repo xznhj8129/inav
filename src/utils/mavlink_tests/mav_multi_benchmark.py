@@ -38,6 +38,7 @@ except ModuleNotFoundError:
 DEFAULT_CONFIG_PATH = Path("mydev/branch/mav_multi/test_config.yaml")
 CHANNELS = [1500, 1500, 900, 1500] + [900] * 14
 MAV_CMD_REQUEST_MESSAGE = int(mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE)
+MAV_CMD_SET_MESSAGE_INTERVAL = int(mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL)
 MAVLINK_MSG_ID_HEARTBEAT = int(mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT)
 
 
@@ -131,30 +132,6 @@ def build_cli_config_commands(config: Dict[str, Any], mavlink_port_count: int) -
         "set mavlink_port2_high_latency = OFF",
         "set mavlink_port3_high_latency = OFF",
         "set mavlink_port4_high_latency = OFF",
-        f"set mavlink_port1_ext_status_rate = {int(cli_cfg['ext_status_rate_hz'])}",
-        f"set mavlink_port1_rc_chan_rate = {int(cli_cfg['rc_chan_rate_hz'])}",
-        f"set mavlink_port1_pos_rate = {int(cli_cfg['pos_rate_hz'])}",
-        f"set mavlink_port1_extra1_rate = {int(cli_cfg['extra1_rate_hz'])}",
-        f"set mavlink_port1_extra2_rate = {int(cli_cfg['extra2_rate_hz'])}",
-        f"set mavlink_port1_extra3_rate = {int(cli_cfg['extra3_rate_hz'])}",
-        f"set mavlink_port2_ext_status_rate = {int(cli_cfg['ext_status_rate_hz'])}",
-        f"set mavlink_port2_rc_chan_rate = {int(cli_cfg['rc_chan_rate_hz'])}",
-        f"set mavlink_port2_pos_rate = {int(cli_cfg['pos_rate_hz'])}",
-        f"set mavlink_port2_extra1_rate = {int(cli_cfg['extra1_rate_hz'])}",
-        f"set mavlink_port2_extra2_rate = {int(cli_cfg['extra2_rate_hz'])}",
-        f"set mavlink_port2_extra3_rate = {int(cli_cfg['extra3_rate_hz'])}",
-        f"set mavlink_port3_ext_status_rate = {int(cli_cfg['ext_status_rate_hz'])}",
-        f"set mavlink_port3_rc_chan_rate = {int(cli_cfg['rc_chan_rate_hz'])}",
-        f"set mavlink_port3_pos_rate = {int(cli_cfg['pos_rate_hz'])}",
-        f"set mavlink_port3_extra1_rate = {int(cli_cfg['extra1_rate_hz'])}",
-        f"set mavlink_port3_extra2_rate = {int(cli_cfg['extra2_rate_hz'])}",
-        f"set mavlink_port3_extra3_rate = {int(cli_cfg['extra3_rate_hz'])}",
-        f"set mavlink_port4_ext_status_rate = {int(cli_cfg['ext_status_rate_hz'])}",
-        f"set mavlink_port4_rc_chan_rate = {int(cli_cfg['rc_chan_rate_hz'])}",
-        f"set mavlink_port4_pos_rate = {int(cli_cfg['pos_rate_hz'])}",
-        f"set mavlink_port4_extra1_rate = {int(cli_cfg['extra1_rate_hz'])}",
-        f"set mavlink_port4_extra2_rate = {int(cli_cfg['extra2_rate_hz'])}",
-        f"set mavlink_port4_extra3_rate = {int(cli_cfg['extra3_rate_hz'])}",
         "save",
     ]
     return commands
@@ -241,6 +218,8 @@ def run_workload(
     command_message_id = int(tests_cfg["stress_command_message_id"])
     rc_target_system = int(tests_cfg["rc_target_system"])
     rc_target_component = int(tests_cfg["rc_target_component"])
+    heartbeat_expected_hz = float(tests_cfg["heartbeat_expected_hz"])
+    stream_cfg = config["cli"]
     port_ready_timeout_s = float(tests_cfg["port_ready_timeout_s"])
     warmup_s = float(tests_cfg.get("warmup_s", 3.0))
     warmup_heartbeat_count = int(tests_cfg.get("warmup_heartbeat_count", 3))
@@ -375,6 +354,65 @@ def run_workload(
             )
 
         time.sleep(0.001)
+
+    for port, conn in listeners.items():
+        target_system, target_component = targets[port]
+        conn.mav.request_data_stream_send(
+            target_system,
+            target_component,
+            int(mavutil.mavlink.MAV_DATA_STREAM_EXTENDED_STATUS),
+            int(stream_cfg["ext_status_rate_hz"]),
+            1 if int(stream_cfg["ext_status_rate_hz"]) > 0 else 0,
+        )
+        conn.mav.request_data_stream_send(
+            target_system,
+            target_component,
+            int(mavutil.mavlink.MAV_DATA_STREAM_RC_CHANNELS),
+            int(stream_cfg["rc_chan_rate_hz"]),
+            1 if int(stream_cfg["rc_chan_rate_hz"]) > 0 else 0,
+        )
+        conn.mav.request_data_stream_send(
+            target_system,
+            target_component,
+            int(mavutil.mavlink.MAV_DATA_STREAM_POSITION),
+            int(stream_cfg["pos_rate_hz"]),
+            1 if int(stream_cfg["pos_rate_hz"]) > 0 else 0,
+        )
+        conn.mav.request_data_stream_send(
+            target_system,
+            target_component,
+            int(mavutil.mavlink.MAV_DATA_STREAM_EXTRA1),
+            int(stream_cfg["extra1_rate_hz"]),
+            1 if int(stream_cfg["extra1_rate_hz"]) > 0 else 0,
+        )
+        conn.mav.request_data_stream_send(
+            target_system,
+            target_component,
+            int(mavutil.mavlink.MAV_DATA_STREAM_EXTRA2),
+            int(stream_cfg["extra2_rate_hz"]),
+            1 if int(stream_cfg["extra2_rate_hz"]) > 0 else 0,
+        )
+        conn.mav.request_data_stream_send(
+            target_system,
+            target_component,
+            int(mavutil.mavlink.MAV_DATA_STREAM_EXTRA3),
+            int(stream_cfg["extra3_rate_hz"]),
+            1 if int(stream_cfg["extra3_rate_hz"]) > 0 else 0,
+        )
+        conn.mav.command_long_send(
+            target_system,
+            target_component,
+            MAV_CMD_SET_MESSAGE_INTERVAL,
+            0,
+            float(MAVLINK_MSG_ID_HEARTBEAT),
+            float(int(1_000_000.0 / heartbeat_expected_hz)),
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+    time.sleep(0.1)
 
     for stats in port_stats.values():
         stats["heartbeat_count"] = 0
@@ -617,6 +655,7 @@ def write_testing_report(config: Dict[str, Any], report: Dict[str, Any]) -> None
     lines.append(f"- EEPROM: `{config['sitl']['eeprom_path']}`")
     lines.append("- MSP kept on UART1 by design (`serial 0 ... functionMask=1`).")
     lines.append("- CLI under test sets `receiver_type=SERIAL` and `serialrx_provider=MAVLINK`.")
+    lines.append("- Stream rates are configured at runtime via MAVLink `REQUEST_DATA_STREAM` and `MAV_CMD_SET_MESSAGE_INTERVAL`.")
     lines.append("- `RC_CHANNELS` metrics below are MAVLink telemetry stream metrics, not RX input ownership.")
     lines.append("")
     lines.append("## MAVSDK Probe")
