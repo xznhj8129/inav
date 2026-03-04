@@ -20,6 +20,45 @@ INAV has a partial implementation of MAVLink that is intended primarily for simp
 - `mavlink_port1_min_txbuffer` – minimum remote TX buffer level before sending when `RADIO_STATUS` provides flow control.
 - `mavlink_port1_radio_type` – scales `RADIO_STATUS` RSSI/SNR for **generic**, **ELRS**, or **SiK** links.
 
+## Multi-port MAVLink
+
+INAV supports up to 4 concurrent MAVLink telemetry ports (`MAX_MAVLINK_PORTS`), one endpoint per serial port configured with `FUNCTION_TELEMETRY_MAVLINK`.
+
+### Configuration model
+
+- Shared across all ports: `mavlink_sysid`, `mavlink_version`, `mavlink_autopilot_type`.
+- Per-port: `mavlink_portN_compid`, `mavlink_portN_min_txbuffer`, `mavlink_portN_radio_type`, `mavlink_portN_high_latency`.
+- Stream defaults at startup:
+- Port 1 uses configured CLI rates (`mavlink_port1_*_rate`).
+- Ports 2..4 start with heartbeat only (1 Hz), all other streams disabled.
+
+### Routing and forwarding behavior
+
+- INAV learns routes from incoming traffic as `(sysid, compid) -> ingress port`.
+- Broadcast messages are forwarded to all other MAVLink ports (except `RADIO_STATUS`, which is not forwarded).
+- Targeted messages are forwarded only to ports with a learned route for that target.
+- Practical caveat: the first targeted message to a never-seen endpoint may not forward until that endpoint has sent at least one MAVLink frame.
+
+### Local message handling behavior
+
+- Local/system broadcasts (`target_system=0` or local system ID with `target_component=0`) are fanned out to all local ports only for:
+- `REQUEST_DATA_STREAM`
+- `MAV_CMD_SET_MESSAGE_INTERVAL`
+- `MAV_CMD_CONTROL_HIGH_LATENCY`
+- Other incoming commands/messages are handled on one resolved local port, based on local target matching.
+
+### High-latency behavior
+
+- High-latency mode is per-port (`mavlink_portN_high_latency` or `MAV_CMD_CONTROL_HIGH_LATENCY` on that port).
+- Requires MAVLink2; MAVLink1 cannot enable it.
+- When enabled, normal stream scheduling for that port is replaced by `HIGH_LATENCY2` at 5-second intervals.
+
+### Usage guidance
+
+- Assign a unique `mavlink_portN_compid` to each INAV MAVLink port to avoid ambiguous local targeting.
+- If a GCS or companion needs telemetry on ports 2..4, explicitly request streams (`REQUEST_DATA_STREAM` or `MAV_CMD_SET_MESSAGE_INTERVAL`) because only heartbeat is enabled by default.
+- If you depend on directed forwarding between links, ensure each remote endpoint transmits at least one frame early so route learning is populated.
+
 ## Supported Outgoing Messages
 
 Messages are organized into MAVLink datastream groups. Each group sends **one message per trigger** at the configured rate:

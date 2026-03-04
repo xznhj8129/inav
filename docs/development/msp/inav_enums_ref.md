@@ -3378,7 +3378,7 @@
 ---
 ## <a id="enum-mavframesupportmask_e"></a>`mavFrameSupportMask_e`
 
-> Source: ../../../src/main/telemetry/mavlink.c
+> Source: ../../../src/main/telemetry/mavlink.h
 
 | Enumerator | Value | Condition |
 |---|---:|---|
@@ -3408,6 +3408,7 @@
 | `MAVLINK_RADIO_GENERIC` | 0 |  |
 | `MAVLINK_RADIO_ELRS` | 1 |  |
 | `MAVLINK_RADIO_SIK` | 2 |  |
+| `MAVLINK_RADIO_NONE` | 3 |  |
 
 ---
 ## <a id="enum-measurementsteps_e"></a>`measurementSteps_e`

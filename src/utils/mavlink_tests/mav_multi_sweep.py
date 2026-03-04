@@ -28,7 +28,7 @@ assert spec.loader is not None
 spec.loader.exec_module(benchmark)
 
 
-parser = argparse.ArgumentParser(description="Run MAVLink load sweep table for 1..4 ports and [50,100,200,max] req/s")
+parser = argparse.ArgumentParser(description="Run MAVLink total-load sweep table for 1..4 ports and [50,100,200,max] req/s total")
 parser.add_argument("--config", default=str(DEFAULT_CONFIG_PATH), help="YAML configuration path")
 args = parser.parse_args()
 
@@ -56,9 +56,9 @@ sweep_duration_s = float(config["tests"]["sweep_duration_s"])
 
 rate_cache: Dict[float, Dict[int, Dict[str, Any]]] = {}
 
-for label, rate_hz in rate_labels:
-    if rate_hz not in rate_cache:
-        rate_cache[rate_hz] = {}
+for label, total_rate_hz in rate_labels:
+    if total_rate_hz not in rate_cache:
+        rate_cache[total_rate_hz] = {}
         for port_count in range(1, 5):
             scenario_log = sitl_log.with_name(f"{sitl_log.stem}_{label}_{port_count}{sitl_log.suffix}")
             log_handle = scenario_log.open("w", encoding="utf-8")
@@ -73,8 +73,12 @@ for label, rate_hz in rate_labels:
                 benchmark.wait_for_tcp_port("127.0.0.1", int(config["ports"]["msp"]), float(config["tests"]["port_ready_timeout_s"]))
                 benchmark.apply_config_and_wait(config, 4)
                 active_ports = [rc_port] + telemetry_ports[: max(0, port_count - 1)]
-                load_rates_hz = {port: rate_hz for port in active_ports}
-                print(f"sweep_run_start label={label} rate={rate_hz} ports={port_count}", flush=True)
+                per_port_rate_hz = total_rate_hz / float(port_count)
+                load_rates_hz = {port: per_port_rate_hz for port in active_ports}
+                print(
+                    f"sweep_run_start label={label} total_rate={total_rate_hz} per_port_rate={per_port_rate_hz} ports={port_count}",
+                    flush=True,
+                )
                 result = benchmark.run_workload(
                     config=config,
                     sitl_pid=sitl_proc.pid,
@@ -83,8 +87,11 @@ for label, rate_hz in rate_labels:
                     load_rates_hz=load_rates_hz,
                     duration_s=sweep_duration_s,
                 )
-                rate_cache[rate_hz][port_count] = result
-                print(f"sweep_run_done label={label} rate={rate_hz} ports={port_count}", flush=True)
+                rate_cache[total_rate_hz][port_count] = result
+                print(
+                    f"sweep_run_done label={label} total_rate={total_rate_hz} per_port_rate={per_port_rate_hz} ports={port_count}",
+                    flush=True,
+                )
             finally:
                 sitl_proc.terminate()
                 try:
@@ -94,7 +101,7 @@ for label, rate_hz in rate_labels:
                     sitl_proc.wait(timeout=5.0)
                 log_handle.close()
                 scenario_log.unlink(missing_ok=True)
-    results[label] = rate_cache[rate_hz]
+    results[label] = rate_cache[total_rate_hz]
 
 output_path = Path(config["output"]["testing_md"])
 lines: List[str] = [
@@ -106,14 +113,15 @@ lines: List[str] = [
     "- UART1 MSP only.",
     "- UART2 is MAVLink RC (460800), RC override target is 100 Hz.",
     "- Additional MAVLink telemetry ports are 115200 baud.",
+    "- Total command rate is held constant per load label and split evenly across active MAVLink ports.",
     "",
     "## Comparison Table",
     "",
-    "| Load Label | Msg/s per active port | Active MAVLink ports | FC cpuLoad avg/max | FC cycleTime avg/max (us) | MAV seq loss max | Cmd failed total | Cmd failed % | MSP fail % |",
-    "| --- | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: |",
+    "| Load Label | Total Msg/s | Active MAVLink ports | Msg/s per active port | FC cpuLoad avg/max | FC cycleTime avg/max (us) | MAV seq loss max | Cmd failed total | Cmd failed % | MSP fail % |",
+    "| --- | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: |",
 ]
 
-for label, rate_hz in rate_labels:
+for label, total_rate_hz in rate_labels:
     rate_results = results[label]
     for port_count in range(1, 5):
         result = rate_results[port_count]
@@ -122,8 +130,9 @@ for label, rate_hz in rate_labels:
         cmd_sent_total = sum(int(item["command_sent"]) for item in per_port)
         cmd_failed_total = sum(int(item["command_failed_total"]) for item in per_port)
         cmd_failed_pct = (cmd_failed_total / max(cmd_sent_total, 1)) * 100.0
+        per_port_rate_hz = total_rate_hz / float(port_count)
         lines.append(
-            f"| {label} | {rate_hz:.1f} | {port_count} | "
+            f"| {label} | {total_rate_hz:.1f} | {port_count} | {per_port_rate_hz:.2f} | "
             f"{result['fc_cpu_load_avg_pct']:.2f}% / {result['fc_cpu_load_max_pct']:.2f}% | "
             f"{result['fc_cycle_time_avg_us']:.1f} / {result['fc_cycle_time_max_us']:.1f} | "
             f"{mav_seq_loss_max_pct:.2f}% | {cmd_failed_total} | {cmd_failed_pct:.2f}% | {(result['msp_failure_rate'] * 100.0):.2f}% |"
@@ -132,13 +141,16 @@ for label, rate_hz in rate_labels:
 lines.append("")
 lines.append("## Raw Scenario Details")
 lines.append("")
-for label, rate_hz in rate_labels:
-    lines.append(f"### {label} ({rate_hz:.1f} msg/s per active port)")
+for label, total_rate_hz in rate_labels:
+    lines.append(f"### {label} ({total_rate_hz:.1f} total msg/s)")
     lines.append("")
     for port_count in range(1, 5):
         result = results[label][port_count]
+        per_port_rate_hz = total_rate_hz / float(port_count)
         lines.append(f"#### {port_count} active MAVLink port(s)")
         lines.append("")
+        lines.append(f"- Total command rate: `{total_rate_hz:.1f} msg/s`")
+        lines.append(f"- Per-port command rate: `{per_port_rate_hz:.2f} msg/s`")
         lines.append(
             f"- FC cpuLoad avg/max: `{result['fc_cpu_load_avg_pct']:.2f}% / {result['fc_cpu_load_max_pct']:.2f}%` | "
             f"FC cycleTime avg/max: `{result['fc_cycle_time_avg_us']:.1f} / {result['fc_cycle_time_max_us']:.1f}` us | "

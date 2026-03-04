@@ -2239,7 +2239,7 @@
         "MAG_MAX": "MAG_FAKE"
     },
     "mavFrameSupportMask_e": {
-        "_source": "inav/src/main/telemetry/mavlink.c",
+        "_source": "inav/src/main/telemetry/mavlink.h",
         "MAV_FRAME_SUPPORTED_NONE": "0",
         "MAV_FRAME_SUPPORTED_GLOBAL": "(1 << 0)",
         "MAV_FRAME_SUPPORTED_GLOBAL_RELATIVE_ALT": "(1 << 1)",
@@ -2255,7 +2255,8 @@
         "_source": "inav/src/main/telemetry/telemetry.h",
         "MAVLINK_RADIO_GENERIC": "0",
         "MAVLINK_RADIO_ELRS": "1",
-        "MAVLINK_RADIO_SIK": "2"
+        "MAVLINK_RADIO_SIK": "2",
+        "MAVLINK_RADIO_NONE": "3"
     },
     "measurementSteps_e": {
         "_source": "inav/src/main/drivers/rangefinder/rangefinder_vl53l0x.c",
