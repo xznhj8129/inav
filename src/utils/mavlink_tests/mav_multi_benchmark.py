@@ -40,6 +40,8 @@ CHANNELS = [1500, 1500, 900, 1500] + [900] * 14
 MAV_CMD_REQUEST_MESSAGE = int(mavutil.mavlink.MAV_CMD_REQUEST_MESSAGE)
 MAV_CMD_SET_MESSAGE_INTERVAL = int(mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL)
 MAVLINK_MSG_ID_HEARTBEAT = int(mavutil.mavlink.MAVLINK_MSG_ID_HEARTBEAT)
+MAV_AUTOPILOT_INVALID = int(mavutil.mavlink.MAV_AUTOPILOT_INVALID)
+MAV_TYPE_GCS = int(mavutil.mavlink.MAV_TYPE_GCS)
 
 
 def load_config(config_path: Path) -> Dict[str, Any]:
@@ -59,6 +61,25 @@ def wait_for_tcp_port(host: str, port: int, timeout_s: float) -> None:
             time.sleep(0.2)
             continue
     raise TimeoutError(f"TCP port {host}:{port} did not become available within {timeout_s}s")
+
+
+def wait_for_tcp_port_cycle(host: str, port: int, timeout_s: float) -> None:
+    deadline = time.monotonic() + timeout_s
+    saw_closed = False
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=1.0):
+                if saw_closed:
+                    return
+        except (ConnectionRefusedError, socket.timeout, OSError):
+            saw_closed = True
+        time.sleep(0.2)
+
+    if saw_closed:
+        raise TimeoutError(f"TCP port {host}:{port} did not return after reboot within {timeout_s}s")
+
+    # If no close window was observed, treat it as already rebooted and just ensure the port is reachable.
+    wait_for_tcp_port(host, port, timeout_s)
 
 
 def cli_read_until_prompt(cli_socket: socket.socket) -> str:
@@ -85,7 +106,7 @@ def wait_for_cli_ready(host: str, port: int, timeout_s: float) -> None:
     raise TimeoutError(f"CLI prompt did not become available on {host}:{port} within {timeout_s}s")
 
 
-def run_cli_commands(host: str, port: int, commands: List[str], reboot_timeout_s: float) -> None:
+def run_cli_commands(host: str, port: int, commands: List[str], reboot_timeout_s: float) -> bool:
     sent_save = False
     with socket.create_connection((host, port), timeout=5.0) as cli_socket:
         cli_socket.settimeout(3.0)
@@ -100,6 +121,7 @@ def run_cli_commands(host: str, port: int, commands: List[str], reboot_timeout_s
     if sent_save:
         # Save triggers reboot; do not send '#' again because that re-enters CLI mode.
         time.sleep(min(reboot_timeout_s, 1.0))
+    return sent_save
 
 
 def build_serial_command(index: int, function_mask: int, baud: int) -> str:
@@ -140,12 +162,14 @@ def build_cli_config_commands(config: Dict[str, Any], mavlink_port_count: int) -
 def apply_config_and_wait(config: Dict[str, Any], mavlink_port_count: int) -> None:
     ports = config["ports"]
     commands = build_cli_config_commands(config, mavlink_port_count)
-    run_cli_commands(
+    sent_save = run_cli_commands(
         "127.0.0.1",
         int(ports["msp"]),
         commands,
         reboot_timeout_s=float(config["tests"]["save_reboot_timeout_s"]),
     )
+    if sent_save:
+        wait_for_tcp_port_cycle("127.0.0.1", int(ports["msp"]), float(config["tests"]["save_reboot_timeout_s"]))
     wait_for_tcp_port("127.0.0.1", int(ports["msp"]), float(config["tests"]["port_ready_timeout_s"]))
     wait_for_tcp_port("127.0.0.1", int(ports["rc"]), float(config["tests"]["port_ready_timeout_s"]))
     if mavlink_port_count >= 2:
@@ -194,6 +218,10 @@ def open_mavlink_tcp_connection(port: int, source_system: int, source_component:
             if time.monotonic() >= deadline:
                 raise
             time.sleep(0.2)
+
+
+def is_fc_heartbeat(msg: Any) -> bool:
+    return int(msg.autopilot) != MAV_AUTOPILOT_INVALID and int(msg.type) != MAV_TYPE_GCS
 
 
 def run_workload(
@@ -263,6 +291,7 @@ def run_workload(
             "mav_msg_count": 0,
             "mav_seq_lost": 0,
             "last_seq_by_source": {},
+            "seq_track_source": None,
         }
 
     for idx, port in enumerate(sorted(load_rates_hz.keys())):
@@ -341,8 +370,11 @@ def run_workload(
                     break
                 msg_type = msg.get_type()
                 if msg_type == "HEARTBEAT":
-                    targets[port] = (int(msg.get_srcSystem()), int(msg.get_srcComponent()))
-                    warmup_hb_seen[port] += 1
+                    src_system = int(msg.get_srcSystem())
+                    src_component = int(msg.get_srcComponent())
+                    if is_fc_heartbeat(msg):
+                        targets[port] = (src_system, src_component)
+                        warmup_hb_seen[port] += 1
 
         if telemetry_ports and all(count >= warmup_heartbeat_count for count in warmup_hb_seen.values()) and (now - warmup_start_t) >= warmup_s:
             break
@@ -357,6 +389,7 @@ def run_workload(
 
     for port, conn in listeners.items():
         target_system, target_component = targets[port]
+        port_stats[port]["seq_track_source"] = (target_system, target_component)
         conn.mav.request_data_stream_send(
             target_system,
             target_component,
@@ -510,16 +543,20 @@ def run_workload(
                             seq = int(header.seq)
                     if seq is not None:
                         src_key = (int(msg.get_srcSystem()), int(msg.get_srcComponent()))
-                        last_seq = stats["last_seq_by_source"].get(src_key)
-                        if last_seq is not None:
-                            seq_delta = (seq - int(last_seq)) & 0xFF
-                            if seq_delta > 0:
-                                stats["mav_seq_lost"] += max(seq_delta - 1, 0)
-                        stats["last_seq_by_source"][src_key] = seq
-                        stats["mav_msg_count"] += 1
+                        if src_key == stats["seq_track_source"]:
+                            last_seq = stats["last_seq_by_source"].get(src_key)
+                            if last_seq is not None:
+                                seq_delta = (seq - int(last_seq)) & 0xFF
+                                if seq_delta > 0:
+                                    stats["mav_seq_lost"] += max(seq_delta - 1, 0)
+                            stats["last_seq_by_source"][src_key] = seq
+                            stats["mav_msg_count"] += 1
 
                     if msg_type == "HEARTBEAT":
-                        targets[port] = (int(msg.get_srcSystem()), int(msg.get_srcComponent()))
+                        src_system = int(msg.get_srcSystem())
+                        src_component = int(msg.get_srcComponent())
+                        if is_fc_heartbeat(msg):
+                            targets[port] = (src_system, src_component)
                         stats["heartbeat_count"] += 1
                     elif msg_type == "RC_CHANNELS":
                         stats["rc_count"] += 1

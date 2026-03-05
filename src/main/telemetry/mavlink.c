@@ -355,6 +355,8 @@ static void freeMAVLinkTelemetryPortByIndex(uint8_t portIndex)
     state->lastMavlinkMessageUs = 0;
     state->lastHighLatencyMessageUs = 0;
     state->highLatencyEnabled = mavlinkGetPortConfig(portIndex)->high_latency;
+    state->txSeq = 0;
+    state->txDroppedFrames = 0;
     memset(&state->mavRecvStatus, 0, sizeof(state->mavRecvStatus));
     memset(&state->mavRecvMsg, 0, sizeof(state->mavRecvMsg));
 }
@@ -419,6 +421,8 @@ static void configureMAVLinkTelemetryPort(uint8_t portIndex)
     state->lastMavlinkMessageUs = 0;
     state->lastHighLatencyMessageUs = 0;
     state->highLatencyEnabled = mavlinkGetPortConfig(portIndex)->high_latency;
+    state->txSeq = 0;
+    state->txDroppedFrames = 0;
     memset(&state->mavRecvStatus, 0, sizeof(state->mavRecvStatus));
     memset(&state->mavRecvMsg, 0, sizeof(state->mavRecvMsg));
 }
@@ -452,8 +456,10 @@ void checkMAVLinkTelemetryState(void)
 
 static void mavlinkSendMessage(void)
 {
-    uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-    int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavSendMsg);
+    const mavlink_msg_entry_t *msgEntry = mavlink_get_msg_entry(mavSendMsg.msgid);
+    if (!msgEntry) {
+        return;
+    }
 
     for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
         if ((mavSendMask & MAVLINK_PORT_MASK(portIndex)) == 0) {
@@ -465,9 +471,39 @@ static void mavlinkSendMessage(void)
             continue;
         }
 
-        for (int i = 0; i < msgLength; i++) {
-            serialWrite(state->port, mavBuffer[i]);
+        mavlink_status_t txStatus = { 0 };
+        txStatus.current_tx_seq = state->txSeq;
+        if (mavlinkGetProtocolVersion() == 1) {
+            txStatus.flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
         }
+
+        mavlink_message_t txMsg = mavSendMsg;
+        mavlink_finalize_message_buffer(
+            &txMsg,
+            txMsg.sysid,
+            txMsg.compid,
+            &txStatus,
+            msgEntry->min_msg_len,
+            txMsg.len,
+            msgEntry->crc_extra
+        );
+        state->txSeq = txStatus.current_tx_seq;
+
+        uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
+        const int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &txMsg);
+        if (msgLength <= 0) {
+            continue;
+        }
+
+        // Drop the frame on this port if there is no room; do not block telemetry task.
+        if (serialTxBytesFree(state->port) < (uint32_t)msgLength) {
+            state->txDroppedFrames++;
+            continue;
+        }
+
+        serialBeginWrite(state->port);
+        serialWriteBuf(state->port, mavBuffer, msgLength);
+        serialEndWrite(state->port);
     }
 }
 
@@ -1181,6 +1217,8 @@ void mavlinkSendVfrHud(void)
     mavlinkSendMessage();
 }
 
+static uint8_t mavlinkGetAutopilotEnum(void);
+
 void mavlinkSendHeartbeat(void)
 {
     uint8_t mavModes = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
@@ -1230,18 +1268,11 @@ void mavlinkSendHeartbeat(void)
         mavSystemState = MAV_STATE_STANDBY;
     }
 
-    uint8_t mavType;
-    if (mavAutopilotType == MAVLINK_AUTOPILOT_ARDUPILOT) {
-        mavType = MAV_AUTOPILOT_ARDUPILOTMEGA;
-    } else {
-        mavType = MAV_AUTOPILOT_GENERIC;
-    }
-
     mavlink_msg_heartbeat_pack(mavSystemId, mavComponentId, &mavSendMsg,
         // type Type of the MAV (quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
         mavSystemType,
         // autopilot Autopilot type / class. defined in MAV_AUTOPILOT ENUM
-        mavType,
+        mavlinkGetAutopilotEnum(),
         // base_mode System mode bitfield, see MAV_MODE_FLAGS ENUM in mavlink/include/mavlink_types.h
         mavModes,
         // custom_mode A bitfield for use for autopilot-specific flags.
@@ -1252,7 +1283,7 @@ void mavlinkSendHeartbeat(void)
     mavlinkSendMessage();
 }
 
-void mavlinkSendBatteryTemperatureStatusText(void)
+static void mavlinkSendBatteryStatus(void)
 {
     uint16_t batteryVoltages[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_LEN];
     uint16_t batteryVoltagesExt[MAVLINK_MSG_BATTERY_STATUS_FIELD_VOLTAGES_EXT_LEN];
@@ -1308,8 +1339,10 @@ void mavlinkSendBatteryTemperatureStatusText(void)
         0);
 
     mavlinkSendMessage();
+}
 
-
+static void mavlinkSendScaledPressure(void)
+{
     int16_t temperature;
     sensors(SENSOR_BARO) ? getBaroTemperature(&temperature) : getIMUTemperature(&temperature);
     mavlink_msg_scaled_pressure_pack(mavSystemId, mavComponentId, &mavSendMsg,
@@ -1320,7 +1353,10 @@ void mavlinkSendBatteryTemperatureStatusText(void)
         0);
 
     mavlinkSendMessage();
+}
 
+static bool mavlinkSendStatusText(void)
+{
 // FIXME - Status text is limited to boards with USE_OSD
 #ifdef USE_OSD
     char buff[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN] = {" "};
@@ -1340,10 +1376,17 @@ void mavlinkSendBatteryTemperatureStatusText(void)
             0);
 
         mavlinkSendMessage();
+        return true;
     }
 #endif
+    return false;
+}
 
-
+void mavlinkSendBatteryTemperatureStatusText(void)
+{
+    mavlinkSendBatteryStatus();
+    mavlinkSendScaledPressure();
+    mavlinkSendStatusText();
 }
 
 static uint8_t mavlinkGetAutopilotEnum(void)
@@ -1577,6 +1620,8 @@ void processMAVLinkTelemetry(timeUs_t currentTimeUs)
 
 }
 
+static void mavlinkResetIncomingMissionTransaction(void);
+
 static bool handleIncoming_MISSION_CLEAR_ALL(void)
 {
     mavlink_mission_clear_all_t msg;
@@ -1585,6 +1630,7 @@ static bool handleIncoming_MISSION_CLEAR_ALL(void)
     // Check if this message is for us
     if (msg.target_system == mavSystemId) {
         resetWaypointList();
+        mavlinkResetIncomingMissionTransaction();
         mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_ACCEPTED, MAV_MISSION_TYPE_MISSION, 0);
         mavlinkSendMessage();
         return true;
@@ -1594,11 +1640,66 @@ static bool handleIncoming_MISSION_CLEAR_ALL(void)
 }
 
 // Static state for MISSION UPLOAD transaction (starting with MISSION_COUNT)
+#define MAVLINK_MISSION_UPLOAD_TIMEOUT_MS 10000
 static int incomingMissionWpCount = 0;
 static int incomingMissionWpSequence = 0;
+static uint8_t incomingMissionSourceSystem = 0;
+static uint8_t incomingMissionSourceComponent = 0;
+static timeMs_t incomingMissionLastActivityMs = 0;
+
+static void mavlinkResetIncomingMissionTransaction(void)
+{
+    incomingMissionWpCount = 0;
+    incomingMissionWpSequence = 0;
+    incomingMissionSourceSystem = 0;
+    incomingMissionSourceComponent = 0;
+    incomingMissionLastActivityMs = 0;
+}
+
+static void mavlinkStartIncomingMissionTransaction(int missionCount)
+{
+    incomingMissionWpCount = missionCount;
+    incomingMissionWpSequence = 0;
+    incomingMissionSourceSystem = mavRecvMsg.sysid;
+    incomingMissionSourceComponent = mavRecvMsg.compid;
+    incomingMissionLastActivityMs = millis();
+}
+
+static void mavlinkTouchIncomingMissionTransaction(void)
+{
+    incomingMissionLastActivityMs = millis();
+}
+
+static bool mavlinkIsIncomingMissionTransactionActive(void)
+{
+    if (incomingMissionWpCount <= 0) {
+        return false;
+    }
+
+    if ((timeMs_t)(millis() - incomingMissionLastActivityMs) > MAVLINK_MISSION_UPLOAD_TIMEOUT_MS) {
+        mavlinkResetIncomingMissionTransaction();
+        return false;
+    }
+
+    return true;
+}
+
+static bool mavlinkIsIncomingMissionTransactionOwner(void)
+{
+    return mavRecvMsg.sysid == incomingMissionSourceSystem &&
+        mavRecvMsg.compid == incomingMissionSourceComponent;
+}
 
 static bool mavlinkHandleMissionItemCommon(bool useIntMessages, uint8_t frame, uint16_t command, uint8_t autocontinue, uint16_t seq, float param1, float param2, float param3, float param4, int32_t lat, int32_t lon, float altMeters)
 {
+    if (!mavlinkIsIncomingMissionTransactionActive() || !mavlinkIsIncomingMissionTransactionOwner()) {
+        mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_INVALID_SEQUENCE, MAV_MISSION_TYPE_MISSION, 0);
+        mavlinkSendMessage();
+        return true;
+    }
+
+    mavlinkTouchIncomingMissionTransaction();
+
     if (autocontinue == 0) {
         mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_UNSUPPORTED, MAV_MISSION_TYPE_MISSION, 0);
         mavlinkSendMessage();
@@ -1773,6 +1874,7 @@ static bool mavlinkHandleMissionItemCommon(bool useIntMessages, uint8_t frame, u
                 mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_INVALID, MAV_MISSION_TYPE_MISSION, 0);
                 mavlinkSendMessage();
             }
+            mavlinkResetIncomingMissionTransaction();
         }
         else {
             if (useIntMessages) {
@@ -1786,6 +1888,7 @@ static bool mavlinkHandleMissionItemCommon(bool useIntMessages, uint8_t frame, u
     else {
         // If we get a duplicate of the last accepted item, re-request the next one instead of aborting.
         if (seq + 1 == incomingMissionWpSequence) {
+            mavlinkTouchIncomingMissionTransaction();
             if (useIntMessages) {
                 mavlink_msg_mission_request_int_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, incomingMissionWpSequence, MAV_MISSION_TYPE_MISSION);
             } else {
@@ -1808,14 +1911,20 @@ static bool handleIncoming_MISSION_COUNT(void)
 
     // Check if this message is for us
     if (msg.target_system == mavSystemId) {
+        mavlinkResetIncomingMissionTransaction();
         if (ARMING_FLAG(ARMED)) {
             mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_ERROR, MAV_MISSION_TYPE_MISSION, 0);
             mavlinkSendMessage();
             return true;
         }
+        if (msg.count == 0) {
+            resetWaypointList();
+            mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, MAV_MISSION_ACCEPTED, MAV_MISSION_TYPE_MISSION, 0);
+            mavlinkSendMessage();
+            return true;
+        }
         if (msg.count <= NAV_MAX_WAYPOINTS) {
-            incomingMissionWpCount = msg.count; // We need to know how many items to request
-            incomingMissionWpSequence = 0;
+            mavlinkStartIncomingMissionTransaction(msg.count);
             mavlink_msg_mission_request_int_pack(mavSystemId, mavComponentId, &mavSendMsg, mavRecvMsg.sysid, mavRecvMsg.compid, incomingMissionWpSequence, MAV_MISSION_TYPE_MISSION);
             mavlinkSendMessage();
             return true;
@@ -2256,9 +2365,15 @@ static bool handleIncoming_COMMAND(uint8_t targetSystem, uint8_t targetComponent
     #endif
                         break;
                     case MAVLINK_MSG_ID_BATTERY_STATUS:
-                    case MAVLINK_MSG_ID_SCALED_PRESSURE:
-                        mavlinkSendBatteryTemperatureStatusText();
+                        mavlinkSendBatteryStatus();
                         sent = true;
+                        break;
+                    case MAVLINK_MSG_ID_SCALED_PRESSURE:
+                        mavlinkSendScaledPressure();
+                        sent = true;
+                        break;
+                    case MAVLINK_MSG_ID_STATUSTEXT:
+                        sent = mavlinkSendStatusText();
                         break;
                     case MAVLINK_MSG_ID_HOME_POSITION:
     #ifdef USE_GPS
@@ -2651,20 +2766,48 @@ static void mavlinkExtractTargets(const mavlink_message_t *msg, int16_t *targetS
     }
 }
 
-static bool mavlinkRouteMatchesTargetOnPort(uint8_t portIndex, int16_t targetSystem, int16_t targetComponent)
+static uint8_t mavlinkComputeForwardMask(uint8_t ingressPortIndex, int16_t targetSystem, int16_t targetComponent)
 {
+    uint8_t mask = 0;
+
+    if (targetSystem <= 0) {
+        for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
+            if (portIndex == ingressPortIndex) {
+                continue;
+            }
+
+            const mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+            if (!state->telemetryEnabled || !state->port) {
+                continue;
+            }
+
+            mask |= MAVLINK_PORT_MASK(portIndex);
+        }
+        return mask;
+    }
+
     for (uint8_t routeIndex = 0; routeIndex < mavRouteCount; routeIndex++) {
         const mavlinkRouteEntry_t *route = &mavRouteTable[routeIndex];
-        if (route->ingressPortIndex != portIndex || route->sysid != targetSystem) {
+
+        if (route->sysid != targetSystem) {
+            continue;
+        }
+        if (targetComponent > 0 && route->compid != targetComponent) {
+            continue;
+        }
+        if (route->ingressPortIndex == ingressPortIndex || route->ingressPortIndex >= mavPortCount) {
             continue;
         }
 
-        if (targetComponent <= 0 || route->compid == targetComponent) {
-            return true;
+        const mavlinkPortRuntime_t *state = &mavPortStates[route->ingressPortIndex];
+        if (!state->telemetryEnabled || !state->port) {
+            continue;
         }
+
+        mask |= MAVLINK_PORT_MASK(route->ingressPortIndex);
     }
 
-    return false;
+    return mask;
 }
 
 static void mavlinkForwardMessage(uint8_t ingressPortIndex, int16_t targetSystem, int16_t targetComponent)
@@ -2675,31 +2818,25 @@ static void mavlinkForwardMessage(uint8_t ingressPortIndex, int16_t targetSystem
 
     uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
     const int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &mavRecvMsg);
+    if (msgLength <= 0) {
+        return;
+    }
 
+    const uint8_t forwardMask = mavlinkComputeForwardMask(ingressPortIndex, targetSystem, targetComponent);
     for (uint8_t portIndex = 0; portIndex < mavPortCount; portIndex++) {
-        if (portIndex == ingressPortIndex) {
+        if ((forwardMask & MAVLINK_PORT_MASK(portIndex)) == 0) {
             continue;
         }
 
-        const mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
-        if (!state->telemetryEnabled || !state->port) {
+        mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+        if (serialTxBytesFree(state->port) < (uint32_t)msgLength) {
+            state->txDroppedFrames++;
             continue;
         }
 
-        bool shouldForward = false;
-        if (targetSystem <= 0) {
-            shouldForward = true;
-        } else if (mavlinkRouteMatchesTargetOnPort(portIndex, targetSystem, targetComponent)) {
-            shouldForward = true;
-        }
-
-        if (!shouldForward) {
-            continue;
-        }
-
-        for (int i = 0; i < msgLength; i++) {
-            serialWrite(state->port, mavBuffer[i]);
-        }
+        serialBeginWrite(state->port);
+        serialWriteBuf(state->port, mavBuffer, msgLength);
+        serialEndWrite(state->port);
     }
 }
 

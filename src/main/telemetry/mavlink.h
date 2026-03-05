@@ -57,7 +57,7 @@ typedef enum {
  * MAVLink requires angles to be in the range -Pi..Pi.
  * This converts angles from a range of 0..Pi to -Pi..Pi
  */
-#define RADIANS_TO_MAVLINK_RANGE(angle) (angle > M_PIf) ? angle - (2 * M_PIf) : angle
+#define RADIANS_TO_MAVLINK_RANGE(angle) (((angle) > M_PIf) ? ((angle) - (2 * M_PIf)) : (angle))
 
 /** @brief A mapping of plane flight modes for custom_mode field of heartbeat. */
 typedef enum APM_PLANE_MODE
@@ -142,6 +142,8 @@ typedef struct mavlinkPortRuntime_s {
     uint8_t mavRates[MAVLINK_STREAM_COUNT];
     uint8_t mavRatesConfigured[MAVLINK_STREAM_COUNT];
     uint8_t mavTicks[MAVLINK_STREAM_COUNT];
+    uint8_t txSeq;
+    uint32_t txDroppedFrames;
     mavlink_message_t mavRecvMsg;
     mavlink_status_t mavRecvStatus;
 } mavlinkPortRuntime_t;
