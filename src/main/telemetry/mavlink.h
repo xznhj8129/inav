@@ -141,7 +141,7 @@ typedef struct mavlinkPortRuntime_s {
     bool highLatencyEnabled;
     uint8_t mavRates[MAVLINK_STREAM_COUNT];
     uint8_t mavRatesConfigured[MAVLINK_STREAM_COUNT];
-    uint8_t mavTicks[MAVLINK_STREAM_COUNT];
+    timeUs_t mavStreamNextDue[MAVLINK_STREAM_COUNT];
     uint8_t txSeq;
     uint32_t txDroppedFrames;
     mavlink_message_t mavRecvMsg;

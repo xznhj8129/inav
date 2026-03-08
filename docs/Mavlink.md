@@ -86,7 +86,8 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 - `MISSION_CLEAR_ALL`: clears stored mission.
 - `COMMAND_LONG` / `COMMAND_INT`: command transport for supported `MAV_CMD_*` handlers.
 - `REQUEST_DATA_STREAM`: legacy stream-rate control per stream group.
-- `SET_POSITION_TARGET_GLOBAL_INT`: writes the GCS-guided waypoint when the frame is supported.
+- `SET_POSITION_TARGET_GLOBAL_INT`: writes the GCS-guided waypoint when the frame is supported; altitude-only requests are also accepted when X/Y are masked out and GCS navigation is valid.
+- `SET_POSITION_TARGET_LOCAL_NED`: accepts altitude-only requests in `MAV_FRAME_LOCAL_OFFSET_NED` when X/Y are zero or ignored and GCS navigation is valid.
 - `RC_CHANNELS_OVERRIDE` passes channel values to the MAVLink serial receiver backend.
 - `RADIO_STATUS` updates remote TX buffer level and scales RSSI/SNR according to `mavlink_port1_radio_type` (also feeds link stats for MAVLink RX receivers).
 - `ADSB_VEHICLE` populates the internal traffic list when ADS‑B is enabled.
@@ -101,7 +102,7 @@ Limited implementation of the Command protocol.
 - `MAV_CMD_SET_MESSAGE_INTERVAL` / `MAV_CMD_GET_MESSAGE_INTERVAL`: adjust or query telemetry stream output for supported message IDs (streamed messages only; intervals slower than 1 Hz are not accepted).
 - `MAV_CMD_GET_HOME_POSITION`: replies with `HOME_POSITION` when home fix exists.
 - `MAV_CMD_REQUEST_MESSAGE`: emits one selected message (`HEARTBEAT`, `SYS_STATUS`, `ATTITUDE`, `VFR_HUD`, `AVAILABLE_MODES`, `CURRENT_MODE`, `EXTENDED_SYS_STATE`, RC channels, GPS/global/origin, battery/pressure, and `HOME_POSITION` when available) or `UNSUPPORTED`.
-- `MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES`: returns stub `AUTOPILOT_VERSION` (v2 only; v1 returns `UNSUPPORTED`).
+- `MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES`: returns stub `AUTOPILOT_VERSION` (v2 only; v1 returns `UNSUPPORTED`) advertising `SET_POSITION_TARGET_GLOBAL_INT` and `SET_POSITION_TARGET_LOCAL_NED`.
 - `MAV_CMD_REQUEST_PROTOCOL_VERSION`: returns stub `PROTOCOL_VERSION` (v2 only; v1 returns `UNSUPPORTED`).
 
 ## Mode mappings (INAV → MAVLink/ArduPilot)
