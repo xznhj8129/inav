@@ -13,7 +13,7 @@ for arg in "$@"; do
   fi
 done
 
-eval "$("$BUILD_INFO_SCRIPT" "$INAV_ROOT")"
+eval "$(bash "$BUILD_INFO_SCRIPT" "$INAV_ROOT")"
 
 echo "###########"
 echo get_all_inav_enums_h.py

@@ -5,7 +5,7 @@
             "minor": 0,
             "patch": 0
         },
-        "git_revision": "86dc81ba"
+        "git_revision": "4d69c20a"
     },
     "enums": {
         "accelerationSensor_e": {
@@ -3469,7 +3469,7 @@
             "SDCARD_OPERATION_FAILURE": "3"
         },
         "sdcardReceiveBlockStatus_e": {
-            "_source": "inav/src/main/drivers/sdcard/sdcard_spi.c",
+            "_source": "inav/src/main/drivers/sdcard/sdcard_sdio.c",
             "SDCARD_RECEIVE_SUCCESS": "0",
             "SDCARD_RECEIVE_BLOCK_IN_PROGRESS": "1",
             "SDCARD_RECEIVE_ERROR": "2"
