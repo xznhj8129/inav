@@ -5,6 +5,7 @@
 *.uvopt
 *.dep
 *.bak
+*.log
 *.uvgui.*
 *.ubx
 .project

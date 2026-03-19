@@ -4,8 +4,9 @@
     {
       "type": "robot",
       "name": "InavQuad",
+      "start-landed": true,
       "origin": {
-        "xyz": "0.0 0.0 -4.0",
+        "xyz": "0.0 0.0 0.0",
         "rpy-deg": "0 0 0"
       },
       "robot-config": {
@@ -315,6 +316,35 @@
         ],
         "sensors": [
           {
+            "id": "Chase",
+            "type": "camera",
+            "enabled": true,
+            "parent-link": "Frame",
+            "capture-interval": 0.03,
+            "capture-settings": [
+              {
+                "image-type": 0,
+                "width": 1280,
+                "height": 720,
+                "fov-degrees": 90,
+                "capture-enabled": false,
+                "streaming-enabled": true,
+                "pixels-as-float": false,
+                "compress": false,
+                "target-gamma": 2.5
+              }
+            ],
+            "gimbal": {
+              "lock-roll": true,
+              "lock-pitch": true,
+              "lock-yaw": false
+            },
+            "origin": {
+              "xyz": "-10.0 0.0 -1.0",
+              "rpy-deg": "0 -11.46 0"
+            }
+          },
+          {
             "id": "IMU1",
             "type": "imu",
             "enabled": true,
@@ -339,8 +369,8 @@
             "parent-link": "Frame",
             "eph-time-constant": 0.9,
             "epv-time-constant": 0.9,
-            "eph-initial": 100,
-            "epv-initial": 100,
+            "eph-initial": 0.1,
+            "epv-initial": 0.1,
             "eph-final": 0.1,
             "epv-final": 0.1,
             "eph-min_3d": 3.0,
@@ -381,7 +411,7 @@
   "home-geo-point": {
     "latitude": 47.641468,
     "longitude": -122.140165,
-    "altitude": 122.0
+    "altitude": 0.0
   },
   "scene-type": "UnrealNative"
 }
