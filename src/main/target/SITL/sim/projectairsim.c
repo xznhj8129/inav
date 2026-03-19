@@ -77,6 +77,8 @@
 #define PAS_ACTUATOR_RR "Prop_RR_actuator"
 
 #define PAS_FRAME_HALF_HEIGHT_M 0.02f
+#define PAS_GROUND_PROBE_OFFSET_M 5.0f
+#define PAS_GROUND_PROBE_START_Z_M -1000.0f
 #define PAS_DEFAULT_TEMP_C 21
 #define PAS_DEFAULT_VBAT_CENTIVOLTS 1680
 
@@ -450,6 +452,17 @@ static bool pasObjectToInt32(const msgpack_object *object, int32_t *value)
 
 static bool pasObjectToVector3(const msgpack_object *object, pasVector3_t *vector)
 {
+    if (object->type == MSGPACK_OBJECT_ARRAY) {
+        if (object->via.array.size != 3) {
+            return false;
+        }
+
+        return
+            pasObjectToFloat(&object->via.array.ptr[0], &vector->x) &&
+            pasObjectToFloat(&object->via.array.ptr[1], &vector->y) &&
+            pasObjectToFloat(&object->via.array.ptr[2], &vector->z);
+    }
+
     const msgpack_object *x = pasFindMapValue(object, "x");
     const msgpack_object *y = pasFindMapValue(object, "y");
     const msgpack_object *z = pasFindMapValue(object, "z");
@@ -507,26 +520,6 @@ static bool pasPackContinueForNStepsParams(msgpack_sbuffer *paramsBuffer, int nS
     }
 
     if (!pasPackKey(&packer, "wait_until_complete") || (msgpack_pack_true(&packer) != 0)) {
-        return false;
-    }
-
-    return true;
-}
-
-static bool pasPackGetZAtPointParams(msgpack_sbuffer *paramsBuffer, float x, float y)
-{
-    msgpack_packer packer;
-    msgpack_packer_init(&packer, paramsBuffer, msgpack_sbuffer_write);
-
-    if (msgpack_pack_map(&packer, 2) != 0) {
-        return false;
-    }
-
-    if (!pasPackKey(&packer, "x") || (msgpack_pack_double(&packer, x) != 0)) {
-        return false;
-    }
-
-    if (!pasPackKey(&packer, "y") || (msgpack_pack_double(&packer, y) != 0)) {
         return false;
     }
 
@@ -599,6 +592,74 @@ static bool pasPackPoseParams(msgpack_sbuffer *paramsBuffer, float x, float y, f
     }
 
     if (!pasPackKey(&packer, "reset_kinematics") || (msgpack_pack_true(&packer) != 0)) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool pasPackHitTestParams(msgpack_sbuffer *paramsBuffer, float x, float y, float z, const pasQuaternion_t *orientation)
+{
+    msgpack_packer packer;
+    msgpack_packer_init(&packer, paramsBuffer, msgpack_sbuffer_write);
+
+    if (msgpack_pack_map(&packer, 1) != 0) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "pose")) {
+        return false;
+    }
+
+    if (msgpack_pack_map(&packer, 3) != 0) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "frame_id") || !pasPackStringValue(&packer, "DEFAULT_FRAME")) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "translation")) {
+        return false;
+    }
+
+    if (msgpack_pack_map(&packer, 3) != 0) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "x") || (msgpack_pack_double(&packer, x) != 0)) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "y") || (msgpack_pack_double(&packer, y) != 0)) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "z") || (msgpack_pack_double(&packer, z) != 0)) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "rotation")) {
+        return false;
+    }
+
+    if (msgpack_pack_map(&packer, 4) != 0) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "w") || (msgpack_pack_double(&packer, orientation->w) != 0)) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "x") || (msgpack_pack_double(&packer, orientation->x) != 0)) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "y") || (msgpack_pack_double(&packer, orientation->y) != 0)) {
+        return false;
+    }
+
+    if (!pasPackKey(&packer, "z") || (msgpack_pack_double(&packer, orientation->z) != 0)) {
         return false;
     }
 
@@ -751,55 +812,6 @@ static bool pasContinueForNSteps(nng_socket socket, const char *worldPath, int n
     return true;
 }
 
-static bool pasGetZAtPoint(nng_socket socket, const char *worldPath, float x, float y, float *groundZ)
-{
-    char method[PAS_METHOD_PATH_LEN];
-    snprintf(method, sizeof(method), "%s/GetZAtPoint", worldPath);
-
-    msgpack_sbuffer paramsBuffer;
-    msgpack_sbuffer_init(&paramsBuffer);
-
-    if (!pasPackGetZAtPointParams(&paramsBuffer, x, y)) {
-        fprintf(stderr, "[PAS] method=%s params_pack_failed=1 x=%.3f y=%.3f\n", method, x, y);
-        msgpack_sbuffer_destroy(&paramsBuffer);
-        return false;
-    }
-
-    char *responseBuffer = NULL;
-    size_t responseLength = 0;
-    const bool requestOk = pasSendRequest(socket, method, &paramsBuffer, &responseBuffer, &responseLength);
-    msgpack_sbuffer_destroy(&paramsBuffer);
-    if (!requestOk) {
-        return false;
-    }
-
-    pasParsedResponse_t parsedResponse;
-    const bool parseOk = pasParseResponse(method, responseBuffer, responseLength, &parsedResponse);
-    if (!parseOk) {
-        nng_free(responseBuffer, responseLength);
-        return false;
-    }
-
-    if (parsedResponse.isError) {
-        pasPrintObject(method, "error_data", &parsedResponse.decoded.data);
-        pasDestroyParsedResponse(&parsedResponse);
-        nng_free(responseBuffer, responseLength);
-        return false;
-    }
-
-    const bool valueOk = pasObjectToFloat(&parsedResponse.decoded.data, groundZ);
-    if (!valueOk) {
-        fprintf(stderr, "[PAS] method=%s ground_z_type=%d x=%.3f y=%.3f\n", method, parsedResponse.decoded.data.type, x, y);
-        pasDestroyParsedResponse(&parsedResponse);
-        nng_free(responseBuffer, responseLength);
-        return false;
-    }
-
-    pasDestroyParsedResponse(&parsedResponse);
-    nng_free(responseBuffer, responseLength);
-    return true;
-}
-
 static bool pasSetPose(nng_socket socket, const char *robotPath, float x, float y, float z, const pasQuaternion_t *orientation)
 {
     char method[PAS_METHOD_PATH_LEN];
@@ -880,6 +892,93 @@ static bool pasSetControlSignals(nng_socket socket, const char *robotPath, const
 
     pasDestroyParsedResponse(&parsedResponse);
     nng_free(responseBuffer, responseLength);
+    return true;
+}
+
+static bool pasHitTest(nng_socket socket, const char *worldPath, float x, float y, float z, const pasQuaternion_t *orientation, pasVector3_t *hitPoint)
+{
+    char method[PAS_METHOD_PATH_LEN];
+    snprintf(method, sizeof(method), "%s/HitTest", worldPath);
+
+    msgpack_sbuffer paramsBuffer;
+    msgpack_sbuffer_init(&paramsBuffer);
+
+    if (!pasPackHitTestParams(&paramsBuffer, x, y, z, orientation)) {
+        fprintf(stderr, "[PAS] method=%s params_pack_failed=1 x=%.3f y=%.3f z=%.3f\n", method, x, y, z);
+        msgpack_sbuffer_destroy(&paramsBuffer);
+        return false;
+    }
+
+    char *responseBuffer = NULL;
+    size_t responseLength = 0;
+    const bool requestOk = pasSendRequest(socket, method, &paramsBuffer, &responseBuffer, &responseLength);
+    msgpack_sbuffer_destroy(&paramsBuffer);
+    if (!requestOk) {
+        return false;
+    }
+
+    pasParsedResponse_t parsedResponse;
+    const bool parseOk = pasParseResponse(method, responseBuffer, responseLength, &parsedResponse);
+    if (!parseOk) {
+        nng_free(responseBuffer, responseLength);
+        return false;
+    }
+
+    if (parsedResponse.isError) {
+        pasPrintObject(method, "error_data", &parsedResponse.decoded.data);
+        pasDestroyParsedResponse(&parsedResponse);
+        nng_free(responseBuffer, responseLength);
+        return false;
+    }
+
+    const bool hitOk = pasObjectToVector3(&parsedResponse.decoded.data, hitPoint);
+    if (!hitOk) {
+        fprintf(stderr, "[PAS] method=%s hit_type=%d x=%.3f y=%.3f z=%.3f\n", method, parsedResponse.decoded.data.type, x, y, z);
+        pasDestroyParsedResponse(&parsedResponse);
+        nng_free(responseBuffer, responseLength);
+        return false;
+    }
+
+    pasDestroyParsedResponse(&parsedResponse);
+    nng_free(responseBuffer, responseLength);
+    return true;
+}
+
+static bool pasGetGroundZ(nng_socket socket, const char *worldPath, float x, float y, float *groundZ)
+{
+    const pasQuaternion_t downwardTraceOrientation = {
+        .w = 0.70710678f,
+        .x = 0.0f,
+        .y = -0.70710678f,
+        .z = 0.0f,
+    };
+    const float probeOffsets[4][2] = {
+        { PAS_GROUND_PROBE_OFFSET_M, 0.0f },
+        { -PAS_GROUND_PROBE_OFFSET_M, 0.0f },
+        { 0.0f, PAS_GROUND_PROBE_OFFSET_M },
+        { 0.0f, -PAS_GROUND_PROBE_OFFSET_M },
+    };
+    float hitZSum = 0.0f;
+    const size_t probeCount = sizeof(probeOffsets) / sizeof(probeOffsets[0]);
+
+    for (size_t i = 0; i < probeCount; i++) {
+        pasVector3_t hitPoint;
+        const float probeX = x + probeOffsets[i][0];
+        const float probeY = y + probeOffsets[i][1];
+
+        if (!pasHitTest(socket, worldPath, probeX, probeY, PAS_GROUND_PROBE_START_Z_M, &downwardTraceOrientation, &hitPoint)) {
+            return false;
+        }
+
+        if (!isfinite(hitPoint.z)) {
+            fprintf(stderr, "[PAS] world_path=%s probe_x=%.3f probe_y=%.3f hit_z=%.3f\n", worldPath, probeX, probeY, hitPoint.z);
+            return false;
+        }
+
+        hitZSum += hitPoint.z;
+    }
+
+    *groundZ = hitZSum / probeCount;
     return true;
 }
 
@@ -1479,7 +1578,7 @@ bool simProjectAirSimInit(char *ip, int port, bool imu)
     snprintf(pasCtx.barometerPath, sizeof(pasCtx.barometerPath), "%s/sensors/%s/barometer", pasCtx.robotPath, PAS_SENSOR_BAROMETER);
     snprintf(pasCtx.magnetometerPath, sizeof(pasCtx.magnetometerPath), "%s/sensors/%s/magnetometer", pasCtx.robotPath, PAS_SENSOR_MAGNETOMETER);
 
-    if (!pasGetZAtPoint(pasCtx.socket, pasCtx.worldPath, 0.0f, 0.0f, &pasCtx.groundZ)) {
+    if (!pasGetGroundZ(pasCtx.socket, pasCtx.worldPath, 0.0f, 0.0f, &pasCtx.groundZ)) {
         nng_close(pasCtx.socket);
         return false;
     }
