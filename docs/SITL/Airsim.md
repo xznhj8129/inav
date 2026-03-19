@@ -30,7 +30,6 @@ You also need:
 From the INAV repo:
 
 ```bash
-unset LD_LIBRARY_PATH
 cmake -S . -B build_SITL -DSITL=ON
 cmake --build build_SITL --target SITL.elf -j"$(nproc)"
 ```
@@ -65,14 +64,12 @@ Useful ProjectAirSim launch arguments include:
 Windowed example:
 
 ```bash
-unset LD_LIBRARY_PATH
 <your-projectairsim-launcher> -windowed -ResX=1280 -ResY=720 -NoVSync -nosound
 ```
 
 Offscreen example:
 
 ```bash
-unset LD_LIBRARY_PATH
 <your-projectairsim-launcher> -RenderOffScreen -NoVSync -nosound
 ```
 
@@ -81,7 +78,6 @@ unset LD_LIBRARY_PATH
 Start INAV SITL with the ProjectAirSim backend:
 
 ```bash
-unset LD_LIBRARY_PATH
 build_SITL/bin/SITL.elf --sim=pas --path <your-eeprom.bin>
 ```
 
