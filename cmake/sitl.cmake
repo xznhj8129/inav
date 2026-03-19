@@ -15,6 +15,9 @@ main_sources(SITL_SRC
     config/config_streamer_file.c
     drivers/serial_tcp.c
     drivers/serial_tcp.h
+    target/SITL/sim/projectairsim.c
+    target/SITL/sim/projectairsim.h
+    target/SITL/sim/projectairsim_scene.json
     target/SITL/sim/realFlight.c
     target/SITL/sim/realFlight.h
     target/SITL/sim/simHelper.c
@@ -24,6 +27,9 @@ main_sources(SITL_SRC
     target/SITL/sim/xplane.c
     target/SITL/sim/xplane.h
 )
+
+find_package(nng CONFIG REQUIRED)
+find_package(msgpack CONFIG REQUIRED)
 
 
 if(CMAKE_HOST_APPLE)
@@ -42,6 +48,8 @@ set(SITL_LINK_LIBRARIS
     -lpthread
     -lm
     -lc
+    nng::nng
+    msgpackc
 )
 
 if(NOT MACOSX)
@@ -114,6 +122,7 @@ function (target_sitl name)
     endif()
 
     list(APPEND target_definitions ${SITL_DEFINITIONS})
+    list(APPEND target_definitions "PROJECTAIRSIM_SCENE_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}/sim/projectairsim_scene.json\"")
     set(exe_target ${name}.elf)
     add_executable(${exe_target})
     target_sources(${exe_target} PRIVATE ${target_sources} ${COMMON_SRC})

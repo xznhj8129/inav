@@ -55,6 +55,7 @@
 #include "build/version.h"
 
 #include "target/SITL/sim/realFlight.h"
+#include "target/SITL/sim/projectairsim.h"
 #include "target/SITL/sim/xplane.h"
 
 #include "target/SITL/serial_proxy.h"
@@ -130,6 +131,13 @@ void systemInit(void) {
                 fprintf(stderr, "[SIM] Connection with X-PLane NOT established.\n");
             }
             break;
+        case SITL_SIM_PROJECTAIRSIM:
+            if (simProjectAirSimInit(simIp, simPort, useImu)) {
+                fprintf(stderr, "[SIM] Connection with ProjectAirSim successfully established.\n");
+            } else {
+                fprintf(stderr, "[SIM] Connection with ProjectAirSim NOT established.\n");
+            }
+            break;
         default:
           fprintf(stderr, "[SIM] No interface specified. Configurator only.\n");
           break;
@@ -200,7 +208,7 @@ void printCmdLineOptions(void)
     printVersion();
     fprintf(stderr, "Avaiable options:\n");
     fprintf(stderr, "--path=[path]                  Path and filename of eeprom.bin. If not specified 'eeprom.bin' in program directory is used.\n");
-    fprintf(stderr, "--sim=[rf|xp]                  Simulator interface: rf = RealFligt, xp = XPlane. Example: --sim=rf\n");
+    fprintf(stderr, "--sim=[rf|xp|pas|as]           Simulator interface: rf = RealFligt, xp = XPlane, pas/as = ProjectAirSim. Example: --sim=pas\n");
     fprintf(stderr, "--simip=[ip]                   IP-Address oft the simulator host. If not specified localhost (127.0.0.1) is used.\n");
     fprintf(stderr, "--simport=[port]               Port oft the simulator host.\n");
     fprintf(stderr, "--useimu                       Use IMU sensor data from the simulator instead of using attitude data from the simulator directly (experimental, not recommended).\n");
@@ -255,6 +263,8 @@ void parseArguments(int argc, char *argv[])
                     sitlSim = SITL_SIM_REALFLIGHT;
                 } else if (strcmp(optarg, "xp") == 0){
                     sitlSim = SITL_SIM_XPLANE;
+                } else if ((strcmp(optarg, "pas") == 0) || (strcmp(optarg, "as") == 0)) {
+                    sitlSim = SITL_SIM_PROJECTAIRSIM;
                 } else {
                     fprintf(stderr, "[SIM] Unsupported simulator %s.\n", optarg);
                 }
