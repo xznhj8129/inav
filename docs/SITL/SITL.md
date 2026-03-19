@@ -12,6 +12,7 @@ The sensors are replaced by data provided by a simulator.
 Currently supported are
 - RealFlight  https://www.realflight.com/
 - X-Plane https://www.x-plane.com/
+- [ProjectAirSim](Airsim.md)
 - fl2sim [replay Blackbox Log via SITL](https://github.com/stronnag/bbl2kml/wiki/fl2sitl), uses the X-Plane protocol.
 
 INAV SITL communicates for sensor data and control directly with the corresponding simulator, see the documentation of the individual simulators and the Configurator or the command line options.
@@ -149,7 +150,7 @@ If SITL is started without command line options, only a serial MSP / CLI connect
 
 ```--path``` Path and file name to config file. If not present, eeprom.bin in the current directory is used. Example: ```C:\INAV_SITL\flying-wing.bin```, ```/home/user/sitl-eeproms/test-eeprom.bin```.
 
-```--sim=[sim]``` Select the simulator. xp = X-Plane, rf = RealFlight. Example: ```--sim=xp```. If not specified, configurator-only mode is started. Omit for usage with INAV-X-Plane-HITL plugin.
+```--sim=[sim]``` Select the simulator. xp = X-Plane, rf = RealFlight, pas/as = ProjectAirSim. Example: ```--sim=pas```. If not specified, configurator-only mode is started. Omit for usage with INAV-X-Plane-HITL plugin.
 
 ```--simip=[ip]``` Hostname or IP address of the simulator, if you specify a simulator with "--sim" and omit this option IPv4 localhost (`127.0.0.1`) will be used. Example: ```--simip=172.65.21.15```, ```--simip acme-sims.org```, ```--sim ::1```.
 

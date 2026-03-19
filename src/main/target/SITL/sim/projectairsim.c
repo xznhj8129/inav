@@ -77,8 +77,7 @@
 #define PAS_ACTUATOR_RR "Prop_RR_actuator"
 
 #define PAS_FRAME_HALF_HEIGHT_M 0.02f
-#define PAS_GROUND_PROBE_OFFSET_M 5.0f
-#define PAS_GROUND_PROBE_START_Z_M -1000.0f
+#define PAS_GROUND_PROBE_START_Z_M 0.05f
 #define PAS_DEFAULT_TEMP_C 21
 #define PAS_DEFAULT_VBAT_CENTIVOLTS 1680
 
@@ -134,12 +133,18 @@ typedef struct {
 } pasMagnetometerData_t;
 
 typedef struct {
+    pasVector3_t position;
+    pasQuaternion_t orientation;
+} pasPoseData_t;
+
+typedef struct {
     nng_socket socket;
     pthread_t workerThread;
     bool running;
     bool initialized;
     bool useImu;
     bool havePrevAttitude;
+    bool prevArmed;
     char serviceUrl[64];
     char sceneId[64];
     char worldPath[PAS_METHOD_PATH_LEN];
@@ -952,33 +957,18 @@ static bool pasGetGroundZ(nng_socket socket, const char *worldPath, float x, flo
         .y = -0.70710678f,
         .z = 0.0f,
     };
-    const float probeOffsets[4][2] = {
-        { PAS_GROUND_PROBE_OFFSET_M, 0.0f },
-        { -PAS_GROUND_PROBE_OFFSET_M, 0.0f },
-        { 0.0f, PAS_GROUND_PROBE_OFFSET_M },
-        { 0.0f, -PAS_GROUND_PROBE_OFFSET_M },
-    };
-    float hitZSum = 0.0f;
-    const size_t probeCount = sizeof(probeOffsets) / sizeof(probeOffsets[0]);
+    pasVector3_t hitPoint;
 
-    for (size_t i = 0; i < probeCount; i++) {
-        pasVector3_t hitPoint;
-        const float probeX = x + probeOffsets[i][0];
-        const float probeY = y + probeOffsets[i][1];
-
-        if (!pasHitTest(socket, worldPath, probeX, probeY, PAS_GROUND_PROBE_START_Z_M, &downwardTraceOrientation, &hitPoint)) {
-            return false;
-        }
-
-        if (!isfinite(hitPoint.z)) {
-            fprintf(stderr, "[PAS] world_path=%s probe_x=%.3f probe_y=%.3f hit_z=%.3f\n", worldPath, probeX, probeY, hitPoint.z);
-            return false;
-        }
-
-        hitZSum += hitPoint.z;
+    if (!pasHitTest(socket, worldPath, x, y, PAS_GROUND_PROBE_START_Z_M, &downwardTraceOrientation, &hitPoint)) {
+        return false;
     }
 
-    *groundZ = hitZSum / probeCount;
+    if (!isfinite(hitPoint.z)) {
+        fprintf(stderr, "[PAS] world_path=%s probe_x=%.3f probe_y=%.3f hit_z=%.3f\n", worldPath, x, y, hitPoint.z);
+        return false;
+    }
+
+    *groundZ = hitPoint.z;
     return true;
 }
 
@@ -1234,6 +1224,63 @@ static bool pasFetchMagnetometerData(nng_socket socket, const char *magnetometer
     return true;
 }
 
+static bool pasFetchGroundTruthPose(nng_socket socket, const char *robotPath, pasPoseData_t *poseData)
+{
+    char method[PAS_METHOD_PATH_LEN];
+    snprintf(method, sizeof(method), "%s/GetGroundTruthPose", robotPath);
+
+    msgpack_sbuffer paramsBuffer;
+    msgpack_sbuffer_init(&paramsBuffer);
+
+    if (!pasPackEmptyParams(&paramsBuffer)) {
+        fprintf(stderr, "[PAS] method=%s params_pack_failed=1\n", method);
+        msgpack_sbuffer_destroy(&paramsBuffer);
+        return false;
+    }
+
+    char *responseBuffer = NULL;
+    size_t responseLength = 0;
+    const bool requestOk = pasSendRequest(socket, method, &paramsBuffer, &responseBuffer, &responseLength);
+    msgpack_sbuffer_destroy(&paramsBuffer);
+    if (!requestOk) {
+        return false;
+    }
+
+    pasParsedResponse_t parsedResponse;
+    const bool parseOk = pasParseResponse(method, responseBuffer, responseLength, &parsedResponse);
+    if (!parseOk) {
+        nng_free(responseBuffer, responseLength);
+        return false;
+    }
+
+    if (parsedResponse.isError) {
+        pasPrintObject(method, "error_data", &parsedResponse.decoded.data);
+        pasDestroyParsedResponse(&parsedResponse);
+        nng_free(responseBuffer, responseLength);
+        return false;
+    }
+
+    const msgpack_object *positionObject = pasFindMapValue(&parsedResponse.decoded.data, "translation");
+    const msgpack_object *orientationObject = pasFindMapValue(&parsedResponse.decoded.data, "rotation");
+
+    const bool ok =
+        (positionObject != NULL) &&
+        (orientationObject != NULL) &&
+        pasObjectToVector3(positionObject, &poseData->position) &&
+        pasObjectToQuaternion(orientationObject, &poseData->orientation);
+
+    if (!ok) {
+        pasPrintObject(method, "pose_data", &parsedResponse.decoded.data);
+        pasDestroyParsedResponse(&parsedResponse);
+        nng_free(responseBuffer, responseLength);
+        return false;
+    }
+
+    pasDestroyParsedResponse(&parsedResponse);
+    nng_free(responseBuffer, responseLength);
+    return true;
+}
+
 static int16_t pasWrap3600(int16_t angle)
 {
     while (angle < 0) {
@@ -1321,38 +1368,23 @@ static void pasApplyImuData(pasContext_t *ctx, const pasImuData_t *imuData)
         pasApplyAttitudeDerivedAccelAndMag(roll, pitch, yaw);
     }
 
-    if (ctx->havePrevAttitude && (imuData->timeStamp > ctx->prevTimeStampNs)) {
-        const float dt = (float)(imuData->timeStamp - ctx->prevTimeStampNs) * 1.0e-9f;
-        const int16_t dRoll = pasWrapSigned1800(roll - ctx->prevRoll);
-        const int16_t dPitch = pasWrapSigned1800(pitch - ctx->prevPitch);
-        const int16_t dYaw = pasWrapSigned1800(yaw - ctx->prevYaw);
-
-        fakeGyroSet(
-            constrainToInt16((dRoll * 1.6f) / dt),
-            constrainToInt16((dPitch * 1.6f) / dt),
-            constrainToInt16((dYaw * 1.6f) / dt)
-        );
-    } else {
-        fakeGyroSet(0, 0, 0);
-    }
-
     ctx->prevRoll = roll;
     ctx->prevPitch = pitch;
     ctx->prevYaw = yaw;
     ctx->prevTimeStampNs = imuData->timeStamp;
     ctx->havePrevAttitude = true;
 
+    fakeGyroSet(
+        constrainToInt16(RADIANS_TO_DEGREES(imuData->angularVelocity.x) * 16.0f),
+        constrainToInt16(-RADIANS_TO_DEGREES(imuData->angularVelocity.y) * 16.0f),
+        constrainToInt16(-RADIANS_TO_DEGREES(imuData->angularVelocity.z) * 16.0f)
+    );
+
     if (ctx->useImu) {
         fakeAccSet(
             constrainToInt16(imuData->linearAcceleration.x * 1000.0f),
             constrainToInt16(imuData->linearAcceleration.y * 1000.0f),
             constrainToInt16(imuData->linearAcceleration.z * 1000.0f)
-        );
-
-        fakeGyroSet(
-            constrainToInt16(RADIANS_TO_DEGREES(imuData->angularVelocity.x) * 16.0f),
-            constrainToInt16(RADIANS_TO_DEGREES(imuData->angularVelocity.y) * 16.0f),
-            constrainToInt16(RADIANS_TO_DEGREES(imuData->angularVelocity.z) * 16.0f)
         );
     }
 }
@@ -1417,6 +1449,46 @@ static void pasSetZeroOutputs(pasContext_t *ctx)
     pasSetControlSignals(ctx->socket, ctx->robotPath, zeroOutputs);
 }
 
+static void pasMaybeResetOrientationOnDisarm(pasContext_t *ctx, const pasPoseData_t *poseData, const pasImuData_t *imuData)
+{
+    const bool armed = ARMING_FLAG(ARMED);
+    if (armed || !ctx->prevArmed) {
+        ctx->prevArmed = armed;
+        return;
+    }
+
+    int16_t roll = 0;
+    int16_t pitch = 0;
+    int16_t yaw = 0;
+    pasQuaternionToInavAttitude(&imuData->orientation, &roll, &pitch, &yaw);
+
+    const pasQuaternion_t levelOrientation = {
+        .w = 1.0f,
+        .x = 0.0f,
+        .y = 0.0f,
+        .z = 0.0f,
+    };
+
+    pasSetZeroOutputs(ctx);
+    if (!pasSetPose(ctx->socket, ctx->robotPath, poseData->position.x, poseData->position.y, poseData->position.z, &levelOrientation)) {
+        ctx->prevArmed = armed;
+        return;
+    }
+
+    ctx->havePrevAttitude = false;
+    fprintf(stderr,
+        "[PAS] auto_reset_orientation_on_disarm=1 x=%.3f y=%.3f z=%.3f roll=%.1f pitch=%.1f yaw=%.1f\n",
+        poseData->position.x,
+        poseData->position.y,
+        poseData->position.z,
+        roll / 10.0f,
+        pitch / 10.0f,
+        yaw / 10.0f
+    );
+
+    ctx->prevArmed = armed;
+}
+
 static void pasCollectMotorOutputs(float motorOutputs[PAS_CONTROL_OUTPUT_COUNT])
 {
     for (int i = 0; i < PAS_CONTROL_OUTPUT_COUNT; i++) {
@@ -1447,6 +1519,7 @@ static void *pasWorker(void *arg)
         pasGpsData_t gpsData;
         pasBarometerData_t barometerData;
         pasMagnetometerData_t magnetometerData;
+        pasPoseData_t poseData;
 
         if (!pasFetchImuData(ctx->socket, ctx->imuPath, &imuData)) {
             delayMicroseconds(PAS_FAILURE_DELAY_US);
@@ -1468,11 +1541,17 @@ static void *pasWorker(void *arg)
             continue;
         }
 
+        if (!pasFetchGroundTruthPose(ctx->socket, ctx->robotPath, &poseData)) {
+            delayMicroseconds(PAS_FAILURE_DELAY_US);
+            continue;
+        }
+
         pasApplyImuData(ctx, &imuData);
         pasApplyGpsData(&gpsData);
         pasApplyBarometerData(&barometerData);
         pasApplyMagnetometerData(&magnetometerData);
         fakeBattSensorSetVbat(PAS_DEFAULT_VBAT_CENTIVOLTS);
+        pasMaybeResetOrientationOnDisarm(ctx, &poseData, &imuData);
 
         if (!ctx->initialized) {
             ENABLE_ARMING_FLAG(SIMULATOR_MODE_SITL);
