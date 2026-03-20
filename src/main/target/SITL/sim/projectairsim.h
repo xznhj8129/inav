@@ -24,4 +24,4 @@
 
 #include <stdbool.h>
 
-bool simProjectAirSimInit(char *ip, int port, bool imu);
+bool simProjectAirSimInit(char *ip, int port, bool imu, bool fastMode);

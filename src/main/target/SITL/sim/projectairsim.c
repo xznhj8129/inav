@@ -33,6 +33,7 @@
 
 #include <msgpack.h>
 #include <nng/nng.h>
+#include <nng/protocol/pair0/pair.h>
 #include <nng/protocol/reqrep0/req.h>
 
 #include "platform.h"
@@ -55,15 +56,19 @@
 #include "sensors/battery_sensor_fake.h"
 
 #define PAS_DEFAULT_SERVICE_PORT 8990
+#define PAS_DEFAULT_TOPIC_PORT 8989
 #define PAS_METHOD_PATH_LEN 256
 #define PAS_OBJECT_PRINT_BUFLEN 2048
 
 #define PAS_SEND_TIMEOUT_MS 1000
 #define PAS_RECV_TIMEOUT_MS 10000
 #define PAS_INIT_WAIT_MS 10000
+#define PAS_TOPIC_WAIT_MS 1000
 #define PAS_FAILURE_DELAY_US 10000
 #define PAS_CONTROL_OUTPUT_COUNT 4
 #define PAS_LOG_PERIOD 500
+#define PAS_TOPIC_FRAME_SUBSCRIBE 0
+#define PAS_TOPIC_FRAME_MESSAGE 2
 
 #define PAS_SCENE_ROBOT_NAME "InavQuad"
 #define PAS_SENSOR_IMU "IMU1"
@@ -80,6 +85,9 @@
 #define PAS_GROUND_PROBE_START_Z_M 0.05f
 #define PAS_DEFAULT_TEMP_C 21
 #define PAS_DEFAULT_VBAT_CENTIVOLTS 1680
+#define PAS_SCENE_STEP_NS_KEY "\"step-ns\": "
+#define PAS_SCENE_REALTIME_UPDATE_RATE_KEY "\"real-time-update-rate\": "
+#define PAS_FAST_STEP_NS_TEXT "8000000"
 
 typedef struct {
     msgpack_unpacked outer;
@@ -138,7 +146,19 @@ typedef struct {
 } pasPoseData_t;
 
 typedef struct {
+    int64_t timeStamp;
+    pasPoseData_t pose;
+} pasPoseStampedData_t;
+
+typedef struct {
+    int64_t timeStamp;
+    pasPoseData_t pose;
+    pasVector3_t linearAccelerationWorld;
+} pasKinematicsData_t;
+
+typedef struct {
     nng_socket socket;
+    nng_socket topicSocket;
     pthread_t workerThread;
     bool running;
     bool initialized;
@@ -146,6 +166,7 @@ typedef struct {
     bool havePrevAttitude;
     bool prevArmed;
     char serviceUrl[64];
+    char topicUrl[64];
     char sceneId[64];
     char worldPath[PAS_METHOD_PATH_LEN];
     char robotPath[PAS_METHOD_PATH_LEN];
@@ -153,12 +174,26 @@ typedef struct {
     char gpsPath[PAS_METHOD_PATH_LEN];
     char barometerPath[PAS_METHOD_PATH_LEN];
     char magnetometerPath[PAS_METHOD_PATH_LEN];
+    char actualPosePath[PAS_METHOD_PATH_LEN];
+    pasImuData_t imuData;
+    pasPoseStampedData_t actualPoseData;
     float groundZ;
     int16_t prevRoll;
     int16_t prevPitch;
     int16_t prevYaw;
     int64_t prevTimeStampNs;
     uint64_t loopCount;
+    fpVector3_t lastFakeAcc;
+    pasVector3_t lastImuLinearAcceleration;
+    pasVector3_t lastGtLinearAccelerationWorld;
+    pasGpsData_t gpsData;
+    pasBarometerData_t barometerData;
+    pasMagnetometerData_t magnetometerData;
+    bool haveImuData;
+    bool haveActualPoseData;
+    bool haveGpsData;
+    bool haveBarometerData;
+    bool haveMagnetometerData;
 } pasContext_t;
 
 static int pasRequestId = 0;
@@ -230,6 +265,25 @@ static bool pasReadSceneConfig(char **sceneConfig, size_t *sceneConfigLength)
     *sceneConfig = buffer;
     *sceneConfigLength = bytesRead;
     return true;
+}
+
+static bool pasOverwriteSceneNumericValue(char *sceneConfig, const char *key, const char *valueText)
+{
+    char *keyPos = strstr(sceneConfig, key);
+    if (keyPos == NULL) {
+        fprintf(stderr, "[PAS] scene_key_missing=%s\n", key);
+        return false;
+    }
+
+    char *valuePos = keyPos + strlen(key);
+    memcpy(valuePos, valueText, strlen(valueText));
+    return true;
+}
+
+static bool pasApplyFastSceneConfig(char *sceneConfig)
+{
+    return pasOverwriteSceneNumericValue(sceneConfig, PAS_SCENE_STEP_NS_KEY, PAS_FAST_STEP_NS_TEXT) &&
+           pasOverwriteSceneNumericValue(sceneConfig, PAS_SCENE_REALTIME_UPDATE_RATE_KEY, PAS_FAST_STEP_NS_TEXT);
 }
 
 static bool pasObjectKeyEquals(const msgpack_object *object, const char *key)
@@ -707,6 +761,61 @@ static bool pasPackControlSignalsParams(msgpack_sbuffer *paramsBuffer, const flo
     return true;
 }
 
+static bool pasPackTopicSubscribeFrame(msgpack_sbuffer *frameBuffer, const char *topicPath)
+{
+    msgpack_packer packer;
+    msgpack_packer_init(&packer, frameBuffer, msgpack_sbuffer_write);
+
+    if (msgpack_pack_array(&packer, 3) != 0) {
+        return false;
+    }
+
+    if ((msgpack_pack_int(&packer, PAS_TOPIC_FRAME_SUBSCRIBE) != 0) ||
+        !pasPackStringValue(&packer, topicPath) ||
+        !pasPackStringValue(&packer, "")) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool pasSubscribeTopic(nng_socket socket, const char *topicPath)
+{
+    msgpack_sbuffer frameBuffer;
+    msgpack_sbuffer_init(&frameBuffer);
+
+    if (!pasPackTopicSubscribeFrame(&frameBuffer, topicPath)) {
+        fprintf(stderr, "[PAS] topic_path=%s subscribe_pack_failed=1\n", topicPath);
+        msgpack_sbuffer_destroy(&frameBuffer);
+        return false;
+    }
+
+    const int sendResult = nng_send(socket, frameBuffer.data, frameBuffer.size, 0);
+    msgpack_sbuffer_destroy(&frameBuffer);
+
+    if (sendResult != 0) {
+        fprintf(stderr, "[PAS] topic_path=%s topic_send_error=%d topic_send_error_text=%s\n", topicPath, sendResult, nng_strerror(sendResult));
+        return false;
+    }
+
+    return true;
+}
+
+static bool pasSubscribeTopics(pasContext_t *ctx)
+{
+    if (!pasSubscribeTopic(ctx->topicSocket, ctx->imuPath) ||
+        !pasSubscribeTopic(ctx->topicSocket, ctx->gpsPath) ||
+        !pasSubscribeTopic(ctx->topicSocket, ctx->barometerPath)) {
+        return false;
+    }
+
+    if (ctx->useImu && !pasSubscribeTopic(ctx->topicSocket, ctx->magnetometerPath)) {
+        return false;
+    }
+
+    return true;
+}
+
 static bool pasLoadScene(nng_socket socket, const char *sceneConfig, char *sceneIdBuffer, size_t sceneIdBufferLength)
 {
     const char *method = "/Sim/LoadScene";
@@ -972,6 +1081,135 @@ static bool pasGetGroundZ(nng_socket socket, const char *worldPath, float x, flo
     return true;
 }
 
+static bool pasParseImuDataObject(const char *source, const msgpack_object *object, pasImuData_t *imuData)
+{
+    const msgpack_object *timeStampObject = pasFindMapValue(object, "time_stamp");
+    const msgpack_object *orientationObject = pasFindMapValue(object, "orientation");
+    const msgpack_object *angularVelocityObject = pasFindMapValue(object, "angular_velocity");
+    const msgpack_object *linearAccelerationObject = pasFindMapValue(object, "linear_acceleration");
+
+    const bool ok =
+        (timeStampObject != NULL) &&
+        (orientationObject != NULL) &&
+        (angularVelocityObject != NULL) &&
+        (linearAccelerationObject != NULL) &&
+        pasObjectToInt64(timeStampObject, &imuData->timeStamp) &&
+        pasObjectToQuaternion(orientationObject, &imuData->orientation) &&
+        pasObjectToVector3(angularVelocityObject, &imuData->angularVelocity) &&
+        pasObjectToVector3(linearAccelerationObject, &imuData->linearAcceleration);
+
+    if (!ok) {
+        pasPrintObject(source, "imu_data", object);
+    }
+
+    return ok;
+}
+
+static bool pasParsePoseStampedDataObject(const char *source, const msgpack_object *object, pasPoseStampedData_t *poseData)
+{
+    const msgpack_object *timeStampObject = pasFindMapValue(object, "time_stamp");
+    const msgpack_object *positionObject = pasFindMapValue(object, "position");
+    const msgpack_object *orientationObject = pasFindMapValue(object, "orientation");
+
+    const bool ok =
+        (timeStampObject != NULL) &&
+        (positionObject != NULL) &&
+        (orientationObject != NULL) &&
+        pasObjectToInt64(timeStampObject, &poseData->timeStamp) &&
+        pasObjectToVector3(positionObject, &poseData->pose.position) &&
+        pasObjectToQuaternion(orientationObject, &poseData->pose.orientation);
+
+    if (!ok) {
+        pasPrintObject(source, "pose_stamped_data", object);
+    }
+
+    return ok;
+}
+
+static bool pasParseGpsDataObject(const char *source, const msgpack_object *object, pasGpsData_t *gpsData)
+{
+    const msgpack_object *timeStampObject = pasFindMapValue(object, "time_stamp");
+    const msgpack_object *timeUtcMillisObject = pasFindMapValue(object, "time_utc_millis");
+    const msgpack_object *latitudeObject = pasFindMapValue(object, "latitude");
+    const msgpack_object *longitudeObject = pasFindMapValue(object, "longitude");
+    const msgpack_object *altitudeObject = pasFindMapValue(object, "altitude");
+    const msgpack_object *epvObject = pasFindMapValue(object, "epv");
+    const msgpack_object *ephObject = pasFindMapValue(object, "eph");
+    const msgpack_object *positionCovTypeObject = pasFindMapValue(object, "position_cov_type");
+    const msgpack_object *fixTypeObject = pasFindMapValue(object, "fix_type");
+    const msgpack_object *velocityObject = pasFindMapValue(object, "velocity");
+
+    const bool ok =
+        (timeStampObject != NULL) &&
+        (timeUtcMillisObject != NULL) &&
+        (latitudeObject != NULL) &&
+        (longitudeObject != NULL) &&
+        (altitudeObject != NULL) &&
+        (epvObject != NULL) &&
+        (ephObject != NULL) &&
+        (positionCovTypeObject != NULL) &&
+        (fixTypeObject != NULL) &&
+        (velocityObject != NULL) &&
+        pasObjectToInt64(timeStampObject, &gpsData->timeStamp) &&
+        pasObjectToInt64(timeUtcMillisObject, &gpsData->timeUtcMillis) &&
+        pasObjectToFloat(latitudeObject, &gpsData->latitude) &&
+        pasObjectToFloat(longitudeObject, &gpsData->longitude) &&
+        pasObjectToFloat(altitudeObject, &gpsData->altitude) &&
+        pasObjectToFloat(epvObject, &gpsData->epv) &&
+        pasObjectToFloat(ephObject, &gpsData->eph) &&
+        pasObjectToInt32(positionCovTypeObject, &gpsData->positionCovType) &&
+        pasObjectToInt32(fixTypeObject, &gpsData->fixType) &&
+        pasObjectToVector3(velocityObject, &gpsData->velocity);
+
+    if (!ok) {
+        pasPrintObject(source, "gps_data", object);
+    }
+
+    return ok;
+}
+
+static bool pasParseBarometerDataObject(const char *source, const msgpack_object *object, pasBarometerData_t *barometerData)
+{
+    const msgpack_object *timeStampObject = pasFindMapValue(object, "time_stamp");
+    const msgpack_object *altitudeObject = pasFindMapValue(object, "altitude");
+    const msgpack_object *pressureObject = pasFindMapValue(object, "pressure");
+    const msgpack_object *qnhObject = pasFindMapValue(object, "qnh");
+
+    const bool ok =
+        (timeStampObject != NULL) &&
+        (altitudeObject != NULL) &&
+        (pressureObject != NULL) &&
+        (qnhObject != NULL) &&
+        pasObjectToInt64(timeStampObject, &barometerData->timeStamp) &&
+        pasObjectToFloat(altitudeObject, &barometerData->altitude) &&
+        pasObjectToFloat(pressureObject, &barometerData->pressure) &&
+        pasObjectToFloat(qnhObject, &barometerData->qnh);
+
+    if (!ok) {
+        pasPrintObject(source, "barometer_data", object);
+    }
+
+    return ok;
+}
+
+static bool pasParseMagnetometerDataObject(const char *source, const msgpack_object *object, pasMagnetometerData_t *magnetometerData)
+{
+    const msgpack_object *timeStampObject = pasFindMapValue(object, "time_stamp");
+    const msgpack_object *fieldObject = pasFindMapValue(object, "magnetic_field_body");
+
+    const bool ok =
+        (timeStampObject != NULL) &&
+        (fieldObject != NULL) &&
+        pasObjectToInt64(timeStampObject, &magnetometerData->timeStamp) &&
+        pasObjectToVector3(fieldObject, &magnetometerData->magneticFieldBody);
+
+    if (!ok) {
+        pasPrintObject(source, "magnetometer_data", object);
+    }
+
+    return ok;
+}
+
 static bool pasFetchImuData(nng_socket socket, const char *imuPath, pasImuData_t *imuData)
 {
     msgpack_sbuffer paramsBuffer;
@@ -1005,23 +1243,8 @@ static bool pasFetchImuData(nng_socket socket, const char *imuPath, pasImuData_t
         return false;
     }
 
-    const msgpack_object *timeStampObject = pasFindMapValue(&parsedResponse.decoded.data, "time_stamp");
-    const msgpack_object *orientationObject = pasFindMapValue(&parsedResponse.decoded.data, "orientation");
-    const msgpack_object *angularVelocityObject = pasFindMapValue(&parsedResponse.decoded.data, "angular_velocity");
-    const msgpack_object *linearAccelerationObject = pasFindMapValue(&parsedResponse.decoded.data, "linear_acceleration");
-
-    const bool ok =
-        (timeStampObject != NULL) &&
-        (orientationObject != NULL) &&
-        (angularVelocityObject != NULL) &&
-        (linearAccelerationObject != NULL) &&
-        pasObjectToInt64(timeStampObject, &imuData->timeStamp) &&
-        pasObjectToQuaternion(orientationObject, &imuData->orientation) &&
-        pasObjectToVector3(angularVelocityObject, &imuData->angularVelocity) &&
-        pasObjectToVector3(linearAccelerationObject, &imuData->linearAcceleration);
-
+    const bool ok = pasParseImuDataObject(imuPath, &parsedResponse.decoded.data, imuData);
     if (!ok) {
-        pasPrintObject(imuPath, "imu_data", &parsedResponse.decoded.data);
         pasDestroyParsedResponse(&parsedResponse);
         nng_free(responseBuffer, responseLength);
         return false;
@@ -1065,41 +1288,8 @@ static bool pasFetchGpsData(nng_socket socket, const char *gpsPath, pasGpsData_t
         return false;
     }
 
-    const msgpack_object *timeStampObject = pasFindMapValue(&parsedResponse.decoded.data, "time_stamp");
-    const msgpack_object *timeUtcMillisObject = pasFindMapValue(&parsedResponse.decoded.data, "time_utc_millis");
-    const msgpack_object *latitudeObject = pasFindMapValue(&parsedResponse.decoded.data, "latitude");
-    const msgpack_object *longitudeObject = pasFindMapValue(&parsedResponse.decoded.data, "longitude");
-    const msgpack_object *altitudeObject = pasFindMapValue(&parsedResponse.decoded.data, "altitude");
-    const msgpack_object *epvObject = pasFindMapValue(&parsedResponse.decoded.data, "epv");
-    const msgpack_object *ephObject = pasFindMapValue(&parsedResponse.decoded.data, "eph");
-    const msgpack_object *positionCovTypeObject = pasFindMapValue(&parsedResponse.decoded.data, "position_cov_type");
-    const msgpack_object *fixTypeObject = pasFindMapValue(&parsedResponse.decoded.data, "fix_type");
-    const msgpack_object *velocityObject = pasFindMapValue(&parsedResponse.decoded.data, "velocity");
-
-    const bool ok =
-        (timeStampObject != NULL) &&
-        (timeUtcMillisObject != NULL) &&
-        (latitudeObject != NULL) &&
-        (longitudeObject != NULL) &&
-        (altitudeObject != NULL) &&
-        (epvObject != NULL) &&
-        (ephObject != NULL) &&
-        (positionCovTypeObject != NULL) &&
-        (fixTypeObject != NULL) &&
-        (velocityObject != NULL) &&
-        pasObjectToInt64(timeStampObject, &gpsData->timeStamp) &&
-        pasObjectToInt64(timeUtcMillisObject, &gpsData->timeUtcMillis) &&
-        pasObjectToFloat(latitudeObject, &gpsData->latitude) &&
-        pasObjectToFloat(longitudeObject, &gpsData->longitude) &&
-        pasObjectToFloat(altitudeObject, &gpsData->altitude) &&
-        pasObjectToFloat(epvObject, &gpsData->epv) &&
-        pasObjectToFloat(ephObject, &gpsData->eph) &&
-        pasObjectToInt32(positionCovTypeObject, &gpsData->positionCovType) &&
-        pasObjectToInt32(fixTypeObject, &gpsData->fixType) &&
-        pasObjectToVector3(velocityObject, &gpsData->velocity);
-
+    const bool ok = pasParseGpsDataObject(gpsPath, &parsedResponse.decoded.data, gpsData);
     if (!ok) {
-        pasPrintObject(gpsPath, "gps_data", &parsedResponse.decoded.data);
         pasDestroyParsedResponse(&parsedResponse);
         nng_free(responseBuffer, responseLength);
         return false;
@@ -1143,23 +1333,8 @@ static bool pasFetchBarometerData(nng_socket socket, const char *barometerPath, 
         return false;
     }
 
-    const msgpack_object *timeStampObject = pasFindMapValue(&parsedResponse.decoded.data, "time_stamp");
-    const msgpack_object *altitudeObject = pasFindMapValue(&parsedResponse.decoded.data, "altitude");
-    const msgpack_object *pressureObject = pasFindMapValue(&parsedResponse.decoded.data, "pressure");
-    const msgpack_object *qnhObject = pasFindMapValue(&parsedResponse.decoded.data, "qnh");
-
-    const bool ok =
-        (timeStampObject != NULL) &&
-        (altitudeObject != NULL) &&
-        (pressureObject != NULL) &&
-        (qnhObject != NULL) &&
-        pasObjectToInt64(timeStampObject, &barometerData->timeStamp) &&
-        pasObjectToFloat(altitudeObject, &barometerData->altitude) &&
-        pasObjectToFloat(pressureObject, &barometerData->pressure) &&
-        pasObjectToFloat(qnhObject, &barometerData->qnh);
-
+    const bool ok = pasParseBarometerDataObject(barometerPath, &parsedResponse.decoded.data, barometerData);
     if (!ok) {
-        pasPrintObject(barometerPath, "barometer_data", &parsedResponse.decoded.data);
         pasDestroyParsedResponse(&parsedResponse);
         nng_free(responseBuffer, responseLength);
         return false;
@@ -1203,17 +1378,8 @@ static bool pasFetchMagnetometerData(nng_socket socket, const char *magnetometer
         return false;
     }
 
-    const msgpack_object *timeStampObject = pasFindMapValue(&parsedResponse.decoded.data, "time_stamp");
-    const msgpack_object *fieldObject = pasFindMapValue(&parsedResponse.decoded.data, "magnetic_field_body");
-
-    const bool ok =
-        (timeStampObject != NULL) &&
-        (fieldObject != NULL) &&
-        pasObjectToInt64(timeStampObject, &magnetometerData->timeStamp) &&
-        pasObjectToVector3(fieldObject, &magnetometerData->magneticFieldBody);
-
+    const bool ok = pasParseMagnetometerDataObject(magnetometerPath, &parsedResponse.decoded.data, magnetometerData);
     if (!ok) {
-        pasPrintObject(magnetometerPath, "magnetometer_data", &parsedResponse.decoded.data);
         pasDestroyParsedResponse(&parsedResponse);
         nng_free(responseBuffer, responseLength);
         return false;
@@ -1224,10 +1390,10 @@ static bool pasFetchMagnetometerData(nng_socket socket, const char *magnetometer
     return true;
 }
 
-static bool pasFetchGroundTruthPose(nng_socket socket, const char *robotPath, pasPoseData_t *poseData)
+static bool pasFetchGroundTruthKinematics(nng_socket socket, const char *robotPath, pasKinematicsData_t *kinematicsData)
 {
     char method[PAS_METHOD_PATH_LEN];
-    snprintf(method, sizeof(method), "%s/GetGroundTruthPose", robotPath);
+    snprintf(method, sizeof(method), "%s/GetGroundTruthKinematics", robotPath);
 
     msgpack_sbuffer paramsBuffer;
     msgpack_sbuffer_init(&paramsBuffer);
@@ -1260,17 +1426,27 @@ static bool pasFetchGroundTruthPose(nng_socket socket, const char *robotPath, pa
         return false;
     }
 
-    const msgpack_object *positionObject = pasFindMapValue(&parsedResponse.decoded.data, "translation");
-    const msgpack_object *orientationObject = pasFindMapValue(&parsedResponse.decoded.data, "rotation");
+    const msgpack_object *timeStampObject = pasFindMapValue(&parsedResponse.decoded.data, "time_stamp");
+    const msgpack_object *poseObject = pasFindMapValue(&parsedResponse.decoded.data, "pose");
+    const msgpack_object *accelsObject = pasFindMapValue(&parsedResponse.decoded.data, "accels");
+    const msgpack_object *positionObject = poseObject ? pasFindMapValue(poseObject, "position") : NULL;
+    const msgpack_object *orientationObject = poseObject ? pasFindMapValue(poseObject, "orientation") : NULL;
+    const msgpack_object *linearAccelerationObject = accelsObject ? pasFindMapValue(accelsObject, "linear") : NULL;
 
     const bool ok =
+        (timeStampObject != NULL) &&
+        (poseObject != NULL) &&
+        (accelsObject != NULL) &&
         (positionObject != NULL) &&
         (orientationObject != NULL) &&
-        pasObjectToVector3(positionObject, &poseData->position) &&
-        pasObjectToQuaternion(orientationObject, &poseData->orientation);
+        (linearAccelerationObject != NULL) &&
+        pasObjectToInt64(timeStampObject, &kinematicsData->timeStamp) &&
+        pasObjectToVector3(positionObject, &kinematicsData->pose.position) &&
+        pasObjectToQuaternion(orientationObject, &kinematicsData->pose.orientation) &&
+        pasObjectToVector3(linearAccelerationObject, &kinematicsData->linearAccelerationWorld);
 
     if (!ok) {
-        pasPrintObject(method, "pose_data", &parsedResponse.decoded.data);
+        pasPrintObject(method, "kinematics_data", &parsedResponse.decoded.data);
         pasDestroyParsedResponse(&parsedResponse);
         nng_free(responseBuffer, responseLength);
         return false;
@@ -1279,6 +1455,146 @@ static bool pasFetchGroundTruthPose(nng_socket socket, const char *robotPath, pa
     pasDestroyParsedResponse(&parsedResponse);
     nng_free(responseBuffer, responseLength);
     return true;
+}
+
+static bool pasHandleTopicFrame(pasContext_t *ctx, const void *frameBuffer, size_t frameLength)
+{
+    msgpack_unpacked frame;
+    msgpack_unpacked_init(&frame);
+
+    size_t offset = 0;
+    const msgpack_unpack_return unpackResult = msgpack_unpack_next(&frame, frameBuffer, frameLength, &offset);
+    if ((unpackResult != MSGPACK_UNPACK_SUCCESS) && (unpackResult != MSGPACK_UNPACK_EXTRA_BYTES)) {
+        fprintf(stderr, "[PAS] topic_frame_unpack_result=%d topic_frame_bytes=%zu\n", unpackResult, frameLength);
+        msgpack_unpacked_destroy(&frame);
+        return false;
+    }
+
+    const msgpack_object *array = &frame.data;
+    if ((array->type != MSGPACK_OBJECT_ARRAY) || (array->via.array.size != 3)) {
+        fprintf(stderr, "[PAS] topic_frame_type=%d topic_frame_size=%u\n", array->type, array->type == MSGPACK_OBJECT_ARRAY ? array->via.array.size : 0);
+        msgpack_unpacked_destroy(&frame);
+        return false;
+    }
+
+    const msgpack_object *frameTypeObject = &array->via.array.ptr[0];
+    const msgpack_object *topicObject = &array->via.array.ptr[1];
+    const msgpack_object *payloadObject = &array->via.array.ptr[2];
+    int64_t frameType = -1;
+
+    if (!pasObjectToInt64(frameTypeObject, &frameType)) {
+        fprintf(stderr, "[PAS] topic_frame_type_decode_failed=1\n");
+        msgpack_unpacked_destroy(&frame);
+        return false;
+    }
+
+    if (frameType != PAS_TOPIC_FRAME_MESSAGE) {
+        msgpack_unpacked_destroy(&frame);
+        return true;
+    }
+
+    const char *topicPath = NULL;
+    size_t topicPathLength = 0;
+    if (topicObject->type == MSGPACK_OBJECT_STR) {
+        topicPath = topicObject->via.str.ptr;
+        topicPathLength = topicObject->via.str.size;
+    } else if (topicObject->type == MSGPACK_OBJECT_BIN) {
+        topicPath = topicObject->via.bin.ptr;
+        topicPathLength = topicObject->via.bin.size;
+    }
+
+    if (topicPath == NULL) {
+        fprintf(stderr, "[PAS] topic_path_type=%d topic_path_decode_failed=1\n", topicObject->type);
+        msgpack_unpacked_destroy(&frame);
+        return false;
+    }
+
+    msgpack_unpacked payload;
+    if (!pasDecodeNestedObject(payloadObject, &payload)) {
+        fprintf(stderr, "[PAS] topic_payload_type=%d topic_payload_decode_failed=1\n", payloadObject->type);
+        msgpack_unpacked_destroy(&frame);
+        return false;
+    }
+
+    bool ok = true;
+    if ((topicPathLength == strlen(ctx->imuPath)) && (memcmp(topicPath, ctx->imuPath, topicPathLength) == 0)) {
+        ok = pasParseImuDataObject(ctx->imuPath, &payload.data, &ctx->imuData);
+        ctx->haveImuData = ok;
+    } else if ((topicPathLength == strlen(ctx->actualPosePath)) && (memcmp(topicPath, ctx->actualPosePath, topicPathLength) == 0)) {
+        ok = pasParsePoseStampedDataObject(ctx->actualPosePath, &payload.data, &ctx->actualPoseData);
+        ctx->haveActualPoseData = ok;
+    } else if ((topicPathLength == strlen(ctx->gpsPath)) && (memcmp(topicPath, ctx->gpsPath, topicPathLength) == 0)) {
+        ok = pasParseGpsDataObject(ctx->gpsPath, &payload.data, &ctx->gpsData);
+        ctx->haveGpsData = ok;
+    } else if ((topicPathLength == strlen(ctx->barometerPath)) && (memcmp(topicPath, ctx->barometerPath, topicPathLength) == 0)) {
+        ok = pasParseBarometerDataObject(ctx->barometerPath, &payload.data, &ctx->barometerData);
+        ctx->haveBarometerData = ok;
+    } else if ((topicPathLength == strlen(ctx->magnetometerPath)) && (memcmp(topicPath, ctx->magnetometerPath, topicPathLength) == 0)) {
+        ok = pasParseMagnetometerDataObject(ctx->magnetometerPath, &payload.data, &ctx->magnetometerData);
+        ctx->haveMagnetometerData = ok;
+    }
+
+    msgpack_unpacked_destroy(&payload);
+    msgpack_unpacked_destroy(&frame);
+    return ok;
+}
+
+static bool pasDrainTopicSocket(pasContext_t *ctx)
+{
+    while (true) {
+        void *recvBuffer = NULL;
+        size_t recvLength = 0;
+        const int recvResult = nng_recv(ctx->topicSocket, &recvBuffer, &recvLength, NNG_FLAG_ALLOC | NNG_FLAG_NONBLOCK);
+
+        if (recvResult == NNG_EAGAIN) {
+            return true;
+        }
+
+        if (recvResult != 0) {
+            fprintf(stderr, "[PAS] topic_nng_recv_error=%d topic_nng_recv_error_text=%s\n", recvResult, nng_strerror(recvResult));
+            return false;
+        }
+
+        const bool ok = pasHandleTopicFrame(ctx, recvBuffer, recvLength);
+        nng_free(recvBuffer, recvLength);
+        if (!ok) {
+            return false;
+        }
+    }
+}
+
+static bool pasWaitForTopicData(pasContext_t *ctx, int64_t simTimeNs)
+{
+    const uint32_t waitStartMs = millis();
+
+    while (true) {
+        if (!pasDrainTopicSocket(ctx)) {
+            return false;
+        }
+
+        if (ctx->haveImuData &&
+            (ctx->imuData.timeStamp >= simTimeNs) &&
+            ctx->haveGpsData &&
+            ctx->haveBarometerData &&
+            (!ctx->useImu || ctx->haveMagnetometerData)) {
+            return true;
+        }
+
+        if ((millis() - waitStartMs) > PAS_TOPIC_WAIT_MS) {
+            fprintf(stderr,
+                "[PAS] topic_wait_timeout_ms=%d sim_time_ns=%" PRId64 " have_imu=%d imu_time_ns=%" PRId64 " have_gps=%d have_baro=%d have_mag=%d\n",
+                PAS_TOPIC_WAIT_MS,
+                simTimeNs,
+                ctx->haveImuData,
+                ctx->haveImuData ? ctx->imuData.timeStamp : -1,
+                ctx->haveGpsData,
+                ctx->haveBarometerData,
+                ctx->haveMagnetometerData);
+            return false;
+        }
+
+        delayMicroseconds(500);
+    }
 }
 
 static int16_t pasWrap3600(int16_t angle)
@@ -1292,19 +1608,6 @@ static int16_t pasWrap3600(int16_t angle)
     }
 
     return angle;
-}
-
-static int16_t pasWrapSigned1800(int16_t delta)
-{
-    while (delta > 1800) {
-        delta -= 3600;
-    }
-
-    while (delta < -1800) {
-        delta += 3600;
-    }
-
-    return delta;
 }
 
 static void pasQuaternionToInavAttitude(const pasQuaternion_t *quaternion, int16_t *roll, int16_t *pitch, int16_t *yaw)
@@ -1325,22 +1628,10 @@ static void pasQuaternionToInavAttitude(const pasQuaternion_t *quaternion, int16
     *yaw = pasWrap3600(constrainToInt16(RADIANS_TO_DECIDEGREES(-standardYaw)));
 }
 
-static void pasApplyAttitudeDerivedAccelAndMag(int16_t roll, int16_t pitch, int16_t yaw)
+static void pasApplyAttitudeDerivedMag(int16_t roll, int16_t pitch, int16_t yaw)
 {
     fpQuaternion_t quat;
     computeQuaternionFromRPY(&quat, roll, pitch, yaw);
-
-    fpVector3_t gravity;
-    gravity.x = 0.0f;
-    gravity.y = 0.0f;
-    gravity.z = GRAVITY_MSS;
-    transformVectorEarthToBody(&gravity, &quat);
-
-    fakeAccSet(
-        constrainToInt16(gravity.x * 1000.0f),
-        constrainToInt16(gravity.y * 1000.0f),
-        constrainToInt16(gravity.z * 1000.0f)
-    );
 
     fpVector3_t north;
     north.x = 1.0f;
@@ -1355,17 +1646,21 @@ static void pasApplyAttitudeDerivedAccelAndMag(int16_t roll, int16_t pitch, int1
     );
 }
 
-static void pasApplyImuData(pasContext_t *ctx, const pasImuData_t *imuData)
+static void pasApplyImuData(pasContext_t *ctx, const pasImuData_t *imuData, const pasPoseData_t *poseData)
 {
     int16_t roll = 0;
     int16_t pitch = 0;
     int16_t yaw = 0;
-    pasQuaternionToInavAttitude(&imuData->orientation, &roll, &pitch, &yaw);
+    const pasQuaternion_t *attitudeOrientation = &imuData->orientation;
+    if (!ctx->useImu) {
+        attitudeOrientation = &poseData->orientation;
+    }
+    pasQuaternionToInavAttitude(attitudeOrientation, &roll, &pitch, &yaw);
 
     if (!ctx->useImu) {
         imuSetAttitudeRPY(roll, pitch, yaw);
         imuUpdateAttitude(micros());
-        pasApplyAttitudeDerivedAccelAndMag(roll, pitch, yaw);
+        pasApplyAttitudeDerivedMag(roll, pitch, yaw);
     }
 
     ctx->prevRoll = roll;
@@ -1373,6 +1668,7 @@ static void pasApplyImuData(pasContext_t *ctx, const pasImuData_t *imuData)
     ctx->prevYaw = yaw;
     ctx->prevTimeStampNs = imuData->timeStamp;
     ctx->havePrevAttitude = true;
+    ctx->lastImuLinearAcceleration = imuData->linearAcceleration;
 
     fakeGyroSet(
         constrainToInt16(RADIANS_TO_DEGREES(imuData->angularVelocity.x) * 16.0f),
@@ -1380,13 +1676,15 @@ static void pasApplyImuData(pasContext_t *ctx, const pasImuData_t *imuData)
         constrainToInt16(-RADIANS_TO_DEGREES(imuData->angularVelocity.z) * 16.0f)
     );
 
-    if (ctx->useImu) {
-        fakeAccSet(
-            constrainToInt16(imuData->linearAcceleration.x * 1000.0f),
-            constrainToInt16(imuData->linearAcceleration.y * 1000.0f),
-            constrainToInt16(imuData->linearAcceleration.z * 1000.0f)
-        );
-    }
+    ctx->lastFakeAcc.x = -imuData->linearAcceleration.x * 1000.0f;
+    ctx->lastFakeAcc.y = -imuData->linearAcceleration.y * 1000.0f;
+    ctx->lastFakeAcc.z = -imuData->linearAcceleration.z * 1000.0f;
+
+    fakeAccSet(
+        constrainToInt16(ctx->lastFakeAcc.x),
+        constrainToInt16(ctx->lastFakeAcc.y),
+        constrainToInt16(ctx->lastFakeAcc.z)
+    );
 }
 
 static void pasApplyGpsData(const pasGpsData_t *gpsData)
@@ -1437,8 +1735,8 @@ static void pasApplyMagnetometerData(const pasMagnetometerData_t *magnetometerDa
     if (pasCtx.useImu) {
         fakeMagSet(
             constrainToInt16(magnetometerData->magneticFieldBody.x * 1024.0f),
-            constrainToInt16(magnetometerData->magneticFieldBody.y * 1024.0f),
-            constrainToInt16(magnetometerData->magneticFieldBody.z * 1024.0f)
+            constrainToInt16(-magnetometerData->magneticFieldBody.y * 1024.0f),
+            constrainToInt16(-magnetometerData->magneticFieldBody.z * 1024.0f)
         );
     }
 }
@@ -1449,7 +1747,7 @@ static void pasSetZeroOutputs(pasContext_t *ctx)
     pasSetControlSignals(ctx->socket, ctx->robotPath, zeroOutputs);
 }
 
-static void pasMaybeResetOrientationOnDisarm(pasContext_t *ctx, const pasPoseData_t *poseData, const pasImuData_t *imuData)
+static void pasMaybeResetOrientationOnDisarm(pasContext_t *ctx, const pasKinematicsData_t *kinematicsData, const pasImuData_t *imuData)
 {
     const bool armed = ARMING_FLAG(ARMED);
     if (armed || !ctx->prevArmed) {
@@ -1470,7 +1768,13 @@ static void pasMaybeResetOrientationOnDisarm(pasContext_t *ctx, const pasPoseDat
     };
 
     pasSetZeroOutputs(ctx);
-    if (!pasSetPose(ctx->socket, ctx->robotPath, poseData->position.x, poseData->position.y, poseData->position.z, &levelOrientation)) {
+    if (!pasSetPose(
+            ctx->socket,
+            ctx->robotPath,
+            kinematicsData->pose.position.x,
+            kinematicsData->pose.position.y,
+            kinematicsData->pose.position.z,
+            &levelOrientation)) {
         ctx->prevArmed = armed;
         return;
     }
@@ -1478,9 +1782,9 @@ static void pasMaybeResetOrientationOnDisarm(pasContext_t *ctx, const pasPoseDat
     ctx->havePrevAttitude = false;
     fprintf(stderr,
         "[PAS] auto_reset_orientation_on_disarm=1 x=%.3f y=%.3f z=%.3f roll=%.1f pitch=%.1f yaw=%.1f\n",
-        poseData->position.x,
-        poseData->position.y,
-        poseData->position.z,
+        kinematicsData->pose.position.x,
+        kinematicsData->pose.position.y,
+        kinematicsData->pose.position.z,
         roll / 10.0f,
         pitch / 10.0f,
         yaw / 10.0f
@@ -1515,43 +1819,27 @@ static void *pasWorker(void *arg)
             continue;
         }
 
-        pasImuData_t imuData;
-        pasGpsData_t gpsData;
-        pasBarometerData_t barometerData;
-        pasMagnetometerData_t magnetometerData;
-        pasPoseData_t poseData;
-
-        if (!pasFetchImuData(ctx->socket, ctx->imuPath, &imuData)) {
+        if (!pasWaitForTopicData(ctx, simTimeNs)) {
             delayMicroseconds(PAS_FAILURE_DELAY_US);
             continue;
         }
 
-        if (!pasFetchGpsData(ctx->socket, ctx->gpsPath, &gpsData)) {
+        pasKinematicsData_t kinematicsData;
+        if (!pasFetchGroundTruthKinematics(ctx->socket, ctx->robotPath, &kinematicsData)) {
             delayMicroseconds(PAS_FAILURE_DELAY_US);
             continue;
         }
 
-        if (!pasFetchBarometerData(ctx->socket, ctx->barometerPath, &barometerData)) {
-            delayMicroseconds(PAS_FAILURE_DELAY_US);
-            continue;
-        }
+        ctx->lastGtLinearAccelerationWorld = kinematicsData.linearAccelerationWorld;
 
-        if (!pasFetchMagnetometerData(ctx->socket, ctx->magnetometerPath, &magnetometerData)) {
-            delayMicroseconds(PAS_FAILURE_DELAY_US);
-            continue;
+        pasApplyImuData(ctx, &ctx->imuData, &kinematicsData.pose);
+        pasApplyGpsData(&ctx->gpsData);
+        pasApplyBarometerData(&ctx->barometerData);
+        if (ctx->useImu) {
+            pasApplyMagnetometerData(&ctx->magnetometerData);
         }
-
-        if (!pasFetchGroundTruthPose(ctx->socket, ctx->robotPath, &poseData)) {
-            delayMicroseconds(PAS_FAILURE_DELAY_US);
-            continue;
-        }
-
-        pasApplyImuData(ctx, &imuData);
-        pasApplyGpsData(&gpsData);
-        pasApplyBarometerData(&barometerData);
-        pasApplyMagnetometerData(&magnetometerData);
         fakeBattSensorSetVbat(PAS_DEFAULT_VBAT_CENTIVOLTS);
-        pasMaybeResetOrientationOnDisarm(ctx, &poseData, &imuData);
+        pasMaybeResetOrientationOnDisarm(ctx, &kinematicsData, &ctx->imuData);
 
         if (!ctx->initialized) {
             ENABLE_ARMING_FLAG(SIMULATOR_MODE_SITL);
@@ -1559,16 +1847,25 @@ static void *pasWorker(void *arg)
             ctx->initialized = true;
 
             fprintf(stderr,
-                "[PAS] sim_time_ns=%" PRId64 " roll=%.1f pitch=%.1f yaw=%.1f lat=%.7f lon=%.7f alt_m=%.2f pressure_pa=%.2f fix_type=%d motor_rr=%.3f motor_fr=%.3f motor_rl=%.3f motor_fl=%.3f\n",
+                "[PAS] sim_time_ns=%" PRId64 " imu_time_ns=%" PRId64 " gt_time_ns=%" PRId64 " pos_ned=%.2f,%.2f,%.2f roll=%.1f pitch=%.1f yaw=%.1f lat=%.7f lon=%.7f alt_m=%.2f gps_course_deg=%.1f pressure_pa=%.2f fix_type=%d mag_body=%.3f,%.3f,%.3f motor_rr=%.3f motor_fr=%.3f motor_rl=%.3f motor_fl=%.3f\n",
                 simTimeNs,
+                ctx->imuData.timeStamp,
+                kinematicsData.timeStamp,
+                kinematicsData.pose.position.x,
+                kinematicsData.pose.position.y,
+                kinematicsData.pose.position.z,
                 ctx->prevRoll / 10.0f,
                 ctx->prevPitch / 10.0f,
                 ctx->prevYaw / 10.0f,
-                gpsData.latitude,
-                gpsData.longitude,
-                gpsData.altitude,
-                barometerData.pressure,
-                gpsData.fixType,
+                ctx->gpsData.latitude,
+                ctx->gpsData.longitude,
+                ctx->gpsData.altitude,
+                atan2f(ctx->gpsData.velocity.y, ctx->gpsData.velocity.x) * (180.0f / M_PIf),
+                ctx->barometerData.pressure,
+                ctx->gpsData.fixType,
+                ctx->magnetometerData.magneticFieldBody.x,
+                ctx->magnetometerData.magneticFieldBody.y,
+                ctx->magnetometerData.magneticFieldBody.z,
                 motorOutputs[0],
                 motorOutputs[1],
                 motorOutputs[2],
@@ -1579,15 +1876,33 @@ static void *pasWorker(void *arg)
         ctx->loopCount++;
         if ((ctx->loopCount % PAS_LOG_PERIOD) == 0) {
             fprintf(stderr,
-                "[PAS] loop=%" PRIu64 " sim_time_ns=%" PRId64 " roll=%.1f pitch=%.1f yaw=%.1f alt_m=%.2f eph=%.2f epv=%.2f motor_rr=%.3f motor_fr=%.3f motor_rl=%.3f motor_fl=%.3f\n",
+                "[PAS] loop=%" PRIu64 " sim_time_ns=%" PRId64 " imu_time_ns=%" PRId64 " gt_time_ns=%" PRId64 " pos_ned=%.2f,%.2f,%.2f roll=%.1f pitch=%.1f yaw=%.1f alt_m=%.2f gps_course_deg=%.1f eph=%.2f epv=%.2f gt_acc_world=%.2f,%.2f,%.2f imu_acc=%.2f,%.2f,%.2f fake_acc=%.0f,%.0f,%.0f mag_body=%.3f,%.3f,%.3f motor_rr=%.3f motor_fr=%.3f motor_rl=%.3f motor_fl=%.3f\n",
                 ctx->loopCount,
                 simTimeNs,
+                ctx->imuData.timeStamp,
+                kinematicsData.timeStamp,
+                kinematicsData.pose.position.x,
+                kinematicsData.pose.position.y,
+                kinematicsData.pose.position.z,
                 ctx->prevRoll / 10.0f,
                 ctx->prevPitch / 10.0f,
                 ctx->prevYaw / 10.0f,
-                gpsData.altitude,
-                gpsData.eph,
-                gpsData.epv,
+                ctx->gpsData.altitude,
+                atan2f(ctx->gpsData.velocity.y, ctx->gpsData.velocity.x) * (180.0f / M_PIf),
+                ctx->gpsData.eph,
+                ctx->gpsData.epv,
+                ctx->lastGtLinearAccelerationWorld.x,
+                ctx->lastGtLinearAccelerationWorld.y,
+                ctx->lastGtLinearAccelerationWorld.z,
+                ctx->lastImuLinearAcceleration.x,
+                ctx->lastImuLinearAcceleration.y,
+                ctx->lastImuLinearAcceleration.z,
+                ctx->lastFakeAcc.x,
+                ctx->lastFakeAcc.y,
+                ctx->lastFakeAcc.z,
+                ctx->magnetometerData.magneticFieldBody.x,
+                ctx->magnetometerData.magneticFieldBody.y,
+                ctx->magnetometerData.magneticFieldBody.z,
                 motorOutputs[0],
                 motorOutputs[1],
                 motorOutputs[2],
@@ -1602,7 +1917,7 @@ static void *pasWorker(void *arg)
     return NULL;
 }
 
-bool simProjectAirSimInit(char *ip, int port, bool imu)
+bool simProjectAirSimInit(char *ip, int port, bool imu, bool fastMode)
 {
     memset(&pasCtx, 0, sizeof(pasCtx));
     pasCtx.useImu = imu;
@@ -1610,6 +1925,11 @@ bool simProjectAirSimInit(char *ip, int port, bool imu)
     char *sceneConfig = NULL;
     size_t sceneConfigLength = 0;
     if (!pasReadSceneConfig(&sceneConfig, &sceneConfigLength)) {
+        return false;
+    }
+
+    if (fastMode && !pasApplyFastSceneConfig(sceneConfig)) {
+        free(sceneConfig);
         return false;
     }
 
@@ -1632,7 +1952,9 @@ bool simProjectAirSimInit(char *ip, int port, bool imu)
     }
 
     const int servicePort = (port > 0) ? port : PAS_DEFAULT_SERVICE_PORT;
+    const int topicPort = (port > 0) ? (port - 1) : PAS_DEFAULT_TOPIC_PORT;
     snprintf(pasCtx.serviceUrl, sizeof(pasCtx.serviceUrl), "tcp://%s:%d", ip, servicePort);
+    snprintf(pasCtx.topicUrl, sizeof(pasCtx.topicUrl), "tcp://%s:%d", ip, topicPort);
 
     const int dialResult = nng_dial(pasCtx.socket, pasCtx.serviceUrl, NULL, 0);
     if (dialResult != 0) {
@@ -1653,11 +1975,42 @@ bool simProjectAirSimInit(char *ip, int port, bool imu)
     snprintf(pasCtx.worldPath, sizeof(pasCtx.worldPath), "/Sim/%s", pasCtx.sceneId);
     snprintf(pasCtx.robotPath, sizeof(pasCtx.robotPath), "%s/robots/%s", pasCtx.worldPath, PAS_SCENE_ROBOT_NAME);
     snprintf(pasCtx.imuPath, sizeof(pasCtx.imuPath), "%s/sensors/%s/imu_kinematics", pasCtx.robotPath, PAS_SENSOR_IMU);
+    snprintf(pasCtx.actualPosePath, sizeof(pasCtx.actualPosePath), "%s/actual_pose", pasCtx.robotPath);
     snprintf(pasCtx.gpsPath, sizeof(pasCtx.gpsPath), "%s/sensors/%s/gps", pasCtx.robotPath, PAS_SENSOR_GPS);
     snprintf(pasCtx.barometerPath, sizeof(pasCtx.barometerPath), "%s/sensors/%s/barometer", pasCtx.robotPath, PAS_SENSOR_BAROMETER);
     snprintf(pasCtx.magnetometerPath, sizeof(pasCtx.magnetometerPath), "%s/sensors/%s/magnetometer", pasCtx.robotPath, PAS_SENSOR_MAGNETOMETER);
 
+    socketResult = nng_pair0_open(&pasCtx.topicSocket);
+    if (socketResult != 0) {
+        fprintf(stderr, "[PAS] topic_pair0_open_error=%d topic_pair0_open_error_text=%s\n", socketResult, nng_strerror(socketResult));
+        nng_close(pasCtx.socket);
+        return false;
+    }
+
+    timeoutResult = nng_socket_set_ms(pasCtx.topicSocket, NNG_OPT_SENDTIMEO, PAS_SEND_TIMEOUT_MS);
+    if (timeoutResult != 0) {
+        fprintf(stderr, "[PAS] topic_socket_timeout_error=%d topic_socket_timeout_error_text=%s\n", timeoutResult, nng_strerror(timeoutResult));
+        nng_close(pasCtx.topicSocket);
+        nng_close(pasCtx.socket);
+        return false;
+    }
+
+    const int topicDialResult = nng_dial(pasCtx.topicSocket, pasCtx.topicUrl, NULL, 0);
+    if (topicDialResult != 0) {
+        fprintf(stderr, "[PAS] topic_url=%s topic_dial_error=%d topic_dial_error_text=%s\n", pasCtx.topicUrl, topicDialResult, nng_strerror(topicDialResult));
+        nng_close(pasCtx.topicSocket);
+        nng_close(pasCtx.socket);
+        return false;
+    }
+
+    if (!pasSubscribeTopics(&pasCtx)) {
+        nng_close(pasCtx.topicSocket);
+        nng_close(pasCtx.socket);
+        return false;
+    }
+
     if (!pasGetGroundZ(pasCtx.socket, pasCtx.worldPath, 0.0f, 0.0f, &pasCtx.groundZ)) {
+        nng_close(pasCtx.topicSocket);
         nng_close(pasCtx.socket);
         return false;
     }
@@ -1671,6 +2024,7 @@ bool simProjectAirSimInit(char *ip, int port, bool imu)
 
     const float snappedZ = pasCtx.groundZ - PAS_FRAME_HALF_HEIGHT_M;
     if (!pasSetPose(pasCtx.socket, pasCtx.robotPath, 0.0f, 0.0f, snappedZ, &levelOrientation)) {
+        nng_close(pasCtx.topicSocket);
         nng_close(pasCtx.socket);
         return false;
     }
@@ -1679,18 +2033,39 @@ bool simProjectAirSimInit(char *ip, int port, bool imu)
 
     int64_t simTimeNs = 0;
     if (!pasContinueForNSteps(pasCtx.socket, pasCtx.worldPath, 1, &simTimeNs)) {
+        nng_close(pasCtx.topicSocket);
         nng_close(pasCtx.socket);
         return false;
     }
 
-    fprintf(stderr, "[PAS] service_url=%s scene_id=%s world_path=%s ground_z=%.3f snap_z=%.3f sim_time_ns=%" PRId64 "\n",
-        pasCtx.serviceUrl, pasCtx.sceneId, pasCtx.worldPath, pasCtx.groundZ, snappedZ, simTimeNs);
+    pasKinematicsData_t initKinematicsData;
+    if (!pasFetchImuData(pasCtx.socket, pasCtx.imuPath, &pasCtx.imuData) ||
+        !pasFetchGroundTruthKinematics(pasCtx.socket, pasCtx.robotPath, &initKinematicsData) ||
+        !pasFetchGpsData(pasCtx.socket, pasCtx.gpsPath, &pasCtx.gpsData) ||
+        !pasFetchBarometerData(pasCtx.socket, pasCtx.barometerPath, &pasCtx.barometerData) ||
+        (pasCtx.useImu && !pasFetchMagnetometerData(pasCtx.socket, pasCtx.magnetometerPath, &pasCtx.magnetometerData))) {
+        nng_close(pasCtx.topicSocket);
+        nng_close(pasCtx.socket);
+        return false;
+    }
+    pasCtx.haveImuData = true;
+    pasCtx.actualPoseData.timeStamp = initKinematicsData.timeStamp;
+    pasCtx.actualPoseData.pose = initKinematicsData.pose;
+    pasCtx.lastGtLinearAccelerationWorld = initKinematicsData.linearAccelerationWorld;
+    pasCtx.haveActualPoseData = true;
+    pasCtx.haveGpsData = true;
+    pasCtx.haveBarometerData = true;
+    pasCtx.haveMagnetometerData = pasCtx.useImu;
+
+    fprintf(stderr, "[PAS] service_url=%s topic_url=%s scene_id=%s world_path=%s fast_mode=%d step_ns=%s ground_z=%.3f snap_z=%.3f sim_time_ns=%" PRId64 "\n",
+        pasCtx.serviceUrl, pasCtx.topicUrl, pasCtx.sceneId, pasCtx.worldPath, fastMode, fastMode ? PAS_FAST_STEP_NS_TEXT : "3000000", pasCtx.groundZ, snappedZ, simTimeNs);
 
     pasCtx.running = true;
     const int threadResult = pthread_create(&pasCtx.workerThread, NULL, pasWorker, &pasCtx);
     if (threadResult != 0) {
         fprintf(stderr, "[PAS] pthread_create_error=%d\n", threadResult);
         pasCtx.running = false;
+        nng_close(pasCtx.topicSocket);
         nng_close(pasCtx.socket);
         return false;
     }
@@ -1700,6 +2075,7 @@ bool simProjectAirSimInit(char *ip, int port, bool imu)
         if ((millis() - waitStartMs) > PAS_INIT_WAIT_MS) {
             fprintf(stderr, "[PAS] init_timeout_ms=%d service_url=%s scene_id=%s\n", PAS_INIT_WAIT_MS, pasCtx.serviceUrl, pasCtx.sceneId);
             pasCtx.running = false;
+            nng_close(pasCtx.topicSocket);
             nng_close(pasCtx.socket);
             return false;
         }

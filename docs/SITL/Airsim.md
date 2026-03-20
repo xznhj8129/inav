@@ -9,6 +9,7 @@ It uses a **prebuilt** ProjectAirSim environment and does **not** require buildi
 
 The current backend supports quadcopter SITL bring-up with:
 - native `--sim=pas` backend inside INAV SITL
+- optional `--sim=pasfast` backend mode for accelerated unattended headless runs
 - scene loading owned by INAV
 - normal Configurator connection
 
@@ -81,6 +82,12 @@ Start INAV SITL with the ProjectAirSim backend:
 build_SITL/bin/SITL.elf --sim=pas --path <your-eeprom.bin>
 ```
 
+For accelerated unattended headless testing, you can use:
+
+```bash
+build_SITL/bin/SITL.elf --sim=pasfast --path <your-eeprom.bin>
+```
+
 The `--path` file is your SITL EEPROM/config state.
 How you create it, persist it, or preconfigure it is part of your own workflow.
 
@@ -119,5 +126,6 @@ As with other SITL workflows, the simulated vehicle will only behave correctly i
 ## Notes
 
 - The ProjectAirSim environment starts empty. INAV loads the scene at runtime.
+- The backend ships and loads its own ProjectAirSim quad scene/config baseline; if you make local scene edits and flight quality becomes suspect, compare against the shipped baseline first.
 - ProjectAirSim launch method, scene choice, EEPROM management, and auxiliary tooling are user-specific.
 - Wrapper scripts can be useful, but they are not required by the backend itself.

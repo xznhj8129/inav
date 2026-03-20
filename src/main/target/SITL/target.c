@@ -76,6 +76,7 @@ static struct timespec start_time;
 static uint8_t pwmMapping[MAX_MOTORS + MAX_SERVOS];
 static uint8_t mappingCount = 0;
 static bool useImu = false;
+static bool projectAirSimFastMode = false;
 static char *simIp = NULL;
 static int simPort = 0;
 
@@ -147,7 +148,7 @@ void systemInit(void) {
             }
             break;
         case SITL_SIM_PROJECTAIRSIM:
-            if (simProjectAirSimInit(simIp, simPort, useImu)) {
+            if (simProjectAirSimInit(simIp, simPort, useImu, projectAirSimFastMode)) {
                 fprintf(stderr, "[SIM] Connection with ProjectAirSim successfully established.\n");
             } else {
                 fprintf(stderr, "[SIM] Connection with ProjectAirSim NOT established.\n");
@@ -223,7 +224,7 @@ void printCmdLineOptions(void)
     printVersion();
     fprintf(stderr, "Avaiable options:\n");
     fprintf(stderr, "--path=[path]                  Path and filename of eeprom.bin. If not specified 'eeprom.bin' in program directory is used.\n");
-    fprintf(stderr, "--sim=[rf|xp|pas|as]           Simulator interface: rf = RealFligt, xp = XPlane, pas/as = ProjectAirSim. Example: --sim=pas\n");
+    fprintf(stderr, "--sim=[rf|xp|pas|as|pasfast|asfast] Simulator interface: rf = RealFligt, xp = XPlane, pas/as = ProjectAirSim, pasfast/asfast = ProjectAirSim fast-step dev mode. Example: --sim=pas\n");
     fprintf(stderr, "--simip=[ip]                   IP-Address oft the simulator host. If not specified localhost (127.0.0.1) is used.\n");
     fprintf(stderr, "--simport=[port]               Port oft the simulator host.\n");
     fprintf(stderr, "--useimu                       Use IMU sensor data from the simulator instead of using attitude data from the simulator directly (experimental, not recommended).\n");
@@ -280,6 +281,10 @@ void parseArguments(int argc, char *argv[])
                     sitlSim = SITL_SIM_XPLANE;
                 } else if ((strcmp(optarg, "pas") == 0) || (strcmp(optarg, "as") == 0)) {
                     sitlSim = SITL_SIM_PROJECTAIRSIM;
+                    projectAirSimFastMode = false;
+                } else if ((strcmp(optarg, "pasfast") == 0) || (strcmp(optarg, "asfast") == 0)) {
+                    sitlSim = SITL_SIM_PROJECTAIRSIM;
+                    projectAirSimFastMode = true;
                 } else {
                     fprintf(stderr, "[SIM] Unsupported simulator %s.\n", optarg);
                 }
