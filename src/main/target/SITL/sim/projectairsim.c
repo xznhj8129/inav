@@ -1398,24 +1398,6 @@ static void pasQuaternionToInavAttitude(const pasQuaternion_t *quaternion, int16
     *yaw = pasWrap3600(constrainToInt16(RADIANS_TO_DECIDEGREES(standardYaw)));
 }
 
-static void pasApplyAttitudeDerivedMag(int16_t roll, int16_t pitch, int16_t yaw)
-{
-    fpQuaternion_t quat;
-    computeQuaternionFromRPY(&quat, roll, pitch, yaw);
-
-    fpVector3_t north;
-    north.x = 1.0f;
-    north.y = 0.0f;
-    north.z = 0.0f;
-    transformVectorEarthToBody(&north, &quat);
-
-    fakeMagSet(
-        constrainToInt16(north.x * 1024.0f),
-        constrainToInt16(north.y * 1024.0f),
-        constrainToInt16(north.z * 1024.0f)
-    );
-}
-
 static void pasApplyImuData(pasContext_t *ctx, const pasImuData_t *imuData, const pasPoseData_t *poseData)
 {
     int16_t roll = 0;
@@ -1430,7 +1412,6 @@ static void pasApplyImuData(pasContext_t *ctx, const pasImuData_t *imuData, cons
     if (!ctx->useImu) {
         imuSetAttitudeRPY(roll, pitch, yaw);
         imuUpdateAttitude((timeUs_t)(imuData->timeStamp / 1000));
-        pasApplyAttitudeDerivedMag(roll, pitch, yaw);
     }
 
     ctx->prevRoll = roll;
@@ -1502,13 +1483,11 @@ static void pasApplyBarometerData(const pasBarometerData_t *barometerData)
 
 static void pasApplyMagnetometerData(const pasMagnetometerData_t *magnetometerData)
 {
-    if (pasCtx.useImu) {
-        fakeMagSet(
-            constrainToInt16(magnetometerData->magneticFieldBody.x * 1024.0f),
-            constrainToInt16(-magnetometerData->magneticFieldBody.y * 1024.0f),
-            constrainToInt16(-magnetometerData->magneticFieldBody.z * 1024.0f)
-        );
-    }
+    fakeMagSet(
+        constrainToInt16(magnetometerData->magneticFieldBody.x * 1024.0f),
+        constrainToInt16(-magnetometerData->magneticFieldBody.y * 1024.0f),
+        constrainToInt16(-magnetometerData->magneticFieldBody.z * 1024.0f)
+    );
 }
 
 static void pasSetZeroOutputs(pasContext_t *ctx)
@@ -1598,7 +1577,7 @@ static void *pasWorker(void *arg)
             !pasFetchImuData(ctx->socket, ctx->imuPath, &imuData) ||
             !pasFetchGpsData(ctx->socket, ctx->gpsPath, &gpsData) ||
             !pasFetchBarometerData(ctx->socket, ctx->barometerPath, &barometerData) ||
-            (ctx->useImu && !pasFetchMagnetometerData(ctx->socket, ctx->magnetometerPath, &magnetometerData))) {
+            !pasFetchMagnetometerData(ctx->socket, ctx->magnetometerPath, &magnetometerData)) {
             delayMicroseconds(PAS_FAILURE_DELAY_US);
             continue;
         }
@@ -1606,19 +1585,14 @@ static void *pasWorker(void *arg)
         ctx->imuData = imuData;
         ctx->gpsData = gpsData;
         ctx->barometerData = barometerData;
-        if (ctx->useImu) {
-            ctx->magnetometerData = magnetometerData;
-        }
+        ctx->magnetometerData = magnetometerData;
         ctx->lastGtLinearAccelerationWorld = kinematicsData.linearAccelerationWorld;
 
         pasApplyImuData(ctx, &imuData, &kinematicsData.pose);
 
         pasApplyGpsData(&gpsData);
         pasApplyBarometerData(&barometerData);
-
-        if (ctx->useImu) {
-            pasApplyMagnetometerData(&magnetometerData);
-        }
+        pasApplyMagnetometerData(&magnetometerData);
         fakeBattSensorSetVbat(PAS_DEFAULT_VBAT_CENTIVOLTS);
         pasMaybeResetOrientationOnDisarm(ctx, &kinematicsData, &imuData);
 
@@ -1789,7 +1763,7 @@ bool simProjectAirSimInit(char *ip, int port, bool imu, bool fastMode)
         !pasFetchGroundTruthKinematics(pasCtx.socket, pasCtx.robotPath, &initKinematicsData) ||
         !pasFetchGpsData(pasCtx.socket, pasCtx.gpsPath, &pasCtx.gpsData) ||
         !pasFetchBarometerData(pasCtx.socket, pasCtx.barometerPath, &pasCtx.barometerData) ||
-        (pasCtx.useImu && !pasFetchMagnetometerData(pasCtx.socket, pasCtx.magnetometerPath, &pasCtx.magnetometerData))) {
+        !pasFetchMagnetometerData(pasCtx.socket, pasCtx.magnetometerPath, &pasCtx.magnetometerData)) {
         nng_close(pasCtx.socket);
         return false;
     }
