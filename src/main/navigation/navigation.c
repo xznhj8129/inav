@@ -4536,6 +4536,13 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
             } else {
                 DISABLE_FLIGHT_MODE(SOARING_MODE);
             }
+
+            /* GCS NAV mode flag - set when GCS assisted navigation is the active flight mode */
+            if (IS_RC_MODE_ACTIVE(BOXGCSNAV) && FLIGHT_MODE(NAV_POSHOLD_MODE)) {
+                ENABLE_FLIGHT_MODE(NAV_GCS_MODE);
+            } else {
+                DISABLE_FLIGHT_MODE(NAV_GCS_MODE);
+            }
         }
 
         /* If we request forced RTH - attempt to activate it no matter what
@@ -4606,6 +4613,12 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
                 waypointWasActivated = true;
                 return NAV_FSM_EVENT_SWITCH_TO_WAYPOINT;
             }
+        }
+
+        // GCS NAV activates POSHOLD independently (higher priority than plain POSHOLD)
+        if (IS_RC_MODE_ACTIVE(BOXGCSNAV)) {
+            if (FLIGHT_MODE(NAV_POSHOLD_MODE) || (canActivatePosHold && canActivateAltHold))
+                return NAV_FSM_EVENT_SWITCH_TO_POSHOLD_3D;
         }
 
         if (IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD)) {
