@@ -1094,6 +1094,10 @@ bool mavlinkHandleIncomingHeartbeat(void)
     mavlink_heartbeat_t msg;
     mavlink_msg_heartbeat_decode(&mavlinkContext.recvMsg, &msg);
 
+    if (msg.autopilot == MAV_AUTOPILOT_INVALID && msg.type != MAV_TYPE_ADSB) {
+        mavlinkMarkGroundControlHeartbeat();
+    }
+
     switch (msg.type) {
 #ifdef USE_ADSB
         case MAV_TYPE_ADSB:

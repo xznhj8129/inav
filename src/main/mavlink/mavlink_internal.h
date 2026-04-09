@@ -102,6 +102,8 @@ typedef struct mavlinkContext_s {
     uint8_t incomingMissionSourceSystem;
     uint8_t incomingMissionSourceComponent;
     timeMs_t incomingMissionLastActivityMs;
+    timeMs_t groundControlHeartbeatMs;
+    bool groundControlHeartbeatSeen;
 } mavlinkContext_t;
 
 extern mavlinkContext_t mavlinkContext;
@@ -127,5 +129,7 @@ extern mavlinkContext_t mavlinkContext;
 #define incomingMissionSourceSystem (mavlinkContext.incomingMissionSourceSystem)
 #define incomingMissionSourceComponent (mavlinkContext.incomingMissionSourceComponent)
 #define incomingMissionLastActivityMs (mavlinkContext.incomingMissionLastActivityMs)
+#define groundControlHeartbeatMs (mavlinkContext.groundControlHeartbeatMs)
+#define groundControlHeartbeatSeen (mavlinkContext.groundControlHeartbeatSeen)
 
 #endif

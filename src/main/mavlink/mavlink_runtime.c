@@ -27,6 +27,18 @@ uint8_t mavlinkGetProtocolVersion(void)
     return mavlinkGetCommonConfig()->version;
 }
 
+void mavlinkMarkGroundControlHeartbeat(void)
+{
+    groundControlHeartbeatMs = millis();
+    groundControlHeartbeatSeen = true;
+}
+
+bool mavlinkHasRecentGroundControlHeartbeat(void)
+{
+    return groundControlHeartbeatSeen &&
+        (millis() - groundControlHeartbeatMs) <= MAVLINK_GROUND_CONTROL_TIMEOUT_MS;
+}
+
 static void mavlinkApplyActivePortOutputVersion(void)
 {
     mavlink_status_t *chanState = mavlink_get_channel_status(MAVLINK_COMM_0);

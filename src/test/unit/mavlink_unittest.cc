@@ -79,6 +79,7 @@ extern "C" {
     #include "sensors/temperature.h"
 
     #include "mavlink/mavlink_types.h"
+    #include "mavlink/mavlink_runtime.h"
     #include "telemetry/mavlink.h"
     #include "telemetry/telemetry.h"
 
@@ -364,6 +365,7 @@ static void initMavlinkTestState(void)
 
     initMAVLinkTelemetry();
     checkMAVLinkTelemetryState();
+    mavlinkMarkGroundControlHeartbeat();
 }
 
 TEST(MavlinkTelemetryTest, TunnelMalformedPayloadLengthIsDroppedAndDoesNotPoisonState)
@@ -637,6 +639,7 @@ TEST(MavlinkTelemetryTest, CommandIntRepositionScalesCoordinates)
 TEST(MavlinkTelemetryTest, ComponentArmDisarmUsesRealArmState)
 {
     initMavlinkTestState();
+    gcsValid = false;
     tryArmSucceeds = true;
 
     mavlink_message_t armMsg;
@@ -770,6 +773,7 @@ TEST(MavlinkTelemetryTest, CommandLongLandUsesForcedEmergencyLanding)
 TEST(MavlinkTelemetryTest, SetModePlaneGuidedSetsPosholdAndGcsNavOverride)
 {
     initMavlinkTestState();
+    gcsValid = false;
     configuredModes.bits[BOXNAVPOSHOLD / 32] |= (1U << (BOXNAVPOSHOLD % 32));
     configuredModes.bits[BOXGCSNAV / 32] |= (1U << (BOXGCSNAV % 32));
 
@@ -864,6 +868,28 @@ TEST(MavlinkTelemetryTest, SetModeWithoutCustomModeFlagIsIgnored)
         42, 200, &msg,
         1,
         0,
+        PLANE_MODE_GUIDED);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    EXPECT_EQ(rcModeOverrideCalls, 0);
+    EXPECT_EQ(abortForcedRTHCalls, 0);
+    EXPECT_EQ(abortForcedEmergLandingCalls, 0);
+}
+
+TEST(MavlinkTelemetryTest, SetModeRequiresRecentGroundControlHeartbeat)
+{
+    initMavlinkTestState();
+    configuredModes.bits[BOXNAVPOSHOLD / 32] |= (1U << (BOXNAVPOSHOLD % 32));
+    configuredModes.bits[BOXGCSNAV / 32] |= (1U << (BOXGCSNAV % 32));
+    fakeMillis = MAVLINK_GROUND_CONTROL_TIMEOUT_MS + 1;
+
+    mavlink_message_t msg;
+    mavlink_msg_set_mode_pack(
+        42, 200, &msg,
+        1,
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
         PLANE_MODE_GUIDED);
 
     pushRxMessage(&msg);

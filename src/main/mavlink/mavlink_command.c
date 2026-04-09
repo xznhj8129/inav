@@ -34,12 +34,12 @@ static void mavlinkSendCommandAck(uint16_t command, MAV_RESULT result, uint8_t a
 
 static bool mavlinkCanExecuteControlCommand(void)
 {
-    return isGCSValid() && ARMING_FLAG(ARMED);
+    return mavlinkHasRecentGroundControlHeartbeat() && ARMING_FLAG(ARMED);
 }
 
 static bool mavlinkCanSetHome(void)
 {
-    return isGCSValid() &&
+    return mavlinkHasRecentGroundControlHeartbeat() &&
         ARMING_FLAG(ARMED) &&
         posControl.flags.estPosStatus >= EST_USABLE &&
         posControl.gpsOrigin.valid &&
@@ -68,7 +68,7 @@ static bool handleIncoming_COMMAND(
 
     switch (command) {
         case MAV_CMD_COMPONENT_ARM_DISARM:
-            if (!isGCSValid()) {
+            if (!mavlinkHasRecentGroundControlHeartbeat()) {
                 mavlinkSendCommandAck(command, MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
                 return true;
             }

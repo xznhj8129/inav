@@ -99,7 +99,7 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 - `MISSION_REQUEST_LIST`, `MISSION_REQUEST`, `MISSION_REQUEST_INT`: downloads active mission items; returns `MISSION_ACK` on bad sequence.
 - `MISSION_CLEAR_ALL`: clears stored mission.
 - `COMMAND_LONG` / `COMMAND_INT`: command transport for supported `MAV_CMD_*` handlers.
-- `SET_MODE`: accepts ArduPilot `custom_mode` requests for the box-backed subset of modes. Supported inbound mappings are `MANUAL`/`ACRO`/`STABILIZE`/`FBWA`/`FBWB`/`CRUISE`/`AUTO`/`RTL`/`LOITER`/`GUIDED`/`TAKEOFF` on fixed-wing and `ACRO`/`STABILIZE`/`ALT_HOLD`/`POSHOLD`/`GUIDED`/`AUTO`/`RTL`/`THROW`/`BRAKE` on multirotor. `LAND`/`AUTOLAND` and other non-box-backed ArduPilot modes remain unsupported.
+- `SET_MODE`: accepts ArduPilot `custom_mode` requests for the box-backed subset of modes when a recent ground-control heartbeat is present. Supported inbound mappings are `MANUAL`/`ACRO`/`STABILIZE`/`FBWA`/`FBWB`/`CRUISE`/`AUTO`/`RTL`/`LOITER`/`GUIDED`/`TAKEOFF` on fixed-wing and `ACRO`/`STABILIZE`/`ALT_HOLD`/`POSHOLD`/`GUIDED`/`AUTO`/`RTL`/`THROW`/`BRAKE` on multirotor. `LAND`/`AUTOLAND` and other non-box-backed ArduPilot modes remain unsupported.
 - `REQUEST_DATA_STREAM`: legacy stream-rate control per stream group.
 - `SET_POSITION_TARGET_GLOBAL_INT`: writes the GCS-guided waypoint when the frame is supported; altitude-only requests are also accepted when X/Y are masked out and GCS navigation is valid.
 - `SET_POSITION_TARGET_LOCAL_NED`: accepts altitude-only requests in `MAV_FRAME_LOCAL_OFFSET_NED` when X/Y are zero or ignored and GCS navigation is valid.
@@ -116,10 +116,10 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 Limited implementation of the Command protocol.
 
 - `MAV_CMD_DO_REPOSITION`: sets the Follow Me/GCS Nav waypoint when GCS NAV is valid. Accepts `MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`; otherwise `UNSUPPORTED`.
-- `MAV_CMD_COMPONENT_ARM_DISARM`: arms via `tryArm()` and disarms via `disarm(DISARM_SWITCH)`. The command is accepted only when a valid GCS session exists and the real armed state reaches the requested state.
-- `MAV_CMD_NAV_RETURN_TO_LAUNCH`: triggers the real forced-RTH path and is accepted only when armed and a valid GCS session exists.
-- `MAV_CMD_NAV_LAND`: triggers the real forced emergency landing path and is accepted only when armed and a valid GCS session exists.
-- `MAV_CMD_DO_SET_HOME`: updates home via waypoint `0`, reusing the existing INAV home-update gates (armed, usable position estimate, valid GPS origin, GCS-assisted navigation enabled, valid GCS session). Absolute-altitude MAVLink frames are converted to INAV's home-relative altitude before the update.
+- `MAV_CMD_COMPONENT_ARM_DISARM`: arms via `tryArm()` and disarms via `disarm(DISARM_SWITCH)`. The command is accepted only when a recent ground-control heartbeat is present and the real armed state reaches the requested state.
+- `MAV_CMD_NAV_RETURN_TO_LAUNCH`: triggers the real forced-RTH path and is accepted only when armed and a recent ground-control heartbeat is present.
+- `MAV_CMD_NAV_LAND`: triggers the real forced emergency landing path and is accepted only when armed and a recent ground-control heartbeat is present.
+- `MAV_CMD_DO_SET_HOME`: updates home via waypoint `0`, reusing the existing INAV home-update gates (armed, usable position estimate, valid GPS origin, GCS-assisted navigation enabled, recent ground-control heartbeat present). Absolute-altitude MAVLink frames are converted to INAV's home-relative altitude before the update.
 - `MAV_CMD_DO_CHANGE_ALTITUDE`: changes the current altitude target. `param1` is the target altitude in meters and `param2` is interpreted as the MAVLink frame (`MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`); unsupported frames are rejected.
 - `MAV_CMD_CONDITION_YAW`: changes the current heading target when the active navigation state has yaw control. Accepts absolute heading (`param4=0`) and relative turns (`param4!=0`); turn-rate is ignored.
 - `MAV_CMD_SET_MESSAGE_INTERVAL` / `MAV_CMD_GET_MESSAGE_INTERVAL`: adjust or query per-message periodic output for `HEARTBEAT`, `SYS_STATUS`, `EXTENDED_SYS_STATE`, RC channels, `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN`, `ATTITUDE`, `VFR_HUD`, `BATTERY_STATUS`, `SCALED_PRESSURE`, and `SYSTEM_TIME`. `REQUEST_DATA_STREAM` still controls the legacy base stream groups; `SET_MESSAGE_INTERVAL` overrides individual messages on top.
@@ -157,7 +157,7 @@ Limited implementation of the Command protocol.
   - FAILSAFE → **RTL** (RTH/other phases) or **AUTOLAND** (landing phase)
   - Any other unmapped mode falls back to **MANUAL**
 
-Incoming `SET_MODE` uses the same ArduPilot `custom_mode` families where INAV has an honest box-backed equivalent. The override remains active until a new `SET_MODE` arrives or the pilot changes the local mode-switch selection, so MAVLink mode changes do not permanently shadow AUX mode control.
+Incoming `SET_MODE` uses the same ArduPilot `custom_mode` families where INAV has an honest box-backed equivalent. The override remains active until a new `SET_MODE` arrives or the pilot changes the local mode-switch selection, so MAVLink mode changes do not permanently shadow AUX mode control. Acceptance is gated by recent ground-control heartbeat presence, not by already being in the guided-navigation state.
 
 
 ## MAVLink Missions

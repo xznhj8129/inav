@@ -348,7 +348,7 @@ bool mavlinkHandleIncomingSetMode(void)
         return false;
     }
 
-    if (!isGCSValid()) {
+    if (!mavlinkHasRecentGroundControlHeartbeat()) {
         return false;
     }
 
