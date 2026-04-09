@@ -104,8 +104,7 @@ static bool handleIncoming_COMMAND(
                 return true;
             }
 
-            activateForcedEmergLanding();
-            mavlinkSendCommandAck(command, getStateOfForcedEmergLanding() != EMERG_LAND_IDLE ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+            mavlinkSendCommandAck(command, navActivateEmergencyLanding() ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
             return true;
         case MAV_CMD_DO_SET_HOME:
             if (!mavlinkCanSetHome()) {

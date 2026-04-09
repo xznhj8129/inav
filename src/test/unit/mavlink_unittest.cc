@@ -2571,6 +2571,16 @@ emergLandState_e getStateOfForcedEmergLanding(void)
     return forcedEmergLandingState;
 }
 
+bool navActivateEmergencyLanding(void)
+{
+    if (!ARMING_FLAG(ARMED)) {
+        return false;
+    }
+
+    activateForcedEmergLanding();
+    return getStateOfForcedEmergLanding() != EMERG_LAND_IDLE;
+}
+
 flightModeForTelemetry_e getFlightModeForTelemetry(void)
 {
     return testFlightMode;

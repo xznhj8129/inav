@@ -3964,6 +3964,16 @@ bool navSetCruiseHeading(int32_t headingCd)
     return true;
 }
 
+bool navActivateEmergencyLanding(void)
+{
+    if (!ARMING_FLAG(ARMED)) {
+        return false;
+    }
+
+    activateForcedEmergLanding();
+    return getStateOfForcedEmergLanding() != EMERG_LAND_IDLE;
+}
+
 void setWaypoint(uint8_t wpNumber, const navWaypoint_t * wpData)
 {
     gpsLocation_t wpLLH;
