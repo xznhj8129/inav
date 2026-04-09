@@ -138,6 +138,7 @@
 #define MSP2_INAV_SET_WP_INDEX                  0x2221  //in message  jump to waypoint N during active WP mission; payload: U8 wp_index (0-based, relative to mission start)
 #define MSP2_INAV_SET_CRUISE_HEADING            0x2223  //in message  set heading while in Cruise/Course Hold mode; payload: I32 heading_centidegrees (0-35999)
 #define MSP2_INAV_SET_LAND                      0x2224  //in message  trigger forced landing using the normal navigation emergency-landing path; payload: none
+#define MSP2_INAV_SET_RTH                       0x2225  //in message  trigger forced return-to-home using the normal navigation RTH path; payload: none
 #define MSP2_INAV_NAV_ROI                       0x2230
 #define MSP2_INAV_SET_NAV_ROI                   0x2231
 #define MSP2_INAV_GOTO_ROI                      0x2232

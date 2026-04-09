@@ -11250,6 +11250,14 @@
         "notes": "Returns error if the aircraft is not armed, any payload bytes are present, or the emergency-landing backend does not leave `EMERG_LAND_IDLE`. On success, calls `navActivateEmergencyLanding()`, which drives the existing forced emergency landing path and returns ACK once the navigation state leaves idle.",
         "description": "Triggers emergency landing using the active navigation backend."
     },
+    "MSP2_INAV_SET_RTH": {
+        "code": 8741,
+        "mspv": 2,
+        "request": null,
+        "reply": null,
+        "notes": "Returns error if any payload bytes are present or the normal forced-RTH path does not leave `RTH_IDLE`. On success, calls `activateForcedRTH()` and returns ACK once `getStateOfForcedRTH()` reports a non-idle forced-RTH state.",
+        "description": "Triggers return-to-home using the active navigation backend."
+    },
     "MSP2_INAV_NAV_ROI": {
         "code": 8752,
         "mspv": 2,

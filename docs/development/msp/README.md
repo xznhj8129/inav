@@ -423,6 +423,7 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 [8737 - MSP2_INAV_SET_WP_INDEX](#msp2_inav_set_wp_index)  
 [8739 - MSP2_INAV_SET_CRUISE_HEADING](#msp2_inav_set_cruise_heading)  
 [8740 - MSP2_INAV_SET_LAND](#msp2_inav_set_land)  
+[8741 - MSP2_INAV_SET_RTH](#msp2_inav_set_rth)  
 [8752 - MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)  
 [8753 - MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)  
 [8754 - MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)  
@@ -4680,6 +4681,15 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 **Reply Payload:** **None**  
 
 **Notes:** Returns error if the aircraft is not armed, any payload bytes are present, or the emergency-landing backend does not leave `EMERG_LAND_IDLE`. On success, calls `navActivateEmergencyLanding()`, which drives the existing forced emergency landing path and returns ACK once the navigation state leaves idle.
+
+## <a id="msp2_inav_set_rth"></a>`MSP2_INAV_SET_RTH (8741 / 0x2225)`
+**Description:** Triggers return-to-home using the active navigation backend.  
+
+**Request Payload:** **None**  
+
+**Reply Payload:** **None**  
+
+**Notes:** Returns error if any payload bytes are present or the normal forced-RTH path does not leave `RTH_IDLE`. On success, calls `activateForcedRTH()` and returns ACK once `getStateOfForcedRTH()` reports a non-idle forced-RTH state.
 
 ## <a id="msp2_inav_nav_roi"></a>`MSP2_INAV_NAV_ROI (8752 / 0x2230)`
 **Description:** Gets the active navigation ROI.  
