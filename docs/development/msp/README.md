@@ -424,6 +424,8 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 [8739 - MSP2_INAV_SET_CRUISE_HEADING](#msp2_inav_set_cruise_heading)  
 [8740 - MSP2_INAV_SET_LAND](#msp2_inav_set_land)  
 [8741 - MSP2_INAV_SET_RTH](#msp2_inav_set_rth)  
+[8742 - MSP2_INAV_SET_HOME](#msp2_inav_set_home)  
+[8743 - MSP2_INAV_ARM_DISARM](#msp2_inav_arm_disarm)  
 [8752 - MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)  
 [8753 - MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)  
 [8754 - MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)  
@@ -4690,6 +4692,33 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 **Reply Payload:** **None**  
 
 **Notes:** Returns error if any payload bytes are present or the normal forced-RTH path does not leave `RTH_IDLE`. On success, calls `activateForcedRTH()` and returns ACK once `getStateOfForcedRTH()` reports a non-idle forced-RTH state.
+
+## <a id="msp2_inav_set_home"></a>`MSP2_INAV_SET_HOME (8742 / 0x2226)`
+**Description:** Sets HOME from explicit geodetic coordinates.  
+  
+**Request Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `lat` | `int32_t` | 4 | 1e-7 deg | Requested home latitude |
+| `lon` | `int32_t` | 4 | 1e-7 deg | Requested home longitude |
+| `alt` | `int32_t` | 4 | cm | Requested home altitude |
+| `alt_datum` | `uint8_t` | 1 | bitfield | Altitude datum bitfield |
+
+**Reply Payload:** **None**  
+
+**Notes:** Expects exactly 13 bytes. Returns error if the normal home-update gate is not open (armed, usable estimated position, valid GPS origin, and GCS-assisted navigation enabled). Calls `navSetHomeFromGeodetic()` and interprets `alt_datum` with the same absolute-vs-relative altitude rule used by waypoint missions.
+
+## <a id="msp2_inav_arm_disarm"></a>`MSP2_INAV_ARM_DISARM (8743 / 0x2227)`
+**Description:** Arms or disarms the aircraft through the normal FC arming path.  
+  
+**Request Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `should_arm` | `uint8_t` | 1 | bool | Requested FC armed state: 0 disarm, 1 arm |
+
+**Reply Payload:** **None**  
+
+**Notes:** Expects exactly 1 byte. Returns error if `should_arm` is not 0 or 1 or if the normal FC arming path does not reach the requested state. Calls `fcSetArmState()`, which uses `tryArm()` for arming and `disarm(DISARM_SWITCH)` for disarming.
 
 ## <a id="msp2_inav_nav_roi"></a>`MSP2_INAV_NAV_ROI (8752 / 0x2230)`
 **Description:** Gets the active navigation ROI.  

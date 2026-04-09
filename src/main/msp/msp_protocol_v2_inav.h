@@ -139,6 +139,8 @@
 #define MSP2_INAV_SET_CRUISE_HEADING            0x2223  //in message  set heading while in Cruise/Course Hold mode; payload: I32 heading_centidegrees (0-35999)
 #define MSP2_INAV_SET_LAND                      0x2224  //in message  trigger forced landing using the normal navigation emergency-landing path; payload: none
 #define MSP2_INAV_SET_RTH                       0x2225  //in message  trigger forced return-to-home using the normal navigation RTH path; payload: none
+#define MSP2_INAV_SET_HOME                      0x2226  //in message  set HOME from explicit LLH; payload: I32 lat, I32 lon, I32 alt, U8 alt_datum
+#define MSP2_INAV_ARM_DISARM                    0x2227  //in message  arm or disarm through the normal FC arming path; payload: U8 should_arm (0 disarm, 1 arm)
 #define MSP2_INAV_NAV_ROI                       0x2230
 #define MSP2_INAV_SET_NAV_ROI                   0x2231
 #define MSP2_INAV_GOTO_ROI                      0x2232

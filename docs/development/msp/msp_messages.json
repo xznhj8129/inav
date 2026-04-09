@@ -11258,6 +11258,58 @@
         "notes": "Returns error if any payload bytes are present or the normal forced-RTH path does not leave `RTH_IDLE`. On success, calls `activateForcedRTH()` and returns ACK once `getStateOfForcedRTH()` reports a non-idle forced-RTH state.",
         "description": "Triggers return-to-home using the active navigation backend."
     },
+    "MSP2_INAV_SET_HOME": {
+        "code": 8742,
+        "mspv": 2,
+        "request": {
+            "payload": [
+                {
+                    "name": "lat",
+                    "ctype": "int32_t",
+                    "desc": "Requested home latitude",
+                    "units": "1e-7 deg"
+                },
+                {
+                    "name": "lon",
+                    "ctype": "int32_t",
+                    "desc": "Requested home longitude",
+                    "units": "1e-7 deg"
+                },
+                {
+                    "name": "alt",
+                    "ctype": "int32_t",
+                    "desc": "Requested home altitude",
+                    "units": "cm"
+                },
+                {
+                    "name": "alt_datum",
+                    "ctype": "uint8_t",
+                    "desc": "Altitude datum bitfield",
+                    "units": "bitfield"
+                }
+            ]
+        },
+        "reply": null,
+        "notes": "Expects exactly 13 bytes. Returns error if the normal home-update gate is not open (armed, usable estimated position, valid GPS origin, and GCS-assisted navigation enabled). Calls `navSetHomeFromGeodetic()` and interprets `alt_datum` with the same absolute-vs-relative altitude rule used by waypoint missions.",
+        "description": "Sets HOME from explicit geodetic coordinates."
+    },
+    "MSP2_INAV_ARM_DISARM": {
+        "code": 8743,
+        "mspv": 2,
+        "request": {
+            "payload": [
+                {
+                    "name": "should_arm",
+                    "ctype": "uint8_t",
+                    "desc": "Requested FC armed state: 0 disarm, 1 arm",
+                    "units": "bool"
+                }
+            ]
+        },
+        "reply": null,
+        "notes": "Expects exactly 1 byte. Returns error if `should_arm` is not 0 or 1 or if the normal FC arming path does not reach the requested state. Calls `fcSetArmState()`, which uses `tryArm()` for arming and `disarm(DISARM_SWITCH)` for disarming.",
+        "description": "Arms or disarms the aircraft through the normal FC arming path."
+    },
     "MSP2_INAV_NAV_ROI": {
         "code": 8752,
         "mspv": 2,

@@ -3812,6 +3812,42 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
         }
         return MSP_RESULT_ERROR;
 
+    case MSP2_INAV_SET_HOME:
+        // Set HOME from explicit LLH.
+        // Payload: I32 lat, I32 lon, I32 alt_cm, U8 alt_datum
+        if (dataSize == 13) {
+            int32_t lat;
+            int32_t lon;
+            int32_t alt;
+            uint8_t datumFlag;
+            if (sbufReadI32Safe(&lat, src) &&
+                sbufReadI32Safe(&lon, src) &&
+                sbufReadI32Safe(&alt, src) &&
+                sbufReadU8Safe(&datumFlag, src)) {
+                gpsLocation_t home = {
+                    .lat = lat,
+                    .lon = lon,
+                    .alt = alt,
+                };
+
+                if (navSetHomeFromGeodetic(&home, (geoAltitudeDatumFlag_e)datumFlag)) {
+                    break;
+                }
+            }
+        }
+        return MSP_RESULT_ERROR;
+
+    case MSP2_INAV_ARM_DISARM:
+        // Arm or disarm using the normal FC arming path.
+        // Payload: U8 should_arm (0 disarm, 1 arm)
+        if (dataSize == 1) {
+            const uint8_t shouldArm = sbufReadU8(src);
+            if (shouldArm <= 1 && fcSetArmState(shouldArm != 0)) {
+                break;
+            }
+        }
+        return MSP_RESULT_ERROR;
+
     default:
         return MSP_RESULT_ERROR;
     }

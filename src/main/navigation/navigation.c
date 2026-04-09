@@ -3974,6 +3974,28 @@ bool navActivateEmergencyLanding(void)
     return getStateOfForcedEmergLanding() != EMERG_LAND_IDLE;
 }
 
+bool navCanSetHome(void)
+{
+    return ARMING_FLAG(ARMED) &&
+        posControl.flags.estPosStatus >= EST_USABLE &&
+        posControl.gpsOrigin.valid &&
+        posControl.flags.isGCSAssistedNavigationEnabled;
+}
+
+bool navSetHomeFromGeodetic(const gpsLocation_t *llh, geoAltitudeDatumFlag_e datumFlag)
+{
+    if (!navCanSetHome()) {
+        return false;
+    }
+
+    navWaypoint_t wp = {0};
+    wp.lat = llh->lat;
+    wp.lon = llh->lon;
+    wp.alt = ((waypointMissionAltConvMode(datumFlag) == GEO_ALT_ABSOLUTE) ? llh->alt - posControl.gpsOrigin.alt : llh->alt);
+    setWaypoint(0, &wp);
+    return true;
+}
+
 void setWaypoint(uint8_t wpNumber, const navWaypoint_t * wpData)
 {
     gpsLocation_t wpLLH;

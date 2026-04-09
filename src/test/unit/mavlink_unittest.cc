@@ -900,16 +900,13 @@ TEST(MavlinkTelemetryTest, SetModeRequiresRecentGroundControlHeartbeat)
     EXPECT_EQ(abortForcedEmergLandingCalls, 0);
 }
 
-TEST(MavlinkTelemetryTest, SetHomeUsesWaypointZeroWithCurrentPosition)
+TEST(MavlinkTelemetryTest, SetHomeRejectsCurrentPositionShortcut)
 {
     initMavlinkTestState();
     ENABLE_ARMING_FLAG(ARMED);
     posControl.flags.estPosStatus = EST_USABLE;
     posControl.flags.isGCSAssistedNavigationEnabled = true;
     posControl.gpsOrigin.valid = true;
-    posControl.actualState.abs.pos.z = 543.0f;
-    geoConvertedLocation.lat = 375000000;
-    geoConvertedLocation.lon = -1222500000;
 
     mavlink_message_t msg;
     mavlink_msg_command_long_pack(
@@ -929,12 +926,9 @@ TEST(MavlinkTelemetryTest, SetHomeUsesWaypointZeroWithCurrentPosition)
     mavlink_msg_command_ack_decode(&ackMsg, &ack);
 
     EXPECT_EQ(ack.command, MAV_CMD_DO_SET_HOME);
-    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
-    EXPECT_EQ(geoConvertLocalToGeodeticCalls, 1);
-    EXPECT_EQ(setWaypointCalls, 1);
-    EXPECT_EQ(lastWaypoint.lat, geoConvertedLocation.lat);
-    EXPECT_EQ(lastWaypoint.lon, geoConvertedLocation.lon);
-    EXPECT_EQ(lastWaypoint.alt, 543);
+    EXPECT_EQ(ack.result, MAV_RESULT_UNSUPPORTED);
+    EXPECT_EQ(geoConvertLocalToGeodeticCalls, 0);
+    EXPECT_EQ(setWaypointCalls, 0);
 }
 
 TEST(MavlinkTelemetryTest, SetHomeConvertsAbsoluteAltitudeToWaypointZeroRelativeAltitude)
@@ -2506,6 +2500,41 @@ void disarm(disarmReason_t disarmReason)
     disarmCalls++;
     lastDisarmReason = disarmReason;
     DISABLE_ARMING_FLAG(ARMED);
+}
+
+bool fcSetArmState(bool shouldArm)
+{
+    if (shouldArm) {
+        if (!ARMING_FLAG(ARMED)) {
+            tryArm();
+        }
+    } else if (ARMING_FLAG(ARMED)) {
+        disarm(DISARM_SWITCH);
+    }
+
+    return (!!ARMING_FLAG(ARMED)) == shouldArm;
+}
+
+bool navCanSetHome(void)
+{
+    return ARMING_FLAG(ARMED) &&
+        posControl.flags.estPosStatus >= EST_USABLE &&
+        posControl.gpsOrigin.valid &&
+        posControl.flags.isGCSAssistedNavigationEnabled;
+}
+
+bool navSetHomeFromGeodetic(const gpsLocation_t *llh, geoAltitudeDatumFlag_e datumFlag)
+{
+    if (!navCanSetHome()) {
+        return false;
+    }
+
+    navWaypoint_t wp = {0};
+    wp.lat = llh->lat;
+    wp.lon = llh->lon;
+    wp.alt = ((datumFlag & NAV_WP_MSL_DATUM) == NAV_WP_MSL_DATUM) ? llh->alt - posControl.gpsOrigin.alt : llh->alt;
+    setWaypoint(0, &wp);
+    return true;
 }
 
 void setWaypoint(uint8_t wpNumber, const navWaypoint_t *wp)
