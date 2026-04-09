@@ -11208,6 +11208,40 @@
         "notes": "All attitude angles are in deci-degrees.",
         "description": "Provides estimates of current attitude, local NEU position, and velocity."
     },
+    "MSP2_INAV_SET_WP_INDEX": {
+        "code": 8737,
+        "mspv": 2,
+        "request": {
+            "payload": [
+                {
+                    "name": "wp_index",
+                    "ctype": "uint8_t",
+                    "desc": "0-based waypoint index to jump to, relative to the mission start waypoint (`posControl.startWpIndex`)",
+                    "units": ""
+                }
+            ]
+        },
+        "reply": null,
+        "notes": "Returns error if the aircraft is not armed, `NAV_WP_MODE` is not active, or the requested index is outside the valid mission range (`startWpIndex` to `startWpIndex + waypointCount - 1`). On success, sets `posControl.activeWaypointIndex` to the requested index and fires `NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_JUMP`, which routes the waypoint FSM back to `NAV_STATE_WAYPOINT_PRE_ACTION` so navigation re-initialises for the new target.",
+        "description": "Jumps to a specific waypoint during an active waypoint mission."
+    },
+    "MSP2_INAV_SET_CRUISE_HEADING": {
+        "code": 8739,
+        "mspv": 2,
+        "request": {
+            "payload": [
+                {
+                    "name": "heading_centidegrees",
+                    "ctype": "int32_t",
+                    "desc": "Target heading in centidegrees; values are wrapped modulo 36000 before being applied",
+                    "units": "centidegrees"
+                }
+            ]
+        },
+        "reply": null,
+        "notes": "Returns error if the aircraft is not armed or `NAV_COURSE_HOLD_MODE` is not active. On success, writes the normalized value into both `posControl.cruise.course` and `posControl.cruise.previousCourse` so the next cruise-control update does not inject a spurious correction.",
+        "description": "Sets the course heading target while Cruise or Course Hold mode is active."
+    },
     "MSP2_BETAFLIGHT_BIND": {
         "code": 12288,
         "mspv": 2,

@@ -412,6 +412,7 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 [8722 - MSP2_INAV_GEOZONE_VERTEX](#msp2_inav_geozone_vertex)  
 [8723 - MSP2_INAV_SET_GEOZONE_VERTEX](#msp2_inav_set_geozone_vertex)  
 [8724 - MSP2_INAV_SET_GVAR](#msp2_inav_set_gvar)  
+[8725 - MSP2_INAV_SET_ALT_TARGET](#msp2_inav_set_alt_target)  
 [8726 - MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE](#msp2_inav_flight_axis_angle_override)  
 [8727 - MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE](#msp2_inav_flight_axis_rate_override)  
 [8728 - MSP2_INAV_SET_LOCAL_TARGET](#msp2_inav_set_local_target)  
@@ -4644,32 +4645,28 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 **Notes:** All attitude angles are in deci-degrees.
 
 ## <a id="msp2_inav_set_wp_index"></a>`MSP2_INAV_SET_WP_INDEX (8737 / 0x2221)`
-**Description:** Jumps to a specific waypoint during an active waypoint mission, causing the aircraft to immediately begin navigating toward the new target waypoint.
-
+**Description:** Jumps to a specific waypoint during an active waypoint mission.  
+  
 **Request Payload:**
-|Field|C Type|Size (Bytes)|Units|Description|
-|---|---|---|---|---|
-| `wp_index` | `uint8_t` | 1 | - | 0-based waypoint index to jump to, relative to the mission start waypoint (`posControl.startWpIndex`) |
+|Field|C Type|Size (Bytes)|Description|
+|---|---|---|---|
+| `wp_index` | `uint8_t` | 1 | 0-based waypoint index to jump to, relative to the mission start waypoint (`posControl.startWpIndex`) |
 
-**Reply Payload:** **None**
+**Reply Payload:** **None**  
 
-**Notes:** Returns error if the aircraft is not armed, `NAV_WP_MODE` is not active, or the index is outside the valid mission range (`startWpIndex` to `startWpIndex + waypointCount - 1`). On success, sets `posControl.activeWaypointIndex` to the requested index and fires `NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_JUMP`, transitioning the navigation FSM back to `NAV_STATE_WAYPOINT_PRE_ACTION` so the flight controller re-initialises navigation for the new target.
-
----
+**Notes:** Returns error if the aircraft is not armed, `NAV_WP_MODE` is not active, or the requested index is outside the valid mission range (`startWpIndex` to `startWpIndex + waypointCount - 1`). On success, sets `posControl.activeWaypointIndex` to the requested index and fires `NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_JUMP`, which routes the waypoint FSM back to `NAV_STATE_WAYPOINT_PRE_ACTION` so navigation re-initialises for the new target.
 
 ## <a id="msp2_inav_set_cruise_heading"></a>`MSP2_INAV_SET_CRUISE_HEADING (8739 / 0x2223)`
-**Description:** Sets the course heading target while Cruise or Course Hold mode is active, causing the aircraft to turn to and maintain the new heading.
-
+**Description:** Sets the course heading target while Cruise or Course Hold mode is active.  
+  
 **Request Payload:**
 |Field|C Type|Size (Bytes)|Units|Description|
 |---|---|---|---|---|
-| `heading_centidegrees` | `int32_t` | 4 | centidegrees | Target heading in centidegrees (0–35999). Values are wrapped modulo 36000 before being applied. |
+| `heading_centidegrees` | `int32_t` | 4 | centidegrees | Target heading in centidegrees; values are wrapped modulo 36000 before being applied |
 
-**Reply Payload:** **None**
+**Reply Payload:** **None**  
 
-**Notes:** Returns error if the aircraft is not armed or `NAV_COURSE_HOLD_MODE` is not active. On success, sets both `posControl.cruise.course` and `posControl.cruise.previousCourse` to the normalised value, preventing spurious heading adjustments from `getCruiseHeadingAdjustment()` on the next control cycle.
-
----
+**Notes:** Returns error if the aircraft is not armed or `NAV_COURSE_HOLD_MODE` is not active. On success, writes the normalized value into both `posControl.cruise.course` and `posControl.cruise.previousCourse` so the next cruise-control update does not inject a spurious correction.
 
 ## <a id="msp2_betaflight_bind"></a>`MSP2_BETAFLIGHT_BIND (12288 / 0x3000)`
 **Description:** Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).  
@@ -4696,3 +4693,4 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 | `reserved_for_custom_use` | `uint8_t[3]` | 3 | Reserved for custom use |
 
 **Notes:** Requires a receiver using MSP as the protocol, sends MSP2_RX_BIND to the receiver.
+
