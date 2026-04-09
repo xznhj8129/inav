@@ -112,6 +112,16 @@ static const mavlinkModeDescriptor_t copterModes[] = {
     { COPTER_MODE_DRIFT,     "DRIFT" },
 };
 
+static void mavlinkClearModeOverride(boxBitmask_t *overrideMask)
+{
+    memset(overrideMask, 0, sizeof(*overrideMask));
+}
+
+static void mavlinkSetModeOverrideBit(boxBitmask_t *overrideMask, boxId_e boxId)
+{
+    overrideMask->bits[boxId / 32] |= (1U << (boxId % 32));
+}
+
 static bool mavlinkPlaneModeIsConfigured(uint8_t customMode)
 {
     switch ((APM_PLANE_MODE)customMode) {
@@ -173,6 +183,192 @@ static bool mavlinkCopterModeIsConfigured(uint8_t customMode)
         default:
             return false;
     }
+}
+
+static bool mavlinkPlaneCustomModeToRcOverride(uint8_t customMode, boxBitmask_t *overrideMask)
+{
+    mavlinkClearModeOverride(overrideMask);
+
+    switch ((APM_PLANE_MODE)customMode) {
+        case PLANE_MODE_MANUAL:
+            if (!isModeActivationConditionPresent(BOXMANUAL)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXMANUAL);
+            return true;
+        case PLANE_MODE_ACRO:
+            return true;
+        case PLANE_MODE_STABILIZE:
+            if (isModeActivationConditionPresent(BOXANGLEHOLD)) {
+                mavlinkSetModeOverrideBit(overrideMask, BOXANGLEHOLD);
+                return true;
+            }
+            if (isModeActivationConditionPresent(BOXHORIZON)) {
+                mavlinkSetModeOverrideBit(overrideMask, BOXHORIZON);
+                return true;
+            }
+            return false;
+        case PLANE_MODE_FLY_BY_WIRE_A:
+            if (!isModeActivationConditionPresent(BOXANGLE)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXANGLE);
+            return true;
+        case PLANE_MODE_FLY_BY_WIRE_B:
+            if (!isModeActivationConditionPresent(BOXNAVALTHOLD)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVALTHOLD);
+            return true;
+        case PLANE_MODE_CRUISE:
+            if (isModeActivationConditionPresent(BOXNAVCRUISE)) {
+                mavlinkSetModeOverrideBit(overrideMask, BOXNAVCRUISE);
+                return true;
+            }
+            if (isModeActivationConditionPresent(BOXNAVCOURSEHOLD) &&
+                isModeActivationConditionPresent(BOXNAVALTHOLD)) {
+                mavlinkSetModeOverrideBit(overrideMask, BOXNAVCOURSEHOLD);
+                mavlinkSetModeOverrideBit(overrideMask, BOXNAVALTHOLD);
+                return true;
+            }
+            return false;
+        case PLANE_MODE_AUTO:
+            if (!isModeActivationConditionPresent(BOXNAVWP)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVWP);
+            return true;
+        case PLANE_MODE_RTL:
+            if (!isModeActivationConditionPresent(BOXNAVRTH)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVRTH);
+            return true;
+        case PLANE_MODE_LOITER:
+            if (!isModeActivationConditionPresent(BOXNAVPOSHOLD)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVPOSHOLD);
+            return true;
+        case PLANE_MODE_TAKEOFF:
+            if (!isModeActivationConditionPresent(BOXNAVLAUNCH)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVLAUNCH);
+            return true;
+        case PLANE_MODE_GUIDED:
+            if (!isModeActivationConditionPresent(BOXNAVPOSHOLD) ||
+                !isModeActivationConditionPresent(BOXGCSNAV)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVPOSHOLD);
+            mavlinkSetModeOverrideBit(overrideMask, BOXGCSNAV);
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool mavlinkCopterCustomModeToRcOverride(uint8_t customMode, boxBitmask_t *overrideMask)
+{
+    mavlinkClearModeOverride(overrideMask);
+
+    switch ((APM_COPTER_MODE)customMode) {
+        case COPTER_MODE_ACRO:
+            return true;
+        case COPTER_MODE_STABILIZE:
+            if (isModeActivationConditionPresent(BOXANGLE)) {
+                mavlinkSetModeOverrideBit(overrideMask, BOXANGLE);
+                return true;
+            }
+            if (isModeActivationConditionPresent(BOXHORIZON)) {
+                mavlinkSetModeOverrideBit(overrideMask, BOXHORIZON);
+                return true;
+            }
+            if (isModeActivationConditionPresent(BOXANGLEHOLD)) {
+                mavlinkSetModeOverrideBit(overrideMask, BOXANGLEHOLD);
+                return true;
+            }
+            return false;
+        case COPTER_MODE_ALT_HOLD:
+            if (!isModeActivationConditionPresent(BOXNAVALTHOLD)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVALTHOLD);
+            return true;
+        case COPTER_MODE_GUIDED:
+            if (!isModeActivationConditionPresent(BOXNAVPOSHOLD) ||
+                !isModeActivationConditionPresent(BOXGCSNAV)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVPOSHOLD);
+            mavlinkSetModeOverrideBit(overrideMask, BOXGCSNAV);
+            return true;
+        case COPTER_MODE_POSHOLD:
+            if (!isModeActivationConditionPresent(BOXNAVPOSHOLD)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVPOSHOLD);
+            return true;
+        case COPTER_MODE_RTL:
+            if (!isModeActivationConditionPresent(BOXNAVRTH)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVRTH);
+            return true;
+        case COPTER_MODE_AUTO:
+            if (!isModeActivationConditionPresent(BOXNAVWP)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVWP);
+            return true;
+        case COPTER_MODE_THROW:
+            if (!isModeActivationConditionPresent(BOXNAVLAUNCH)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXNAVLAUNCH);
+            return true;
+        case COPTER_MODE_BRAKE:
+            if (!isModeActivationConditionPresent(BOXBRAKING)) {
+                return false;
+            }
+            mavlinkSetModeOverrideBit(overrideMask, BOXBRAKING);
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool mavlinkHandleIncomingSetMode(void)
+{
+    mavlink_set_mode_t msg;
+    mavlink_msg_set_mode_decode(&mavlinkContext.recvMsg, &msg);
+
+    if (msg.target_system != 0 && msg.target_system != mavSystemId) {
+        return false;
+    }
+
+    if (!isGCSValid()) {
+        return false;
+    }
+
+    if (!(msg.base_mode & MAV_MODE_FLAG_CUSTOM_MODE_ENABLED)) {
+        return false;
+    }
+
+    boxBitmask_t overrideMask;
+    const bool supported = mavlinkIsFixedWingVehicle() ?
+        mavlinkPlaneCustomModeToRcOverride((uint8_t)msg.custom_mode, &overrideMask) :
+        mavlinkCopterCustomModeToRcOverride((uint8_t)msg.custom_mode, &overrideMask);
+
+    if (!supported) {
+        return false;
+    }
+
+    abortForcedRTH();
+    abortForcedEmergLanding();
+    rcModeSetMavlinkOverride(&overrideMask);
+    return true;
 }
 
 static void mavlinkSendAvailableModes(const mavlinkModeDescriptor_t *modes, uint8_t count, uint8_t currentCustom,

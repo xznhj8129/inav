@@ -99,6 +99,7 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 - `MISSION_REQUEST_LIST`, `MISSION_REQUEST`, `MISSION_REQUEST_INT`: downloads active mission items; returns `MISSION_ACK` on bad sequence.
 - `MISSION_CLEAR_ALL`: clears stored mission.
 - `COMMAND_LONG` / `COMMAND_INT`: command transport for supported `MAV_CMD_*` handlers.
+- `SET_MODE`: accepts ArduPilot `custom_mode` requests for the box-backed subset of modes. Supported inbound mappings are `MANUAL`/`ACRO`/`STABILIZE`/`FBWA`/`FBWB`/`CRUISE`/`AUTO`/`RTL`/`LOITER`/`GUIDED`/`TAKEOFF` on fixed-wing and `ACRO`/`STABILIZE`/`ALT_HOLD`/`POSHOLD`/`GUIDED`/`AUTO`/`RTL`/`THROW`/`BRAKE` on multirotor. `LAND`/`AUTOLAND` and other non-box-backed ArduPilot modes remain unsupported.
 - `REQUEST_DATA_STREAM`: legacy stream-rate control per stream group.
 - `SET_POSITION_TARGET_GLOBAL_INT`: writes the GCS-guided waypoint when the frame is supported; altitude-only requests are also accepted when X/Y are masked out and GCS navigation is valid.
 - `SET_POSITION_TARGET_LOCAL_NED`: accepts altitude-only requests in `MAV_FRAME_LOCAL_OFFSET_NED` when X/Y are zero or ignored and GCS navigation is valid.
@@ -155,6 +156,8 @@ Limited implementation of the Command protocol.
   - LAUNCH → **TAKEOFF**
   - FAILSAFE → **RTL** (RTH/other phases) or **AUTOLAND** (landing phase)
   - Any other unmapped mode falls back to **MANUAL**
+
+Incoming `SET_MODE` uses the same ArduPilot `custom_mode` families where INAV has an honest box-backed equivalent. The override remains active until a new `SET_MODE` arrives or the pilot changes the local mode-switch selection, so MAVLink mode changes do not permanently shadow AUX mode control.
 
 
 ## MAVLink Missions

@@ -5,6 +5,7 @@
 #include "mavlink/mavlink_command.h"
 #include "mavlink/mavlink_guided.h"
 #include "mavlink/mavlink_mission.h"
+#include "mavlink/mavlink_modes.h"
 #include "mavlink/mavlink_runtime.h"
 #include "mavlink/mavlink_streams.h"
 
@@ -288,6 +289,8 @@ mavlinkFcDispatchResult_e mavlinkFcDispatchIncomingMessage(uint8_t ingressPortIn
         return mavlinkHandleIncomingMissionRequestInt() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;
     case MAVLINK_MSG_ID_REQUEST_DATA_STREAM:
         return mavlinkHandleIncomingRequestDataStream() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;
+    case MAVLINK_MSG_ID_SET_MODE:
+        return mavlinkHandleIncomingSetMode() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;
     case MAVLINK_MSG_ID_TIMESYNC:
         return handleIncoming_TIMESYNC() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;
     case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:

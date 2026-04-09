@@ -67,6 +67,7 @@ extern "C" {
     #undef _Static_assert
 #endif
 
+    #include "mavlink/mavlink_modes.h"
     #include "rx/rx.h"
 
     #include "sensors/barometer.h"
@@ -141,12 +142,17 @@ static bool tryArmSucceeds;
 static int disarmCalls;
 static disarmReason_t lastDisarmReason;
 static int activateForcedRTHCalls;
+static int abortForcedRTHCalls;
 static rthState_e forcedRTHState;
 static int activateForcedEmergLandingCalls;
+static int abortForcedEmergLandingCalls;
 static emergLandState_e forcedEmergLandingState;
 static int geoConvertLocalToGeodeticCalls;
 static bool geoConvertLocalToGeodeticResult;
 static gpsLocation_t geoConvertedLocation;
+static boxBitmask_t configuredModes;
+static int rcModeOverrideCalls;
+static boxBitmask_t lastRcModeOverrideMask;
 
 static void resetSerialBuffers(void)
 {
@@ -315,12 +321,17 @@ static void initMavlinkTestState(void)
     disarmCalls = 0;
     lastDisarmReason = DISARM_NONE;
     activateForcedRTHCalls = 0;
+    abortForcedRTHCalls = 0;
     forcedRTHState = RTH_IDLE;
     activateForcedEmergLandingCalls = 0;
+    abortForcedEmergLandingCalls = 0;
     forcedEmergLandingState = EMERG_LAND_IDLE;
     geoConvertLocalToGeodeticCalls = 0;
     geoConvertLocalToGeodeticResult = true;
     memset(&geoConvertedLocation, 0, sizeof(geoConvertedLocation));
+    memset(&configuredModes, 0, sizeof(configuredModes));
+    rcModeOverrideCalls = 0;
+    memset(&lastRcModeOverrideMask, 0, sizeof(lastRcModeOverrideMask));
     armingFlags = 0;
     stateFlags = 0;
     memset(&gpsSol, 0, sizeof(gpsSol));
@@ -754,6 +765,113 @@ TEST(MavlinkTelemetryTest, CommandLongLandUsesForcedEmergencyLanding)
     EXPECT_EQ(ack.command, MAV_CMD_NAV_LAND);
     EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
     EXPECT_EQ(activateForcedEmergLandingCalls, 1);
+}
+
+TEST(MavlinkTelemetryTest, SetModePlaneGuidedSetsPosholdAndGcsNavOverride)
+{
+    initMavlinkTestState();
+    configuredModes.bits[BOXNAVPOSHOLD / 32] |= (1U << (BOXNAVPOSHOLD % 32));
+    configuredModes.bits[BOXGCSNAV / 32] |= (1U << (BOXGCSNAV % 32));
+
+    mavlink_message_t msg;
+    mavlink_msg_set_mode_pack(
+        42, 200, &msg,
+        1,
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        PLANE_MODE_GUIDED);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    EXPECT_EQ(rcModeOverrideCalls, 1);
+    EXPECT_TRUE((lastRcModeOverrideMask.bits[BOXNAVPOSHOLD / 32] & (1U << (BOXNAVPOSHOLD % 32))) != 0);
+    EXPECT_TRUE((lastRcModeOverrideMask.bits[BOXGCSNAV / 32] & (1U << (BOXGCSNAV % 32))) != 0);
+    EXPECT_EQ(abortForcedRTHCalls, 1);
+    EXPECT_EQ(abortForcedEmergLandingCalls, 1);
+}
+
+TEST(MavlinkTelemetryTest, SetModePlaneCruiseUsesCourseHoldAltHoldFallback)
+{
+    initMavlinkTestState();
+    configuredModes.bits[BOXNAVCOURSEHOLD / 32] |= (1U << (BOXNAVCOURSEHOLD % 32));
+    configuredModes.bits[BOXNAVALTHOLD / 32] |= (1U << (BOXNAVALTHOLD % 32));
+
+    mavlink_message_t msg;
+    mavlink_msg_set_mode_pack(
+        42, 200, &msg,
+        1,
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        PLANE_MODE_CRUISE);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    EXPECT_EQ(rcModeOverrideCalls, 1);
+    EXPECT_TRUE((lastRcModeOverrideMask.bits[BOXNAVCOURSEHOLD / 32] & (1U << (BOXNAVCOURSEHOLD % 32))) != 0);
+    EXPECT_TRUE((lastRcModeOverrideMask.bits[BOXNAVALTHOLD / 32] & (1U << (BOXNAVALTHOLD % 32))) != 0);
+}
+
+TEST(MavlinkTelemetryTest, SetModeCopterGuidedSetsPosholdAndGcsNavOverride)
+{
+    initMavlinkTestState();
+    mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_MULTIROTOR;
+    configuredModes.bits[BOXNAVPOSHOLD / 32] |= (1U << (BOXNAVPOSHOLD % 32));
+    configuredModes.bits[BOXGCSNAV / 32] |= (1U << (BOXGCSNAV % 32));
+
+    mavlink_message_t msg;
+    mavlink_msg_set_mode_pack(
+        42, 200, &msg,
+        1,
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        COPTER_MODE_GUIDED);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    EXPECT_EQ(rcModeOverrideCalls, 1);
+    EXPECT_TRUE((lastRcModeOverrideMask.bits[BOXNAVPOSHOLD / 32] & (1U << (BOXNAVPOSHOLD % 32))) != 0);
+    EXPECT_TRUE((lastRcModeOverrideMask.bits[BOXGCSNAV / 32] & (1U << (BOXGCSNAV % 32))) != 0);
+}
+
+TEST(MavlinkTelemetryTest, SetModeUnsupportedCopterLandIsIgnored)
+{
+    initMavlinkTestState();
+    mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_MULTIROTOR;
+
+    mavlink_message_t msg;
+    mavlink_msg_set_mode_pack(
+        42, 200, &msg,
+        1,
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        COPTER_MODE_LAND);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    EXPECT_EQ(rcModeOverrideCalls, 0);
+    EXPECT_EQ(abortForcedRTHCalls, 0);
+    EXPECT_EQ(abortForcedEmergLandingCalls, 0);
+}
+
+TEST(MavlinkTelemetryTest, SetModeWithoutCustomModeFlagIsIgnored)
+{
+    initMavlinkTestState();
+    configuredModes.bits[BOXNAVPOSHOLD / 32] |= (1U << (BOXNAVPOSHOLD % 32));
+    configuredModes.bits[BOXGCSNAV / 32] |= (1U << (BOXGCSNAV % 32));
+
+    mavlink_message_t msg;
+    mavlink_msg_set_mode_pack(
+        42, 200, &msg,
+        1,
+        0,
+        PLANE_MODE_GUIDED);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    EXPECT_EQ(rcModeOverrideCalls, 0);
+    EXPECT_EQ(abortForcedRTHCalls, 0);
+    EXPECT_EQ(abortForcedEmergLandingCalls, 0);
 }
 
 TEST(MavlinkTelemetryTest, SetHomeUsesWaypointZeroWithCurrentPosition)
@@ -2404,6 +2522,7 @@ void activateForcedRTH(void)
 
 void abortForcedRTH(void)
 {
+    abortForcedRTHCalls++;
 }
 
 rthState_e getStateOfForcedRTH(void)
@@ -2418,6 +2537,7 @@ void activateForcedEmergLanding(void)
 
 void abortForcedEmergLanding(void)
 {
+    abortForcedEmergLandingCalls++;
 }
 
 emergLandState_e getStateOfForcedEmergLanding(void)
@@ -2432,8 +2552,18 @@ flightModeForTelemetry_e getFlightModeForTelemetry(void)
 
 bool isModeActivationConditionPresent(boxId_e modeId)
 {
-    UNUSED(modeId);
-    return false;
+    return (configuredModes.bits[modeId / 32] & (1U << (modeId % 32))) != 0;
+}
+
+void rcModeSetMavlinkOverride(const boxBitmask_t *overrideMask)
+{
+    rcModeOverrideCalls++;
+    lastRcModeOverrideMask = *overrideMask;
+}
+
+void rcModeClearMavlinkOverride(void)
+{
+    memset(&lastRcModeOverrideMask, 0, sizeof(lastRcModeOverrideMask));
 }
 
 textAttributes_t osdGetSystemMessage(char *message, size_t length, bool remove)

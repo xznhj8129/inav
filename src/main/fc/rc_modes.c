@@ -40,8 +40,28 @@
 
 static uint8_t specifiedConditionCountPerMode[CHECKBOX_ITEM_COUNT];
 static bool isUsingNAVModes = false;
+static bool mavlinkModeOverrideActive = false;
+static bool mavlinkModeOverrideLastRcMaskValid = false;
+static boxBitmask_t mavlinkModeOverrideMask;
+static boxBitmask_t mavlinkModeOverrideLastRcMask;
 
 boxBitmask_t rcModeActivationMask; // one bit per mode defined in boxId_e
+
+static const boxId_e mavlinkManagedBoxes[] = {
+    BOXANGLE,
+    BOXHORIZON,
+    BOXNAVALTHOLD,
+    BOXNAVRTH,
+    BOXNAVPOSHOLD,
+    BOXMANUAL,
+    BOXNAVLAUNCH,
+    BOXNAVWP,
+    BOXGCSNAV,
+    BOXNAVCOURSEHOLD,
+    BOXBRAKING,
+    BOXNAVCRUISE,
+    BOXANGLEHOLD,
+};
 
 // TODO(alberto): It looks like we can now safely remove this assert, since everything
 // but BB is able to handle more than 32 boxes and all the definitions use
@@ -146,6 +166,18 @@ void rcModeUpdate(boxBitmask_t *newState)
     rcModeActivationMask = *newState;
 }
 
+void rcModeSetMavlinkOverride(const boxBitmask_t *overrideMask)
+{
+    mavlinkModeOverrideMask = *overrideMask;
+    mavlinkModeOverrideActive = true;
+}
+
+void rcModeClearMavlinkOverride(void)
+{
+    memset(&mavlinkModeOverrideMask, 0, sizeof(mavlinkModeOverrideMask));
+    mavlinkModeOverrideActive = false;
+}
+
 bool isModeActivationConditionPresent(boxId_e modeId)
 {
     return specifiedConditionCountPerMode[modeId] > 0;
@@ -169,7 +201,9 @@ void updateActivatedModes(void)
 {
     // Disable all modes to begin with
     boxBitmask_t newMask;
+    boxBitmask_t rcManagedMask;
     memset(&newMask, 0, sizeof(newMask));
+    memset(&rcManagedMask, 0, sizeof(rcManagedMask));
 
     // Unfortunately for AND logic it's not enough to simply check if any of the specified channel range conditions are valid for a mode.
     // We need to count the total number of conditions specified for each mode, and check that all those conditions are currently valid.
@@ -201,6 +235,37 @@ void updateActivatedModes(void)
                 if (activeConditionCountPerMode[modeIndex] > 0) {
                     bitArraySet(newMask.bits, modeIndex);
                 }
+            }
+        }
+    }
+
+    for (unsigned i = 0; i < ARRAYLEN(mavlinkManagedBoxes); i++) {
+        if (bitArrayGet(newMask.bits, mavlinkManagedBoxes[i])) {
+            bitArraySet(rcManagedMask.bits, mavlinkManagedBoxes[i]);
+        }
+    }
+
+    if (mavlinkModeOverrideActive && mavlinkModeOverrideLastRcMaskValid) {
+        for (unsigned i = 0; i < ARRAYLEN(mavlinkManagedBoxes); i++) {
+            if (bitArrayGet(rcManagedMask.bits, mavlinkManagedBoxes[i]) !=
+                bitArrayGet(mavlinkModeOverrideLastRcMask.bits, mavlinkManagedBoxes[i])) {
+                rcModeClearMavlinkOverride();
+                break;
+            }
+        }
+    }
+
+    mavlinkModeOverrideLastRcMask = rcManagedMask;
+    mavlinkModeOverrideLastRcMaskValid = true;
+
+    if (mavlinkModeOverrideActive) {
+        for (unsigned i = 0; i < ARRAYLEN(mavlinkManagedBoxes); i++) {
+            bitArrayClr(newMask.bits, mavlinkManagedBoxes[i]);
+        }
+
+        for (unsigned i = 0; i < ARRAYLEN(mavlinkManagedBoxes); i++) {
+            if (bitArrayGet(mavlinkModeOverrideMask.bits, mavlinkManagedBoxes[i])) {
+                bitArraySet(newMask.bits, mavlinkManagedBoxes[i]);
             }
         }
     }

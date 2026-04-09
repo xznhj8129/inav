@@ -78,5 +78,6 @@ bool mavlinkIsFixedWingVehicle(void);
 uint8_t mavlinkGetVehicleType(void);
 uint8_t mavlinkGetAutopilotEnum(void);
 mavlinkModeSelection_t mavlinkSelectMode(void);
+bool mavlinkHandleIncomingSetMode(void);
 void mavlinkSendAvailableModesForCurrentMode(void);
 void mavlinkSendCurrentMode(const mavlinkModeSelection_t *modeSelection);
