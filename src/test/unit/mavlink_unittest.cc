@@ -40,6 +40,7 @@ extern "C" {
     #include "drivers/serial.h"
 
     #include "fc/config.h"
+    #include "fc/fc_core.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
     #include "fc/settings.h"
@@ -108,6 +109,7 @@ static const uint8_t testSimpleMspCommand = 90;
 static const uint8_t testLargeReplyMspCommand = 91;
 static const size_t testMspFrameBufSize = MSP_PORT_OUTBUF_SIZE + 16;
 static timeMs_t fakeMillis;
+static timeUs_t fakeMicros;
 static int mspCommandCallCount;
 static int mspPassthroughDispatchCount;
 static int mspRebootPostProcessCount;
@@ -134,6 +136,17 @@ static geoAltitudeDatumFlag_e lastAltitudeTargetDatum;
 static int32_t lastAltitudeTargetCm;
 static flightModeForTelemetry_e testFlightMode;
 static uint32_t testSensorsMask;
+static int tryArmCalls;
+static bool tryArmSucceeds;
+static int disarmCalls;
+static disarmReason_t lastDisarmReason;
+static int activateForcedRTHCalls;
+static rthState_e forcedRTHState;
+static int activateForcedEmergLandingCalls;
+static emergLandState_e forcedEmergLandingState;
+static int geoConvertLocalToGeodeticCalls;
+static bool geoConvertLocalToGeodeticResult;
+static gpsLocation_t geoConvertedLocation;
 
 static void resetSerialBuffers(void)
 {
@@ -278,6 +291,7 @@ static void initMavlinkTestState(void)
 {
     resetSerialBuffers();
     fakeMillis = 0;
+    fakeMicros = 0;
     setWaypointCalls = 0;
     resetWaypointCalls = 0;
     mavlinkRxHandleCalls = 0;
@@ -296,6 +310,17 @@ static void initMavlinkTestState(void)
     lastAltitudeTargetCm = 0;
     testFlightMode = FLM_MANUAL;
     testSensorsMask = 0;
+    tryArmCalls = 0;
+    tryArmSucceeds = false;
+    disarmCalls = 0;
+    lastDisarmReason = DISARM_NONE;
+    activateForcedRTHCalls = 0;
+    forcedRTHState = RTH_IDLE;
+    activateForcedEmergLandingCalls = 0;
+    forcedEmergLandingState = EMERG_LAND_IDLE;
+    geoConvertLocalToGeodeticCalls = 0;
+    geoConvertLocalToGeodeticResult = true;
+    memset(&geoConvertedLocation, 0, sizeof(geoConvertedLocation));
     armingFlags = 0;
     stateFlags = 0;
     memset(&gpsSol, 0, sizeof(gpsSol));
@@ -596,6 +621,212 @@ TEST(MavlinkTelemetryTest, CommandIntRepositionScalesCoordinates)
     EXPECT_EQ(lastWaypoint.alt, (int32_t)(12.3f * 100.0f));
     EXPECT_EQ(lastWaypoint.p3, 0);
     EXPECT_EQ(lastWaypoint.p1, 45);
+}
+
+TEST(MavlinkTelemetryTest, ComponentArmDisarmUsesRealArmState)
+{
+    initMavlinkTestState();
+    tryArmSucceeds = true;
+
+    mavlink_message_t armMsg;
+    mavlink_msg_command_long_pack(
+        42, 200, &armMsg,
+        1, testTargetComponent,
+        MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        1.0f, 0, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&armMsg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_COMPONENT_ARM_DISARM);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(tryArmCalls, 1);
+    EXPECT_TRUE(ARMING_FLAG(ARMED));
+
+    serialTxLen = 0;
+
+    mavlink_message_t disarmMsg;
+    mavlink_msg_command_long_pack(
+        42, 200, &disarmMsg,
+        1, testTargetComponent,
+        MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        0.0f, 0, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&disarmMsg);
+    handleMAVLinkTelemetry(1000);
+
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_COMPONENT_ARM_DISARM);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(disarmCalls, 1);
+    EXPECT_EQ(lastDisarmReason, DISARM_SWITCH);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST(MavlinkTelemetryTest, ComponentArmDisarmDeniesFailedArm)
+{
+    initMavlinkTestState();
+
+    mavlink_message_t msg;
+    mavlink_msg_command_long_pack(
+        42, 200, &msg,
+        1, testTargetComponent,
+        MAV_CMD_COMPONENT_ARM_DISARM,
+        0,
+        1.0f, 0, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_COMPONENT_ARM_DISARM);
+    EXPECT_EQ(ack.result, MAV_RESULT_DENIED);
+    EXPECT_EQ(tryArmCalls, 1);
+    EXPECT_FALSE(ARMING_FLAG(ARMED));
+}
+
+TEST(MavlinkTelemetryTest, CommandLongReturnToLaunchUsesForcedRth)
+{
+    initMavlinkTestState();
+    ENABLE_ARMING_FLAG(ARMED);
+    forcedRTHState = RTH_IN_PROGRESS;
+
+    mavlink_message_t msg;
+    mavlink_msg_command_long_pack(
+        42, 200, &msg,
+        1, testTargetComponent,
+        MAV_CMD_NAV_RETURN_TO_LAUNCH,
+        0,
+        0, 0, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_NAV_RETURN_TO_LAUNCH);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(activateForcedRTHCalls, 1);
+}
+
+TEST(MavlinkTelemetryTest, CommandLongLandUsesForcedEmergencyLanding)
+{
+    initMavlinkTestState();
+    ENABLE_ARMING_FLAG(ARMED);
+    forcedEmergLandingState = EMERG_LAND_IN_PROGRESS;
+
+    mavlink_message_t msg;
+    mavlink_msg_command_long_pack(
+        42, 200, &msg,
+        1, testTargetComponent,
+        MAV_CMD_NAV_LAND,
+        0,
+        0, 0, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_NAV_LAND);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(activateForcedEmergLandingCalls, 1);
+}
+
+TEST(MavlinkTelemetryTest, SetHomeUsesWaypointZeroWithCurrentPosition)
+{
+    initMavlinkTestState();
+    ENABLE_ARMING_FLAG(ARMED);
+    posControl.flags.estPosStatus = EST_USABLE;
+    posControl.flags.isGCSAssistedNavigationEnabled = true;
+    posControl.gpsOrigin.valid = true;
+    posControl.actualState.abs.pos.z = 543.0f;
+    geoConvertedLocation.lat = 375000000;
+    geoConvertedLocation.lon = -1222500000;
+
+    mavlink_message_t msg;
+    mavlink_msg_command_long_pack(
+        42, 200, &msg,
+        1, testTargetComponent,
+        MAV_CMD_DO_SET_HOME,
+        0,
+        1.0f, 0, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_DO_SET_HOME);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(geoConvertLocalToGeodeticCalls, 1);
+    EXPECT_EQ(setWaypointCalls, 1);
+    EXPECT_EQ(lastWaypoint.lat, geoConvertedLocation.lat);
+    EXPECT_EQ(lastWaypoint.lon, geoConvertedLocation.lon);
+    EXPECT_EQ(lastWaypoint.alt, 543);
+}
+
+TEST(MavlinkTelemetryTest, SetHomeConvertsAbsoluteAltitudeToWaypointZeroRelativeAltitude)
+{
+    initMavlinkTestState();
+    ENABLE_ARMING_FLAG(ARMED);
+    posControl.flags.estPosStatus = EST_USABLE;
+    posControl.flags.isGCSAssistedNavigationEnabled = true;
+    posControl.gpsOrigin.valid = true;
+    posControl.gpsOrigin.alt = 1000;
+
+    mavlink_message_t msg;
+    mavlink_msg_command_int_pack(
+        42, 200, &msg,
+        1, testTargetComponent,
+        MAV_FRAME_GLOBAL_INT,
+        MAV_CMD_DO_SET_HOME,
+        0, 0,
+        0, 0, 0, 0,
+        375000000, -1222500000, 34.56f);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_DO_SET_HOME);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(setWaypointCalls, 1);
+    EXPECT_EQ(lastWaypoint.lat, 375000000);
+    EXPECT_NEAR((double)lastWaypoint.lon, -1222500000.0, 100.0);
+    EXPECT_EQ(lastWaypoint.alt, 2456);
 }
 
 TEST(MavlinkTelemetryTest, MissionClearAllAcksAndResets)
@@ -1745,6 +1976,34 @@ TEST(MavlinkTelemetryTest, RcChannelsOverrideIgnoresTargetSystemMismatch)
     EXPECT_EQ(mavlinkRxHandleCalls, 1);
 }
 
+TEST(MavlinkTelemetryTest, TimesyncRepliesWithBootTimeAndMirroredRequesterTimestamp)
+{
+    initMavlinkTestState();
+    fakeMicros = 987654;
+
+    mavlink_message_t msg;
+    mavlink_msg_timesync_pack(
+        42, 200, &msg,
+        0,
+        123456789,
+        1,
+        testTargetComponent);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t replyMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_TIMESYNC, &replyMsg));
+
+    mavlink_timesync_t reply;
+    mavlink_msg_timesync_decode(&replyMsg, &reply);
+
+    EXPECT_EQ(reply.tc1, 987654000LL);
+    EXPECT_EQ(reply.ts1, 123456789LL);
+    EXPECT_EQ(reply.target_system, 42);
+    EXPECT_EQ(reply.target_component, 200);
+}
+
 extern "C" {
 
 int32_t debug[DEBUG32_VALUE_COUNT];
@@ -1765,7 +2024,7 @@ uint16_t averageSystemLoadPercent;
 
 timeUs_t micros(void)
 {
-    return 0;
+    return fakeMicros;
 }
 
 uint32_t millis(void)
@@ -2071,6 +2330,15 @@ bool navigationConsumeWaypointReached(uint16_t *seq)
     return true;
 }
 
+bool geoConvertLocalToGeodetic(gpsLocation_t *llh, const gpsOrigin_t *origin, const fpVector3_t *pos)
+{
+    UNUSED(origin);
+    UNUSED(pos);
+    geoConvertLocalToGeodeticCalls++;
+    *llh = geoConvertedLocation;
+    return geoConvertLocalToGeodeticResult;
+}
+
 navigationFSMStateFlags_t navGetCurrentStateFlags(void)
 {
     return (navigationFSMStateFlags_t)0;
@@ -2079,6 +2347,21 @@ navigationFSMStateFlags_t navGetCurrentStateFlags(void)
 void updateHeadingHoldTarget(int16_t heading)
 {
     UNUSED(heading);
+}
+
+void tryArm(void)
+{
+    tryArmCalls++;
+    if (tryArmSucceeds) {
+        ENABLE_ARMING_FLAG(ARMED);
+    }
+}
+
+void disarm(disarmReason_t disarmReason)
+{
+    disarmCalls++;
+    lastDisarmReason = disarmReason;
+    DISABLE_ARMING_FLAG(ARMED);
 }
 
 void setWaypoint(uint8_t wpNumber, const navWaypoint_t *wp)
@@ -2112,6 +2395,34 @@ void resetWaypointList(void)
     resetWaypointCalls++;
     waypointCount = 0;
     memset(waypointStore, 0, sizeof(waypointStore));
+}
+
+void activateForcedRTH(void)
+{
+    activateForcedRTHCalls++;
+}
+
+void abortForcedRTH(void)
+{
+}
+
+rthState_e getStateOfForcedRTH(void)
+{
+    return forcedRTHState;
+}
+
+void activateForcedEmergLanding(void)
+{
+    activateForcedEmergLandingCalls++;
+}
+
+void abortForcedEmergLanding(void)
+{
+}
+
+emergLandState_e getStateOfForcedEmergLanding(void)
+{
+    return forcedEmergLandingState;
 }
 
 flightModeForTelemetry_e getFlightModeForTelemetry(void)

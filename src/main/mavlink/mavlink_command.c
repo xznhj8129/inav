@@ -32,6 +32,20 @@ static void mavlinkSendCommandAck(uint16_t command, MAV_RESULT result, uint8_t a
     mavlinkSendMessage();
 }
 
+static bool mavlinkCanExecuteControlCommand(void)
+{
+    return isGCSValid() && ARMING_FLAG(ARMED);
+}
+
+static bool mavlinkCanSetHome(void)
+{
+    return isGCSValid() &&
+        ARMING_FLAG(ARMED) &&
+        posControl.flags.estPosStatus >= EST_USABLE &&
+        posControl.gpsOrigin.valid &&
+        posControl.flags.isGCSAssistedNavigationEnabled;
+}
+
 static bool handleIncoming_COMMAND(
     uint8_t targetSystem, 
     uint8_t targetComponent, 
@@ -53,6 +67,90 @@ static bool handleIncoming_COMMAND(
     UNUSED(param3);
 
     switch (command) {
+        case MAV_CMD_COMPONENT_ARM_DISARM:
+            if (!isGCSValid()) {
+                mavlinkSendCommandAck(command, MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+                return true;
+            }
+
+            if (param1 == 1.0f) {
+                if (!ARMING_FLAG(ARMED)) {
+                    tryArm();
+                }
+
+                mavlinkSendCommandAck(command, ARMING_FLAG(ARMED) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+            } else if (param1 == 0.0f) {
+                if (ARMING_FLAG(ARMED)) {
+                    disarm(DISARM_SWITCH);
+                }
+
+                mavlinkSendCommandAck(command, ARMING_FLAG(ARMED) ? MAV_RESULT_DENIED : MAV_RESULT_ACCEPTED, ackTargetSystem, ackTargetComponent);
+            } else {
+                mavlinkSendCommandAck(command, MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
+            }
+            return true;
+        case MAV_CMD_NAV_RETURN_TO_LAUNCH:
+            if (!mavlinkCanExecuteControlCommand()) {
+                mavlinkSendCommandAck(command, MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+                return true;
+            }
+
+            activateForcedRTH();
+            mavlinkSendCommandAck(command, getStateOfForcedRTH() != RTH_IDLE ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+            return true;
+        case MAV_CMD_NAV_LAND:
+            if (!mavlinkCanExecuteControlCommand()) {
+                mavlinkSendCommandAck(command, MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+                return true;
+            }
+
+            activateForcedEmergLanding();
+            mavlinkSendCommandAck(command, getStateOfForcedEmergLanding() != EMERG_LAND_IDLE ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+            return true;
+        case MAV_CMD_DO_SET_HOME:
+            if (!mavlinkCanSetHome()) {
+                mavlinkSendCommandAck(command, MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+                return true;
+            }
+
+            {
+                navWaypoint_t wp = {0};
+
+                if (param1 == 1.0f) {
+                    gpsLocation_t currentHome = {0};
+                    if (!geoConvertLocalToGeodetic(&currentHome, &posControl.gpsOrigin, &posControl.actualState.abs.pos)) {
+                        mavlinkSendCommandAck(command, MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
+                        return true;
+                    }
+
+                    wp.lat = currentHome.lat;
+                    wp.lon = currentHome.lon;
+                    wp.alt = (int32_t)lrintf(posControl.actualState.abs.pos.z);
+                } else {
+                    if (!mavlinkFrameIsSupported(frame,
+                        MAV_FRAME_SUPPORTED_GLOBAL |
+                        MAV_FRAME_SUPPORTED_GLOBAL_RELATIVE_ALT |
+                        MAV_FRAME_SUPPORTED_GLOBAL_INT |
+                        MAV_FRAME_SUPPORTED_GLOBAL_RELATIVE_ALT_INT)) {
+                        mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
+                        return true;
+                    }
+
+                    if (isnan(latitudeDeg) || isnan(longitudeDeg)) {
+                        mavlinkSendCommandAck(command, MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
+                        return true;
+                    }
+
+                    const int32_t altitudeCm = (int32_t)lrintf(altitudeMeters * 100.0f);
+                    wp.lat = (int32_t)lrintf(latitudeDeg * 1e7f);
+                    wp.lon = (int32_t)lrintf(longitudeDeg * 1e7f);
+                    wp.alt = mavlinkFrameUsesAbsoluteAltitude(frame) ? altitudeCm - posControl.gpsOrigin.alt : altitudeCm;
+                }
+
+                setWaypoint(0, &wp);
+                mavlinkSendCommandAck(command, MAV_RESULT_ACCEPTED, ackTargetSystem, ackTargetComponent);
+                return true;
+            }
         case MAV_CMD_DO_REPOSITION:
             if (!mavlinkFrameIsSupported(frame,
                 MAV_FRAME_SUPPORTED_GLOBAL |

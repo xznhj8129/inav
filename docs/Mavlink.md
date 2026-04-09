@@ -106,6 +106,7 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 - `RADIO_STATUS` updates remote TX buffer level and scales RSSI/SNR according to `mavlink_port{1-4}_radio_type` (also feeds link stats for MAVLink RX receivers).
 - `ADSB_VEHICLE` populates the internal traffic list when ADS‑B is enabled.
 - `PARAM_REQUEST_LIST` elicits a stub `PARAM_VALUE` response so ground stations stop requesting parameters (INAV does not expose parameters over MAVLink).
+- `TIMESYNC` replies with monotonic boot-time nanoseconds in `tc1` and mirrors the requester timestamp in `ts1`.
 - `TUNNEL` accepts private payload type `0x8001` for MSP-over-MAVLink on MAVLink2 links.
 
 
@@ -114,6 +115,10 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 Limited implementation of the Command protocol.
 
 - `MAV_CMD_DO_REPOSITION`: sets the Follow Me/GCS Nav waypoint when GCS NAV is valid. Accepts `MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`; otherwise `UNSUPPORTED`.
+- `MAV_CMD_COMPONENT_ARM_DISARM`: arms via `tryArm()` and disarms via `disarm(DISARM_SWITCH)`. The command is accepted only when a valid GCS session exists and the real armed state reaches the requested state.
+- `MAV_CMD_NAV_RETURN_TO_LAUNCH`: triggers the real forced-RTH path and is accepted only when armed and a valid GCS session exists.
+- `MAV_CMD_NAV_LAND`: triggers the real forced emergency landing path and is accepted only when armed and a valid GCS session exists.
+- `MAV_CMD_DO_SET_HOME`: updates home via waypoint `0`, reusing the existing INAV home-update gates (armed, usable position estimate, valid GPS origin, GCS-assisted navigation enabled, valid GCS session). Absolute-altitude MAVLink frames are converted to INAV's home-relative altitude before the update.
 - `MAV_CMD_DO_CHANGE_ALTITUDE`: changes the current altitude target. `param1` is the target altitude in meters and `param2` is interpreted as the MAVLink frame (`MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`); unsupported frames are rejected.
 - `MAV_CMD_CONDITION_YAW`: changes the current heading target when the active navigation state has yaw control. Accepts absolute heading (`param4=0`) and relative turns (`param4!=0`); turn-rate is ignored.
 - `MAV_CMD_SET_MESSAGE_INTERVAL` / `MAV_CMD_GET_MESSAGE_INTERVAL`: adjust or query per-message periodic output for `HEARTBEAT`, `SYS_STATUS`, `EXTENDED_SYS_STATE`, RC channels, `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN`, `ATTITUDE`, `VFR_HUD`, `BATTERY_STATUS`, `SCALED_PRESSURE`, and `SYSTEM_TIME`. `REQUEST_DATA_STREAM` still controls the legacy base stream groups; `SET_MESSAGE_INTERVAL` overrides individual messages on top.

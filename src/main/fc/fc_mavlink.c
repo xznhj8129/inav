@@ -208,6 +208,31 @@ static bool handleIncoming_RADIO_STATUS(void) {
     return true;
 }
 
+static bool handleIncoming_TIMESYNC(void)
+{
+    mavlink_timesync_t msg;
+    mavlink_msg_timesync_decode(&mavlinkContext.recvMsg, &msg);
+
+    if (msg.target_system != 0 && msg.target_system != mavSystemId) {
+        return false;
+    }
+
+    if (msg.target_component != 0 && msg.target_component != mavComponentId) {
+        return false;
+    }
+
+    mavlink_msg_timesync_pack(
+        mavSystemId,
+        mavComponentId,
+        &mavSendMsg,
+        (int64_t)micros() * 1000,
+        msg.ts1,
+        mavlinkContext.recvMsg.sysid,
+        mavlinkContext.recvMsg.compid);
+    mavlinkSendMessage();
+    return true;
+}
+
 #ifdef USE_ADSB
 static bool handleIncoming_ADSB_VEHICLE(void) {
     mavlink_adsb_vehicle_t msg;
@@ -263,6 +288,8 @@ mavlinkFcDispatchResult_e mavlinkFcDispatchIncomingMessage(uint8_t ingressPortIn
         return mavlinkHandleIncomingMissionRequestInt() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;
     case MAVLINK_MSG_ID_REQUEST_DATA_STREAM:
         return mavlinkHandleIncomingRequestDataStream() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;
+    case MAVLINK_MSG_ID_TIMESYNC:
+        return handleIncoming_TIMESYNC() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;
     case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:
         handleIncoming_RC_CHANNELS_OVERRIDE();
         return MAVLINK_FC_DISPATCH_HANDLED_NO_ACTIVITY;
