@@ -4694,7 +4694,7 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 **Notes:** Returns error if any payload bytes are present or the normal forced-RTH path does not leave `RTH_IDLE`. On success, calls `activateForcedRTH()` and returns ACK once `getStateOfForcedRTH()` reports a non-idle forced-RTH state.
 
 ## <a id="msp2_inav_set_home"></a>`MSP2_INAV_SET_HOME (8742 / 0x2226)`
-**Description:** Sets HOME from explicit geodetic coordinates.  
+**Description:** Sets HOME from explicit geodetic coordinates, or restores preserved ARM_HOME when the provided LLA is null.  
   
 **Request Payload:**
 |Field|C Type|Size (Bytes)|Units|Description|
@@ -4706,7 +4706,7 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 
 **Reply Payload:** **None**  
 
-**Notes:** Expects exactly 13 bytes. Returns error if the normal home-update gate is not open (armed, usable estimated position, valid GPS origin, and GCS-assisted navigation enabled). Calls `navSetHomeFromGeodetic()` and interprets `alt_datum` with the same absolute-vs-relative altitude rule used by waypoint missions.
+**Notes:** Expects exactly 13 bytes. Returns error if the normal home-update gate is not open (armed, usable estimated position, valid GPS origin, and GCS-assisted navigation enabled). Calls `navSetHomeFromGeodetic()` and interprets `alt_datum` with the same absolute-vs-relative altitude rule used by waypoint missions. Explicit null LLA (`lat=0`, `lon=0`, `alt=0`) restores the current home from the preserved ARM_HOME capture.
 
 ## <a id="msp2_inav_arm_disarm"></a>`MSP2_INAV_ARM_DISARM (8743 / 0x2227)`
 **Description:** Arms or disarms the aircraft through the normal FC arming path.  

@@ -151,6 +151,7 @@ static emergLandState_e forcedEmergLandingState;
 static int geoConvertLocalToGeodeticCalls;
 static bool geoConvertLocalToGeodeticResult;
 static gpsLocation_t geoConvertedLocation;
+static int navResetHomeToArmHomeCalls;
 static boxBitmask_t configuredModes;
 static int rcModeOverrideCalls;
 static boxBitmask_t lastRcModeOverrideMask;
@@ -330,6 +331,7 @@ static void initMavlinkTestState(void)
     geoConvertLocalToGeodeticCalls = 0;
     geoConvertLocalToGeodeticResult = true;
     memset(&geoConvertedLocation, 0, sizeof(geoConvertedLocation));
+    navResetHomeToArmHomeCalls = 0;
     memset(&configuredModes, 0, sizeof(configuredModes));
     rcModeOverrideCalls = 0;
     memset(&lastRcModeOverrideMask, 0, sizeof(lastRcModeOverrideMask));
@@ -927,7 +929,39 @@ TEST(MavlinkTelemetryTest, SetHomeRejectsCurrentPositionShortcut)
 
     EXPECT_EQ(ack.command, MAV_CMD_DO_SET_HOME);
     EXPECT_EQ(ack.result, MAV_RESULT_UNSUPPORTED);
-    EXPECT_EQ(geoConvertLocalToGeodeticCalls, 0);
+    EXPECT_EQ(setWaypointCalls, 0);
+}
+
+TEST(MavlinkTelemetryTest, SetHomeNullLlaResetsToArmHome)
+{
+    initMavlinkTestState();
+    ENABLE_ARMING_FLAG(ARMED);
+    posControl.flags.estPosStatus = EST_USABLE;
+    posControl.flags.isGCSAssistedNavigationEnabled = true;
+    posControl.gpsOrigin.valid = true;
+
+    mavlink_message_t msg;
+    mavlink_msg_command_int_pack(
+        42, 200, &msg,
+        1, testTargetComponent,
+        MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+        MAV_CMD_DO_SET_HOME,
+        0, 0,
+        0, 0, 0, 0,
+        0, 0, 0.0f);
+
+    pushRxMessage(&msg);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_COMMAND_ACK, &ackMsg));
+
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_DO_SET_HOME);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(navResetHomeToArmHomeCalls, 1);
     EXPECT_EQ(setWaypointCalls, 0);
 }
 
@@ -2523,10 +2557,24 @@ bool navCanSetHome(void)
         posControl.flags.isGCSAssistedNavigationEnabled;
 }
 
+bool navResetHomeToArmHome(void)
+{
+    if (!navCanSetHome()) {
+        return false;
+    }
+
+    navResetHomeToArmHomeCalls++;
+    return true;
+}
+
 bool navSetHomeFromGeodetic(const gpsLocation_t *llh, geoAltitudeDatumFlag_e datumFlag)
 {
     if (!navCanSetHome()) {
         return false;
+    }
+
+    if (llh->lat == 0 && llh->lon == 0 && llh->alt == 0) {
+        return navResetHomeToArmHome();
     }
 
     navWaypoint_t wp = {0};

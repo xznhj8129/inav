@@ -3305,7 +3305,7 @@ void checkSafeHomeState(bool shouldBeEnabled)
 		posControl.safehomeState.isApplied = true;
 	} else {
 		// set home to original arming point
-        setHomePosition(&posControl.rthState.originalHomePosition, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING, navigationActualStateHomeValidity());
+        setHomePosition(&posControl.rthState.originalHomePosition, posControl.rthState.originalHomeHeading, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING, navigationActualStateHomeValidity());
 		posControl.safehomeState.isApplied = false;
 	}
 	// if we've changed the home position, update the distance and direction
@@ -3414,6 +3414,7 @@ void updateHomePosition(void)
         }
         // save the current location in case it is replaced by a safehome or HOME_RESET
         posControl.rthState.originalHomePosition = posControl.rthState.homePosition.pos;
+        posControl.rthState.originalHomeHeading = posControl.rthState.homePosition.heading;
         setHome = false;
     }
 }
@@ -3982,10 +3983,24 @@ bool navCanSetHome(void)
         posControl.flags.isGCSAssistedNavigationEnabled;
 }
 
+bool navResetHomeToArmHome(void)
+{
+    if (!navCanSetHome()) {
+        return false;
+    }
+
+    setHomePosition(&posControl.rthState.originalHomePosition, posControl.rthState.originalHomeHeading, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING, navigationActualStateHomeValidity());
+    return true;
+}
+
 bool navSetHomeFromGeodetic(const gpsLocation_t *llh, geoAltitudeDatumFlag_e datumFlag)
 {
     if (!navCanSetHome()) {
         return false;
+    }
+
+    if (llh->lat == 0 && llh->lon == 0 && llh->alt == 0) {
+        return navResetHomeToArmHome();
     }
 
     navWaypoint_t wp = {0};

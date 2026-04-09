@@ -756,6 +756,7 @@ typedef enum {
 } geoAltitudeDatumFlag_e;
 
 bool navCanSetHome(void);                       // shared home-update gate for MAVLink/MSP control paths
+bool navResetHomeToArmHome(void);               // restore current home to the original ARM_HOME capture
 bool navSetHomeFromGeodetic(const gpsLocation_t *llh, geoAltitudeDatumFlag_e datumFlag); // set HOME from geodetic LLH
 
 // geoSetOrigin stores the location provided in llh as a GPS origin in the
