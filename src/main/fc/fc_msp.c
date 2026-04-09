@@ -3741,6 +3741,14 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
         }
         return MSP_RESULT_ERROR;
 
+    case MSP2_INAV_SET_LAND:
+        // Trigger forced landing using the normal emergency-landing runtime path.
+        // Payload: none
+        if (dataSize == 0 && navActivateEmergencyLanding()) {
+            break;
+        }
+        return MSP_RESULT_ERROR;
+
     default:
         return MSP_RESULT_ERROR;
     }

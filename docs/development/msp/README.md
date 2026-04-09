@@ -422,6 +422,7 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 [8736 - MSP2_INAV_FULL_LOCAL_POSE](#msp2_inav_full_local_pose)  
 [8737 - MSP2_INAV_SET_WP_INDEX](#msp2_inav_set_wp_index)  
 [8739 - MSP2_INAV_SET_CRUISE_HEADING](#msp2_inav_set_cruise_heading)  
+[8740 - MSP2_INAV_SET_LAND](#msp2_inav_set_land)  
 [12288 - MSP2_BETAFLIGHT_BIND](#msp2_betaflight_bind)  
 [12289 - MSP2_RX_BIND](#msp2_rx_bind)  
 
@@ -4667,6 +4668,15 @@ For list of enums, see [Enum documentation page](https://github.com/iNavFlight/i
 **Reply Payload:** **None**  
 
 **Notes:** Returns error if the aircraft is not armed or `NAV_COURSE_HOLD_MODE` is not active. On success, writes the normalized value into both `posControl.cruise.course` and `posControl.cruise.previousCourse` so the next cruise-control update does not inject a spurious correction.
+
+## <a id="msp2_inav_set_land"></a>`MSP2_INAV_SET_LAND (8740 / 0x2224)`
+**Description:** Triggers emergency landing using the active navigation backend.  
+
+**Request Payload:** **None**  
+
+**Reply Payload:** **None**  
+
+**Notes:** Returns error if the aircraft is not armed, any payload bytes are present, or the emergency-landing backend does not leave `EMERG_LAND_IDLE`. On success, calls `navActivateEmergencyLanding()`, which drives the existing forced emergency landing path and returns ACK once the navigation state leaves idle.
 
 ## <a id="msp2_betaflight_bind"></a>`MSP2_BETAFLIGHT_BIND (12288 / 0x3000)`
 **Description:** Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).  

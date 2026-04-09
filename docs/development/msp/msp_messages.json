@@ -11242,6 +11242,14 @@
         "notes": "Returns error if the aircraft is not armed or `NAV_COURSE_HOLD_MODE` is not active. On success, writes the normalized value into both `posControl.cruise.course` and `posControl.cruise.previousCourse` so the next cruise-control update does not inject a spurious correction.",
         "description": "Sets the course heading target while Cruise or Course Hold mode is active."
     },
+    "MSP2_INAV_SET_LAND": {
+        "code": 8740,
+        "mspv": 2,
+        "request": null,
+        "reply": null,
+        "notes": "Returns error if the aircraft is not armed, any payload bytes are present, or the emergency-landing backend does not leave `EMERG_LAND_IDLE`. On success, calls `navActivateEmergencyLanding()`, which drives the existing forced emergency landing path and returns ACK once the navigation state leaves idle.",
+        "description": "Triggers emergency landing using the active navigation backend."
+    },
     "MSP2_BETAFLIGHT_BIND": {
         "code": 12288,
         "mspv": 2,
