@@ -2,6 +2,8 @@
 
 INAV has a partial implementation of MAVLink that is intended primarily for simple telemetry and operation. It supports RC, missions, telemetry and some features such as Guided mode; but it is very different from a compliant MAVLink spec vehicle such as Pixhawk or Ardupilot and important differences exist, as such it is not 100% compatible and cannot be expected to work the same way. The standard MAVLink header library is used in compilation.
 
+INAV supports up to 4 concurrent MAVLink telemetry ports (`MAX_MAVLINK_PORTS`), one endpoint per serial port configured with `FUNCTION_TELEMETRY_MAVLINK`.
+
 ## Fundamental differences from ArduPilot/PX4
 
 - **No MAVLink parameter API**: INAV sends a single stub parameter and otherwise ignores parameter traffic. Configure the aircraft through the INAV Configurator or CLI instead.
@@ -9,16 +11,66 @@ INAV has a partial implementation of MAVLink that is intended primarily for simp
 - **Mission handling**: uploads are rejected while armed (except legacy guided waypoint writes). Mission frames are validated per command and unsupported frames are rejected.
 - **Mode reporting**: `custom_mode` approximates ArduPilot modes and may not match all INAV states. 
 - **Flow control expectations**: INAV honours `RADIO_STATUS.txbuf` to avoid overrunning radios; without it, packets are simply paced at 20 ms intervals.
-- **Half‑duplex etiquette**: when half‑duplex is enabled, INAV waits one telemetry tick after any received frame before transmitting to reduce collisions.
+- **Half‑duplex etiquette**: on a MAVLink serial RX port configured for `serialrx_halfduplex`, INAV waits one telemetry tick after any received frame before transmitting to reduce collisions.
 
-### Relevant CLI options
 
-- `mavlink_sysid` – system ID used in every outbound packet (default 1); most inbound handlers only act on packets targeted to this system ID.
-- `mavlink_autopilot_type` – heartbeat autopilot ID (`GENERIC` or `ARDUPILOT`).
-- `mavlink_version` – force MAVLink v1 when set to 1.
-- Stream rates (Hz): `mavlink_ext_status_rate`, `mavlink_rc_chan_rate`, `mavlink_pos_rate`, `mavlink_extra1_rate`, `mavlink_extra2_rate`, `mavlink_extra3_rate`. Each group is polled up to 50 Hz; a rate of 0 disables the group.
-- `mavlink_min_txbuffer` – minimum remote TX buffer level before sending when `RADIO_STATUS` provides flow control.
-- `mavlink_radio_type` – scales `RADIO_STATUS` RSSI/SNR for **generic**, **ELRS**, or **SiK** links.
+### Usage guidance
+- If you rely on RC via MAVLink, ensure the serial receiver type is set to `SERIALRX_MAVLINK`.
+- If MAVLink RX and telemetry intentionally share one half-duplex wire, enable `serialrx_halfduplex` for that setup.
+- To reduce bandwidth, lower the stream rates for groups you do not need, or disable them entirely by setting the rate to 0.
+- If a GCS or companion needs telemetry on ports 2..4, explicitly request streams (`REQUEST_DATA_STREAM` or `MAV_CMD_SET_MESSAGE_INTERVAL`) because only heartbeat is enabled by default.
+- If you depend on directed forwarding between links, ensure each remote endpoint transmits at least one frame early so route learning is populated.
+
+### Relevant CLI settings
+
+- `mavlink_sysid` - system ID used in every outbound packet (default 1); most inbound handlers only act on packets targeted to this system ID.
+- `mavlink_autopilot_type` - heartbeat autopilot ID (`GENERIC` or `ARDUPILOT`).
+- `mavlink_version` - force MAVLink v1 when set to 1.
+- Stream rates (Hz): Each group is polled up to 50 Hz; a rate of 0 disables the group.
+   - `mavlink_port{1-4}_ext_status_rate`
+   - `mavlink_port{1-4}_rc_chan_rate`
+   - `mavlink_port{1-4}_pos_rate`
+   - `mavlink_port{1-4}_extra1_rate`
+   - `mavlink_port{1-4}_extra2_rate`
+   - `mavlink_port{1-4}_extra3_rate`. 
+- Port 1 uses configured CLI rates (`mavlink_port1_*_rate`).
+- Ports 2..4 start with heartbeat only (1 Hz), all other streams disabled.
+- `mavlink_port{1-4}_min_txbuffer` - minimum remote TX buffer level before sending when `RADIO_STATUS` provides flow control.
+- `mavlink_port{1-4}_radio_type`- scales `RADIO_STATUS` RSSI/SNR for **generic**, **ELRS**, or **SiK** links.
+- `mavlink_port{1-4}_high_latency`- turns on Mavlink HIGH_LATENCY2 mode on this port  
+
+INAV always transmits as MAVLink component `MAV_COMP_ID_AUTOPILOT1`. Attached MAVLink devices are remote components learned from incoming traffic; they are not modeled as local per-port FC identities.
+
+
+## Datastream groups and defaults
+
+Default rates (Hz) are shown; adjust with the CLI keys above for port 1.
+Ports 2..N use a secondary startup profile (heartbeat at 1 Hz, other streams disabled).
+
+| Datastream group | Messages | Default rate |
+| --- | --- | --- |
+| `EXTENDED_STATUS` | `SYS_STATUS` | 2 Hz |
+| `RC_CHANNELS` | `RC_CHANNELS_RAW` (v1) / `RC_CHANNELS` (v2) | 1 Hz |
+| `POSITION` | `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN` | 2 Hz |
+| `EXTRA1` | `ATTITUDE` | 2 Hz |
+| `EXTRA2` | `VFR_HUD` | 2 Hz |
+| `HEARTBEAT` | `HEARTBEAT` | 1 Hz (independent of stream groups) |
+| `EXT_SYS_STATE` | `EXTENDED_SYS_STATE` | 1 Hz (defaults to `mavlink_port1_extra3_rate`) |
+| `EXTRA3` | `BATTERY_STATUS`, `SCALED_PRESSURE`, `SYSTEM_TIME`, `STATUSTEXT` (when present) | 1 Hz |
+
+### Routing, forwarding and local handling
+
+- INAV learns routes from incoming traffic as `(sysid, compid) -> ingress port`.
+- Broadcast messages are forwarded to all other MAVLink ports (except `RADIO_STATUS`, which is not forwarded).
+- Targeted messages are forwarded only to ports with a learned route for that target.
+- Practical caveat: the first targeted message to a never-seen endpoint may not forward until that endpoint has sent at least one MAVLink frame.
+- INAV’s local FC identity is always `(mavlink_sysid, MAV_COMP_ID_AUTOPILOT1)`.
+- Traffic from the local system ID but a different component ID is treated as a remote component and can be learned into the route table.
+- Local/system broadcasts (`target_system=0` or local system ID with `target_component=0`) are fanned out to all local ports only for:
+  - `REQUEST_DATA_STREAM`
+  - `MAV_CMD_SET_MESSAGE_INTERVAL`
+  - `MAV_CMD_CONTROL_HIGH_LATENCY`
+- Other incoming commands/messages are handled once on the resolved local ingress path, but broadcast-targeted control requests still execute locally.
 
 ## Supported Outgoing Messages
 
@@ -35,8 +87,9 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 - `EXTENDED_SYS_STATE`: publishes landed state.
 - `BATTERY_STATUS`: with per-cell voltages (cells 11‑14 in `voltages_ext`), current draw, consumed mAh/Wh, and remaining percentage when available.
 - `SCALED_PRESSURE`: for IMU/baro temperature.
+- `SYSTEM_TIME`: with `time_boot_ms = millis()` and `time_unix_usec = 0`.
 - `STATUSTEXT`: when the OSD has a pending system message; severity follows OSD attributes (notice/warning/critical).
-- On-demand (command-triggered) messages: `AUTOPILOT_VERSION`, `PROTOCOL_VERSION`, `MESSAGE_INTERVAL`, `HOME_POSITION`, `AVAILABLE_MODES`, and `CURRENT_MODE`.
+- Event/on-demand messages: `MISSION_ITEM_REACHED` when a mission item is reached, plus `AUTOPILOT_VERSION`, `PROTOCOL_VERSION`, `MESSAGE_INTERVAL`, `HOME_POSITION`, `AVAILABLE_MODES`, and `CURRENT_MODE`.
 
 ## Supported Incoming Messages
 
@@ -46,12 +99,14 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 - `MISSION_REQUEST_LIST`, `MISSION_REQUEST`, `MISSION_REQUEST_INT`: downloads active mission items; returns `MISSION_ACK` on bad sequence.
 - `MISSION_CLEAR_ALL`: clears stored mission.
 - `COMMAND_LONG` / `COMMAND_INT`: command transport for supported `MAV_CMD_*` handlers.
-- `REQUEST_DATA_STREAM`: legacy stream-rate control per stream group. `MAV_DATA_STREAM_ALL` (0) applies to all INAV-scheduled groups (`EXTENDED_STATUS`, `RC_CHANNELS`, `POSITION`, `EXTRA1`, `EXTRA2`, `EXTRA3`, `EXTENDED_SYS_STATE`); `start_stop==0` stops the addressed stream(s).
-- `SET_POSITION_TARGET_GLOBAL_INT`: requires matching `target_system` and `target_component` (`0` or local component), validates frame/type-mask semantics, updates guided WP255 for XY targets, and supports altitude-only control (`X/Y ignore`, `Z set`) using the same datum logic as `MAV_CMD_DO_CHANGE_ALTITUDE`.
-- `RC_CHANNELS_OVERRIDE` passes channel values to the MAVLink serial receiver backend when targeted to the local system ID.
-- `RADIO_STATUS` updates remote TX buffer level and scales RSSI/SNR according to `mavlink_radio_type` (also feeds link stats for MAVLink RX receivers).
+- `REQUEST_DATA_STREAM`: legacy stream-rate control per stream group.
+- `SET_POSITION_TARGET_GLOBAL_INT`: writes the GCS-guided waypoint when the frame is supported; altitude-only requests are also accepted when X/Y are masked out and GCS navigation is valid.
+- `SET_POSITION_TARGET_LOCAL_NED`: accepts altitude-only requests in `MAV_FRAME_LOCAL_OFFSET_NED` when X/Y are zero or ignored and GCS navigation is valid.
+- `RC_CHANNELS_OVERRIDE` passes channel values to the MAVLink serial receiver backend.
+- `RADIO_STATUS` updates remote TX buffer level and scales RSSI/SNR according to `mavlink_port{1-4}_radio_type` (also feeds link stats for MAVLink RX receivers).
 - `ADSB_VEHICLE` populates the internal traffic list when ADS‑B is enabled.
 - `PARAM_REQUEST_LIST` elicits a stub `PARAM_VALUE` response so ground stations stop requesting parameters (INAV does not expose parameters over MAVLink).
+- `TUNNEL` accepts private payload type `0x8001` for MSP-over-MAVLink on MAVLink2 links.
 
 
 ## Supported Commands
@@ -59,12 +114,14 @@ Messages are organized into MAVLink datastream groups. Each group sends **one me
 Limited implementation of the Command protocol.
 
 - `MAV_CMD_DO_REPOSITION`: sets the Follow Me/GCS Nav waypoint when GCS NAV is valid. Accepts `MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`; otherwise `UNSUPPORTED`.
-- `MAV_CMD_DO_CHANGE_ALTITUDE`: supported when barometer support is compiled (`USE_BARO`); accepts global/global-int (MSL datum) and global-relative/global-relative-int (takeoff-relative datum), then calls navigation altitude-target update.
-- `MAV_CMD_SET_MESSAGE_INTERVAL` / `MAV_CMD_GET_MESSAGE_INTERVAL`: adjust or query telemetry stream output for supported message IDs (streamed messages only; intervals slower than 1 Hz are not accepted).
+- `MAV_CMD_DO_CHANGE_ALTITUDE`: changes the current altitude target. `param1` is the target altitude in meters and `param2` is interpreted as the MAVLink frame (`MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`); unsupported frames are rejected.
+- `MAV_CMD_CONDITION_YAW`: changes the current heading target when the active navigation state has yaw control. Accepts absolute heading (`param4=0`) and relative turns (`param4!=0`); turn-rate is ignored.
+- `MAV_CMD_SET_MESSAGE_INTERVAL` / `MAV_CMD_GET_MESSAGE_INTERVAL`: adjust or query per-message periodic output for `HEARTBEAT`, `SYS_STATUS`, `EXTENDED_SYS_STATE`, RC channels, `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN`, `ATTITUDE`, `VFR_HUD`, `BATTERY_STATUS`, `SCALED_PRESSURE`, and `SYSTEM_TIME`. `REQUEST_DATA_STREAM` still controls the legacy base stream groups; `SET_MESSAGE_INTERVAL` overrides individual messages on top.
 - `MAV_CMD_GET_HOME_POSITION`: replies with `HOME_POSITION` when home fix exists.
-- `MAV_CMD_REQUEST_MESSAGE`: emits one selected message (`HEARTBEAT`, `SYS_STATUS`, `ATTITUDE`, `VFR_HUD`, `AVAILABLE_MODES`, `CURRENT_MODE`, `EXTENDED_SYS_STATE`, RC channels, GPS/global/origin, battery/pressure, and `HOME_POSITION` when available) or `UNSUPPORTED`.
-- `MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES`: returns stub `AUTOPILOT_VERSION` (v2 only; v1 returns `UNSUPPORTED`).
+- `MAV_CMD_REQUEST_MESSAGE`: emits one selected message (`HEARTBEAT`, `SYS_STATUS`, `ATTITUDE`, `VFR_HUD`, `AVAILABLE_MODES`, `CURRENT_MODE`, `EXTENDED_SYS_STATE`, RC channels, `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN`, `BATTERY_STATUS`, `SCALED_PRESSURE`, `SYSTEM_TIME`, and `HOME_POSITION` when available) or `UNSUPPORTED`.
+- `MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES`: returns stub `AUTOPILOT_VERSION` (v2 only; v1 returns `UNSUPPORTED`) advertising `SET_POSITION_TARGET_GLOBAL_INT` and `SET_POSITION_TARGET_LOCAL_NED`.
 - `MAV_CMD_REQUEST_PROTOCOL_VERSION`: returns stub `PROTOCOL_VERSION` (v2 only; v1 returns `UNSUPPORTED`).
+- `MAV_CMD_CONTROL_HIGH_LATENCY`: enables or disables `HIGH_LATENCY2` scheduling on the ingress MAVLink port (`param1` = `0` or `1`). Enabling is rejected on MAVLink1 links.
 
 ## Mode mappings (INAV → MAVLink/ArduPilot)
 
@@ -94,26 +151,6 @@ Limited implementation of the Command protocol.
   - FAILSAFE → **RTL** (RTH/other phases) or **AUTOLAND** (landing phase)
   - Any other unmapped mode falls back to **MANUAL**
 
-## Datastream groups and defaults
-
-Default rates (Hz) are shown; adjust with the CLI keys above.
-
-| Datastream group | Messages | Default rate |
-| --- | --- | --- |
-| `EXTENDED_STATUS` | `SYS_STATUS` | 2 Hz |
-| `RC_CHANNELS` | `RC_CHANNELS_RAW` (v1) / `RC_CHANNELS` (v2) | 1 Hz |
-| `POSITION` | `GPS_RAW_INT`, `GLOBAL_POSITION_INT`, `GPS_GLOBAL_ORIGIN` | 2 Hz |
-| `EXTRA1` | `ATTITUDE` | 3 Hz |
-| `EXTRA2` | `VFR_HUD`, `HEARTBEAT` | 2 Hz |
-| `EXT_SYS_STATE` | `EXTENDED_SYS_STATE` | 1 Hz (defaults to `mavlink_extra3_rate`) |
-| `EXTRA3` | `BATTERY_STATUS`, `SCALED_PRESSURE`, `STATUSTEXT` (when present) | 1 Hz |
-
-## Operating tips
-
-- Set `mavlink_radio_type` to **ELRS** or **SiK** if you use those links to get accurate link quality scaling in `RADIO_STATUS`.
-- If you rely on RC override via MAVLink, ensure the serial receiver type is set to `SERIALRX_MAVLINK` and consider enabling `telemetry_halfduplex` when RX shares the port.
-- To reduce bandwidth, lower the stream rates for groups you do not need, or disable them entirely by setting the rate to 0.
-
 
 ## MAVLink Missions
 
@@ -129,3 +166,25 @@ Partial compatibility with MAVLink mission planners such as QGC is implemented, 
 - SET_POI: lat/lon/alt OK; `param1` is fixed to `MAV_ROI_LOCATION`; user-action bits in `p3` are dropped (alt-mode bit respected on upload).
 - SET_HEAD: heading `p1` OK; user-action bits in `p3` are not represented.
 - Net effect: actions and positions OK, but MSP-specific fields (leg speed, LAND elevation adjustment, RTH land flag, user-action bits in `p3`) are lost, so MAVLink missions cannot fully conform to `MSP_navigation_messages.md`.
+
+
+## MSP over MAVLink tunnel
+This feature uses the MAVLink [Tunnel service](https://mavlink.io/en/services/tunnel.html) to let the INAV Configurator use MSP over an existing MAVLink telemetry link, typically a radio link where there is no separate wireless MSP device.
+**It is not intended as a general-purpose serial tunnel, and it is not a replacement for normal MAVLink control/telemetry traffic.**
+CLI mode is unavailable in MSP-over-MAVLink.
+
+- INAV accepts `TUNNEL` messages with private payload type `0x8001` as an MSP byte stream carried over MAVLink2.
+- `target_system` must match `mavlink_sysid`.
+- `target_component` may be `0` or `MAV_COMP_ID_AUTOPILOT1`.
+- `target_component=0` is handled on the ingress MAVLink port only; it is not fanned out to other local MAVLink ports.
+- MSP replies are sent back to the requester as one or more `TUNNEL` messages on that same ingress port.
+- MSP framing is preserved end-to-end: MSPv1 requests get MSPv1 replies, and MSPv2 requests get MSPv2 replies.
+- Reboot (`MSP_REBOOT`) is supported over the tunnel. Serial passthrough and ESC 4way passthrough are rejected before execution.
+
+## High latency mode
+High-latency mode uses the MAVLink [High Latency service](https://mavlink.io/en/services/high_latency.html) to replace normal scheduled telemetry on one port with periodic `HIGH_LATENCY2` summaries for very low-bandwidth or intermittent links.
+
+- High latency mode is per-port, controlled by `mavlink_port{1-4}_high_latency` or by `MAV_CMD_CONTROL_HIGH_LATENCY` received on that port.
+- It requires MAVLink2. MAVLink1 cannot enable or carry `HIGH_LATENCY2`.
+- When enabled on a port, normal stream scheduling on that port is replaced by `HIGH_LATENCY2` at 5 second intervals.
+- This is intended for slow and high latency telemetry such as cellular, satellite or LoRa, not for normal rich telemetry, mission planning, or configurator use.

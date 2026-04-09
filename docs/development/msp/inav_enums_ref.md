@@ -175,6 +175,8 @@
 - [magSensor_e](#enum-magsensor_e)
 - [mavFrameSupportMask_e](#enum-mavframesupportmask_e)
 - [mavlinkAutopilotType_e](#enum-mavlinkautopilottype_e)
+- [mavlinkFcDispatchResult_e](#enum-mavlinkfcdispatchresult_e)
+- [mavlinkPeriodicMessage_e](#enum-mavlinkperiodicmessage_e)
 - [mavlinkRadio_e](#enum-mavlinkradio_e)
 - [measurementSteps_e](#enum-measurementsteps_e)
 - [mixerProfileATRequest_e](#enum-mixerprofileatrequest_e)
@@ -3382,7 +3384,7 @@
 ---
 ## <a id="enum-mavframesupportmask_e"></a>`mavFrameSupportMask_e`
 
-> Source: ../../../src/main/telemetry/mavlink.c
+> Source: ../../../src/main/mavlink/mavlink_mission.h
 
 | Enumerator | Value | Condition |
 |---|---:|---|
@@ -3403,6 +3405,38 @@
 | `MAVLINK_AUTOPILOT_ARDUPILOT` | 1 |  |
 
 ---
+## <a id="enum-mavlinkfcdispatchresult_e"></a>`mavlinkFcDispatchResult_e`
+
+> Source: ../../../src/main/fc/fc_mavlink.h
+
+| Enumerator | Value | Condition |
+|---|---:|---|
+| `MAVLINK_FC_DISPATCH_NOT_HANDLED` | 0 |  |
+| `MAVLINK_FC_DISPATCH_HANDLED_NO_ACTIVITY` | 1 |  |
+| `MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY` | 2 |  |
+
+---
+## <a id="enum-mavlinkperiodicmessage_e"></a>`mavlinkPeriodicMessage_e`
+
+> Source: ../../../src/main/mavlink/mavlink_types.h
+
+| Enumerator | Value | Condition |
+|---|---:|---|
+| `MAVLINK_PERIODIC_MESSAGE_HEARTBEAT` | 0 |  |
+| `MAVLINK_PERIODIC_MESSAGE_SYS_STATUS` | 1 |  |
+| `MAVLINK_PERIODIC_MESSAGE_EXTENDED_SYS_STATE` | 2 |  |
+| `MAVLINK_PERIODIC_MESSAGE_RC_CHANNELS` | 3 |  |
+| `MAVLINK_PERIODIC_MESSAGE_GPS_RAW_INT` | 4 |  |
+| `MAVLINK_PERIODIC_MESSAGE_GLOBAL_POSITION_INT` | 5 |  |
+| `MAVLINK_PERIODIC_MESSAGE_GPS_GLOBAL_ORIGIN` | 6 |  |
+| `MAVLINK_PERIODIC_MESSAGE_ATTITUDE` | 7 |  |
+| `MAVLINK_PERIODIC_MESSAGE_VFR_HUD` | 8 |  |
+| `MAVLINK_PERIODIC_MESSAGE_BATTERY_STATUS` | 9 |  |
+| `MAVLINK_PERIODIC_MESSAGE_SCALED_PRESSURE` | 10 |  |
+| `MAVLINK_PERIODIC_MESSAGE_SYSTEM_TIME` | 11 |  |
+| `MAVLINK_PERIODIC_MESSAGE_COUNT` | 12 |  |
+
+---
 ## <a id="enum-mavlinkradio_e"></a>`mavlinkRadio_e`
 
 > Source: ../../../src/main/telemetry/telemetry.h
@@ -3412,6 +3446,7 @@
 | `MAVLINK_RADIO_GENERIC` | 0 |  |
 | `MAVLINK_RADIO_ELRS` | 1 |  |
 | `MAVLINK_RADIO_SIK` | 2 |  |
+| `MAVLINK_RADIO_NONE` | 3 |  |
 
 ---
 ## <a id="enum-measurementsteps_e"></a>`measurementSteps_e`
