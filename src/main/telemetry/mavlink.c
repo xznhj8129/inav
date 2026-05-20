@@ -264,6 +264,11 @@ static APM_PLANE_MODE inavToArduPlaneMap(flightModeForTelemetry_e flightMode)
     }
 }
 
+static bool mavlinkFrameIsGuidedGlobal(uint8_t frame)
+{
+    return frame == MAV_FRAME_GLOBAL || frame == MAV_FRAME_GLOBAL_RELATIVE_ALT;
+}
+
 static int mavlinkStreamTrigger(enum MAV_DATA_STREAM streamNum)
 {
     uint8_t rate = (uint8_t) mavRates[streamNum];
@@ -1021,7 +1026,7 @@ static bool handleIncoming_MISSION_ITEM(void)
         if (ARMING_FLAG(ARMED)) {
             // Legacy Mission Planner BS for GUIDED
             if (isGCSValid() && (msg.command == MAV_CMD_NAV_WAYPOINT) && (msg.current == 2)) {
-                if (!(msg.frame == MAV_FRAME_GLOBAL)) {
+                if (!mavlinkFrameIsGuidedGlobal(msg.frame)) {
                     mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg,
                         mavRecvMsg.sysid, mavRecvMsg.compid,
                         MAV_MISSION_UNSUPPORTED_FRAME, MAV_MISSION_TYPE_MISSION, 0);
@@ -1036,7 +1041,7 @@ static bool handleIncoming_MISSION_ITEM(void)
                 wp.alt = (int32_t)(msg.z * 100.0f);
                 wp.p1 = 0;
                 wp.p2 = 0;
-                wp.p3 = 0;
+                wp.p3 = (msg.frame == MAV_FRAME_GLOBAL) ? NAV_WP_ALTMODE : 0;
                 setWaypoint(255, &wp);
 
                 mavlink_msg_mission_ack_pack(mavSystemId, mavComponentId, &mavSendMsg,
