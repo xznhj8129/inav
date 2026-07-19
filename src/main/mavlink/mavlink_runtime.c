@@ -126,6 +126,7 @@ void mavlinkRuntimeCheckState(void)
             configureMAVLinkTelemetryPort(portIndex);
             if (state->telemetryEnabled) {
                 configureMAVLinkStreamRates(portIndex);
+                mavlinkPortReconnected(portIndex);
             }
         } else {
             freeMAVLinkTelemetryPortByIndex(portIndex);
