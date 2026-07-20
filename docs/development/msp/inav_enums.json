@@ -2155,6 +2155,7 @@
             "LSM6DXX_VAL_CTRL1_XL_LPF2": "1",
             "LSM6DXX_VAL_CTRL2_G_ODR6664": "10",
             "LSM6DXX_VAL_CTRL2_G_2000DPS": "3",
+            "LSM6DXX_VAL_CTRL3_C_BDU": "BIT(6)",
             "LSM6DXX_VAL_CTRL3_C_H_LACTIVE": "0",
             "LSM6DXX_VAL_CTRL3_C_PP_OD": "0",
             "LSM6DXX_VAL_CTRL3_C_SIM": "0",
@@ -2172,7 +2173,21 @@
             "LSM6DXX_VAL_CTRL7_G_HPM_G_65": "1",
             "LSM6DXX_VAL_CTRL7_G_HPM_G_260": "2",
             "LSM6DXX_VAL_CTRL7_G_HPM_G_1040": "3",
-            "LSM6DXX_VAL_CTRL9_XL_I3C_DISABLE": "BIT(1)"
+            "LSM6DXX_VAL_CTRL9_XL_I3C_DISABLE": "BIT(1)",
+            "LSM6DXX_VAL_CTRL1_XL_V_OPMODE_HIGH_ACCURACY": "1",
+            "LSM6DXX_VAL_CTRL1_XL_V_ODR_1000HZ_HAODR1": "9",
+            "LSM6DXX_VAL_CTRL2_G_V_OPMODE_HIGH_ACCURACY": "1",
+            "LSM6DXX_VAL_CTRL2_G_V_ODR_8000HZ_HAODR1": "12",
+            "LSM6DXX_VAL_HAODR_CFG_MODE1": "1",
+            "LSM6DXX_VAL_CTRL6_C_V_FS_G_2000DPS": "4",
+            "LSM6DXX_VAL_CTRL6_C_V_DSK320X_RESERVED_BIT3": "BIT(3)",
+            "LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_288HZ": "0",
+            "LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_215HZ": "1",
+            "LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_157HZ": "2",
+            "LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_455HZ": "3",
+            "LSM6DXX_VAL_CTRL7_G_V_LPF1_EN": "BIT(0)",
+            "LSM6DXX_VAL_CTRL8_XL_V_FS_16G": "3",
+            "LSM6DXX_VAL_CTRL4_C_V_DRDY_PULSED": "BIT(1)"
         },
         "lsm6dxxRegister_e": {
             "_source": "inav/src/main/drivers/accgyro/accgyro_lsm6dxx.h",
@@ -2204,7 +2219,8 @@
             "LSM6DXX_REG_OUTY_L_A": "42",
             "LSM6DXX_REG_OUTY_H_A": "43",
             "LSM6DXX_REG_OUTZ_L_A": "44",
-            "LSM6DXX_REG_OUTZ_H_A": "45"
+            "LSM6DXX_REG_OUTZ_H_A": "45",
+            "LSM6DXX_REG_HAODR_CFG": "98"
         },
         "ltm_frame_e": {
             "_source": "inav/src/main/telemetry/ltm.h",
