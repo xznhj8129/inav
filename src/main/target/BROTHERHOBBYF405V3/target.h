@@ -138,6 +138,7 @@
 
 // Others
 
+#define DISABLE_MAVLINK_MSP_TUNNEL
 #define MAX_PWM_OUTPUT_PORTS 9
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE
 #define USE_DSHOT
@@ -152,4 +153,3 @@
 #define TARGET_IO_PORTF         0xffff
 
 #define USE_DSHOT_DMAR
-
