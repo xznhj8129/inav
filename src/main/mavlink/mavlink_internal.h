@@ -93,7 +93,6 @@ typedef struct mavlinkContext_s {
     mspPort_t tunnelMspPorts[MAX_MAVLINK_PORTS];
     uint8_t tunnelRemoteSystemIds[MAX_MAVLINK_PORTS];
     uint8_t tunnelRemoteComponentIds[MAX_MAVLINK_PORTS];
-    uint8_t tunnelReplyPayloadBuf[MSP_PORT_OUTBUF_SIZE];
 #endif
     uint8_t sendMask;
     mavlinkPortRuntime_t *activePort;
@@ -124,7 +123,6 @@ extern mavlinkContext_t mavlinkContext;
 #define mavTunnelMspPorts (mavlinkContext.tunnelMspPorts)
 #define mavTunnelRemoteSystemIds (mavlinkContext.tunnelRemoteSystemIds)
 #define mavTunnelRemoteComponentIds (mavlinkContext.tunnelRemoteComponentIds)
-#define mavTunnelReplyPayloadBuf (mavlinkContext.tunnelReplyPayloadBuf)
 #endif
 #define mavSendMask (mavlinkContext.sendMask)
 #define mavActivePort (mavlinkContext.activePort)
