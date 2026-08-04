@@ -85,9 +85,10 @@ static bool mavlinkProcessCompletedTunnelCommand(uint8_t ingressPortIndex)
 {
     mspPort_t *mspPort = &mavTunnelMspPorts[ingressPortIndex];
     const mspVersion_e mspVersion = mspPort->mspVersion;
+    uint8_t replyPayloadBuf[MSP_PORT_OUTBUF_SIZE];
 
     mspPacket_t reply = {
-        .buf = { .ptr = mavTunnelReplyPayloadBuf, .end = ARRAYEND(mavTunnelReplyPayloadBuf), },
+        .buf = { .ptr = replyPayloadBuf, .end = ARRAYEND(replyPayloadBuf), },
         .cmd = -1,
         .flags = 0,
         .result = 0,
@@ -112,7 +113,7 @@ static bool mavlinkProcessCompletedTunnelCommand(uint8_t ingressPortIndex)
     mspResult_e status = mspSerialProcessCommand(mspPort, mspFcProcessCommand, &reply, &mspPostProcessFn);
 
     if (mspPostProcessFn && command != MSP_REBOOT) {
-        sbufInit(&reply.buf, mavTunnelReplyPayloadBuf, ARRAYEND(mavTunnelReplyPayloadBuf));
+        sbufInit(&reply.buf, replyPayloadBuf, ARRAYEND(replyPayloadBuf));
         reply.result = MSP_RESULT_ERROR;
         mspPostProcessFn = NULL;
         status = MSP_RESULT_ERROR;
