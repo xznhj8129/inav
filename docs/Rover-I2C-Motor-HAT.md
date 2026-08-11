@@ -80,7 +80,15 @@ mmix 3 1.000 0.000 0.000 -1.000
 save
 ```
 
-This assumes M1/M2 are the left wheels and M3/M4 the right. The signs follow from INAV's
+This assumes the wheels are wired to the HAT like this, viewed from above with the nose
+pointing up - the left side on M1/M2 and the right side on M3/M4:
+
+```
+    front left  M1 | M3  front right
+    rear left   M2 | M4  rear right
+```
+
+The signs follow from INAV's
 own conventions: `rcCommand[YAW]` is negated relative to the stick in
 `processPilotAndFailSafeActions()`, and `mixTable()` applies a further negation, so a
 right yaw stick gives a positive contribution to motors with a positive yaw coefficient.
