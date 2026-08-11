@@ -61,7 +61,7 @@ rover limit of 1850.
 Steering comes entirely from the `mmix` yaw coefficients. Do not expect the motor driver
 to know anything about left and right.
 
-## Example configuration (4-wheel skid steer)
+## Base configuration
 
 ```
 set platform_type = ROVER
@@ -71,31 +71,52 @@ set 3d_deadband_low = 1450
 set 3d_deadband_high = 1550
 set 3d_neutral = 1500
 feature REVERSIBLE_MOTORS
-
-mmix reset
-mmix 0 1.000 0.000 0.000  1.000
-mmix 1 1.000 0.000 0.000  1.000
-mmix 2 1.000 0.000 0.000 -1.000
-mmix 3 1.000 0.000 0.000 -1.000
 save
 ```
 
-This assumes the wheels are wired to the HAT like this, viewed from above with the nose
-pointing up - the left side on M1/M2 and the right side on M3/M4:
+## Working out the mixer
+
+Which HAT output drives which wheel depends entirely on how the motors were wired, and
+it is rarely the tidy left/right arrangement you would draw. Measure it rather than
+assume it - trying to infer the mapping from how the vehicle pivots does not work,
+because several different wirings produce similar-looking wrong behaviour.
+
+With the wheels off the ground and the vehicle disarmed, drive each motor on its own and
+note which wheel turns. `MSP_SET_MOTOR` writes `motor_disarmed[]`, which `mixTable()`
+copies straight to `motor[]` while disarmed, so one motor above `3d_deadband_high` and
+the rest at neutral spins exactly one wheel. Work through indices 0..3 in turn.
+
+Note the direction too: any wheel that runs backwards under a forward command has its
+leads reversed, which is fixed by swapping that motor's two leads at the terminal block,
+not in the mixer.
+
+Then group the indices by side and assign the yaw coefficients:
+
+- left-hand wheels get `yaw = +1.000`
+- right-hand wheels get `yaw = -1.000`
+- all four keep `throttle = 1.000`, since INAV derives the motor count from the number
+  of mixer entries with a non-zero throttle coefficient
+
+The sign convention follows from INAV itself: `rcCommand[YAW]` is negated relative to the
+stick in `processPilotAndFailSafeActions()`, and `mixTable()` negates again, so a right
+yaw stick gives a positive contribution to motors with a positive yaw coefficient. A
+right turn needs the left wheels driven forward, hence left = positive. If the whole
+vehicle steers backwards, swap the sign of all four.
+
+### Worked example
+
+A rover that measured out as M1 = front left, M2 = rear right, M3 = front right,
+M4 = rear left - so the left side is mixer indices 0 and 3, and the right side is 1
+and 2:
 
 ```
-    front left  M1 | M3  front right
-    rear left   M2 | M4  rear right
+mmix reset
+mmix 0 1.000 0.000 0.000  1.000
+mmix 1 1.000 0.000 0.000 -1.000
+mmix 2 1.000 0.000 0.000 -1.000
+mmix 3 1.000 0.000 0.000  1.000
+save
 ```
-
-The signs follow from INAV's
-own conventions: `rcCommand[YAW]` is negated relative to the stick in
-`processPilotAndFailSafeActions()`, and `mixTable()` applies a further negation, so a
-right yaw stick gives a positive contribution to motors with a positive yaw coefficient.
-A right turn therefore needs the left wheels positive.
-
-If the vehicle steers the wrong way, swap the sign of all four yaw coefficients. If a
-single wheel turns the wrong way, swap that motor's two leads at the HAT terminal block.
 
 ## Behaviour and limits
 
