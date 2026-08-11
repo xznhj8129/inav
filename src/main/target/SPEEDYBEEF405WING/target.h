@@ -121,6 +121,10 @@
 #define PITOT_I2C_BUS           BUS_I2C1
 #define TEMPERATURE_I2C_BUS     BUS_I2C1
 
+// Adafruit DC & Stepper Motor HAT as the drivetrain (motor_pwm_protocol = I2C_HAT)
+#define USE_MOTOR_I2C_HAT
+#define MOTOR_I2C_HAT_BUS       BUS_I2C1
+
 // OSD
 #define USE_MAX7456
 #define MAX7456_CS_PIN          PB12
