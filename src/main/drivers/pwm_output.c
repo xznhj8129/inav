@@ -645,9 +645,8 @@ void pwmMotorPreconfigure(void)
 
 #ifdef USE_MOTOR_I2C_HAT
         case PWM_TYPE_I2C_HAT:
-            // No hardware timer outputs are claimed - motors go out over I2C. Failure to
-            // detect the HAT is turned into a PWM init error by pwmInitMotors().
-            motorI2CHatInit();
+            // No hardware timer outputs are claimed - motors go out over I2C. The HAT
+            // itself is probed later, by pwmMotorPostBusInit(), once I2C is running.
             motorWritePtr = motorI2CHatWrite;
             break;
 #endif

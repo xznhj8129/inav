@@ -444,6 +444,14 @@ void init(void)
 #endif
 #endif
 
+#if !defined(SITL_BUILD) && defined(USE_MOTOR_I2C_HAT)
+    // Motor protocols living on a shared bus can only be probed now that the buses are up
+    pwmMotorPostBusInit();
+    if (getPwmInitError() != PWM_INIT_ERROR_NONE) {
+        ENABLE_ARMING_FLAG(ARMING_DISABLED_PWM_OUTPUT_ERROR);
+    }
+#endif
+
 #ifdef USE_ADC
     drv_adc_config_t adc_params;
     memset(&adc_params, 0, sizeof(adc_params));

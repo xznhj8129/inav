@@ -398,18 +398,10 @@ static void pwmInitMotors(timMotorServoHardware_t * timOutputs)
     pwmMotorPreconfigure();
 
 #ifdef USE_MOTOR_I2C_HAT
-    if (motorConfig()->motorPwmProtocol == PWM_TYPE_I2C_HAT) {
-        if (motorCount > MOTOR_I2C_HAT_MOTOR_COUNT) {
-            pwmInitError = PWM_INIT_ERROR_I2C_HAT_TOO_MANY_MOTORS;
-            LOG_ERROR(PWM, "Too many motors for the I2C motor HAT. Mixer requested %d, max %d", motorCount, MOTOR_I2C_HAT_MOTOR_COUNT);
-            return;
-        }
-
-        if (!motorI2CHatIsReady()) {
-            pwmInitError = PWM_INIT_ERROR_I2C_HAT_NOT_DETECTED;
-            LOG_ERROR(PWM, "I2C motor HAT not detected at 0x%02X", MOTOR_I2C_HAT_I2C_ADDRESS);
-            return;
-        }
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_I2C_HAT && motorCount > MOTOR_I2C_HAT_MOTOR_COUNT) {
+        pwmInitError = PWM_INIT_ERROR_I2C_HAT_TOO_MANY_MOTORS;
+        LOG_ERROR(PWM, "Too many motors for the I2C motor HAT. Mixer requested %d, max %d", motorCount, MOTOR_I2C_HAT_MOTOR_COUNT);
+        return;
     }
 #endif
 
@@ -488,6 +480,29 @@ static void pwmInitServos(timMotorServoHardware_t * timOutputs)
     }
 }
 
+
+/*
+ * Motor protocols that talk over a shared bus cannot be probed from
+ * pwmMotorAndServoInit(): the I2C peripherals are only brought up later in the boot
+ * sequence. This second stage runs once the buses are alive.
+ */
+void pwmMotorPostBusInit(void)
+{
+#ifdef USE_MOTOR_I2C_HAT
+    if (motorConfig()->motorPwmProtocol != PWM_TYPE_I2C_HAT) {
+        return;
+    }
+
+    // Don't mask an error the first stage already found
+    if (pwmInitError != PWM_INIT_ERROR_NONE) {
+        return;
+    }
+
+    if (!motorI2CHatInit()) {
+        pwmInitError = PWM_INIT_ERROR_I2C_HAT_NOT_DETECTED;
+    }
+#endif
+}
 
 bool pwmMotorAndServoInit(void)
 {
