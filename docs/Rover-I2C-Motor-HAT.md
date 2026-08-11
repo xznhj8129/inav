@@ -73,16 +73,21 @@ set 3d_neutral = 1500
 feature REVERSIBLE_MOTORS
 
 mmix reset
-mmix 0 1.000 0.000 0.000 -1.000
-mmix 1 1.000 0.000 0.000 -1.000
-mmix 2 1.000 0.000 0.000  1.000
-mmix 3 1.000 0.000 0.000  1.000
+mmix 0 1.000 0.000 0.000  1.000
+mmix 1 1.000 0.000 0.000  1.000
+mmix 2 1.000 0.000 0.000 -1.000
+mmix 3 1.000 0.000 0.000 -1.000
 save
 ```
 
-Motors 0/1 (M1/M2) are one side, 2/3 (M3/M4) the other. If the vehicle steers the wrong
-way, swap the sign of all four yaw coefficients. If a single wheel turns the wrong way,
-swap that motor's two leads at the HAT terminal block.
+This assumes M1/M2 are the left wheels and M3/M4 the right. The signs follow from INAV's
+own conventions: `rcCommand[YAW]` is negated relative to the stick in
+`processPilotAndFailSafeActions()`, and `mixTable()` applies a further negation, so a
+right yaw stick gives a positive contribution to motors with a positive yaw coefficient.
+A right turn therefore needs the left wheels positive.
+
+If the vehicle steers the wrong way, swap the sign of all four yaw coefficients. If a
+single wheel turns the wrong way, swap that motor's two leads at the HAT terminal block.
 
 ## Behaviour and limits
 
