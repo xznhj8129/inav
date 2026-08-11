@@ -47,6 +47,7 @@
 #define PCA9685_PRESCALE            0xFE
 
 #define PCA9685_MODE1_RESTART       0x80
+#define PCA9685_MODE1_AI            0x20
 #define PCA9685_MODE1_SLEEP         0x10
 #define PCA9685_MODE1_ALLCALL       0x01
 #define PCA9685_MODE2_OUTDRV        0x04
@@ -134,7 +135,14 @@ static bool pca9685Reset(void)
     const uint8_t allOff[4] = { 0, 0, 0, 0 };
     uint8_t mode1;
 
-    if (!busWriteBuf(busDev, PCA9685_ALL_LED_ON_L, allOff, sizeof(allOff))) {
+    /*
+     * Auto-increment must be enabled before anything else: this driver writes each
+     * channel's four LEDn_ON_L..OFF_H bytes as a single burst, and with AI off the
+     * PCA9685 drops all four into LEDn_ON_L, leaving ON_H/OFF_L/OFF_H untouched - the
+     * outputs then never assert. The Adafruit library writes those registers one at a
+     * time, which is why it never has to set this bit.
+     */
+    if (!busWrite(busDev, PCA9685_MODE1, PCA9685_MODE1_ALLCALL | PCA9685_MODE1_AI)) {
         return false;
     }
 
@@ -142,7 +150,7 @@ static bool pca9685Reset(void)
         return false;
     }
 
-    if (!busWrite(busDev, PCA9685_MODE1, PCA9685_MODE1_ALLCALL)) {
+    if (!busWriteBuf(busDev, PCA9685_ALL_LED_ON_L, allOff, sizeof(allOff))) {
         return false;
     }
 
