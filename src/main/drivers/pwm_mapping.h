@@ -45,6 +45,7 @@ typedef enum {
     PWM_TYPE_DSHOT150,
     PWM_TYPE_DSHOT300,
     PWM_TYPE_DSHOT600,
+    PWM_TYPE_I2C_HAT,       // Adafruit I2C motor HAT - no hardware timer outputs are used
 } motorPwmProtocolTypes_e;
 
 typedef enum {
@@ -65,6 +66,8 @@ typedef enum {
     PWM_INIT_ERROR_NOT_ENOUGH_MOTOR_OUTPUTS,
     PWM_INIT_ERROR_NOT_ENOUGH_SERVO_OUTPUTS,
     PWM_INIT_ERROR_TIMER_INIT_FAILED,
+    PWM_INIT_ERROR_I2C_HAT_TOO_MANY_MOTORS,
+    PWM_INIT_ERROR_I2C_HAT_NOT_DETECTED,
 } pwmInitError_e;
 
 typedef struct rangefinderIOConfig_s {

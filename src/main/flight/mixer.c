@@ -105,6 +105,37 @@ void pgResetFn_timerOverrides(timerOverride_t *instance)
     }
 }
 
+bool isMotorProtocolCenteredBidirectional(void)
+{
+#ifdef USE_MOTOR_I2C_HAT
+    return motorConfig()->motorPwmProtocol == PWM_TYPE_I2C_HAT;
+#else
+    return false;
+#endif
+}
+
+/*
+ * Convert a conventional unipolar propulsion command - one where mincommand means "no
+ * propulsion" - into the centered domain, where neutral means "no propulsion". Returns
+ * the input untouched for conventional protocols.
+ */
+uint16_t mixerConvertToCenteredThrottle(uint16_t throttle)
+{
+    if (!isMotorProtocolCenteredBidirectional()) {
+        return throttle;
+    }
+
+    const uint16_t minThrottle = motorConfig()->mincommand;
+    const uint16_t maxThrottle = getMaxThrottle();
+    const uint16_t neutral = reversibleMotorsConfig()->neutral;
+
+    if (throttle <= minThrottle || maxThrottle <= minThrottle) {
+        return neutral;
+    }
+
+    return scaleRange(constrain(throttle, minThrottle, maxThrottle), minThrottle, maxThrottle, neutral, maxThrottle);
+}
+
 int getThrottleIdleValue(void)
 {
     if (!throttleIdleValue) {
@@ -220,8 +251,10 @@ void mixerInit(void)
 {
     computeMotorCount();
     loadPrimaryMotorMixer();
-    // in 3D mode, mixer gain has to be halved
-    if (feature(FEATURE_REVERSIBLE_MOTORS)) {
+    // in 3D mode, mixer gain has to be halved. Centered-bidirectional protocols keep the
+    // full gain: their motors span the whole 1000..2000 range around neutral, so full yaw
+    // authority is needed to pivot on the spot.
+    if (feature(FEATURE_REVERSIBLE_MOTORS) && !isMotorProtocolCenteredBidirectional()) {
         mixerScale = 0.5f;
     }
 
@@ -241,7 +274,11 @@ void mixerResetDisarmedMotors(void)
 {
     getThrottleIdleValue();
 
-    if (feature(FEATURE_REVERSIBLE_MOTORS)) {
+    if (isMotorProtocolCenteredBidirectional()) {
+        motorZeroCommand = reversibleMotorsConfig()->neutral;
+        throttleRangeMin = motorConfig()->mincommand;
+        throttleRangeMax = getMaxThrottle();
+    } else if (feature(FEATURE_REVERSIBLE_MOTORS)) {
         motorZeroCommand = reversibleMotorsConfig()->neutral;
         throttleRangeMin = throttleDeadbandHigh;
         throttleRangeMax = getMaxThrottle();
@@ -253,7 +290,8 @@ void mixerResetDisarmedMotors(void)
 
     reversibleMotorsThrottleState = MOTOR_DIRECTION_FORWARD;
 
-    if (ifMotorstopFeatureEnabled()) {
+    if (ifMotorstopFeatureEnabled() || isMotorProtocolCenteredBidirectional()) {
+        // There is no idle for a centered-bidirectional drivetrain - stopped is neutral
         motorValueWhenStopped = motorZeroCommand;
     } else {
         motorValueWhenStopped = throttleIdleValue;
@@ -414,6 +452,14 @@ void FAST_CODE writeMotors(void)
         }
         else
 #endif
+        if (isMotorProtocolCenteredBidirectional()) {
+            /*
+             * motor[i] is already an independently mixed centered command - there is no
+             * global forward/backward direction to scale it into.
+             */
+            motorValue = motor[i];
+        }
+        else
         {
             if (feature(FEATURE_REVERSIBLE_MOTORS)) {
                 if (reversibleMotorsThrottleState == MOTOR_DIRECTION_FORWARD) {
@@ -555,7 +601,19 @@ void FAST_CODE mixTable(void)
         mixerThrottleCommand = constrain(logicConditionValuesByType[LOGIC_CONDITION_OVERRIDE_THROTTLE], throttleRangeMin, throttleRangeMax);
     } else
 #endif
-    if (feature(FEATURE_REVERSIBLE_MOTORS)) {
+    if (isMotorProtocolCenteredBidirectional()) {
+        /*
+         * Every motor is mixed independently over the full symmetric range, with neutral
+         * in the middle. There is no global motor direction, so both the direction state
+         * machine and the half-range clamping of FEATURE_REVERSIBLE_MOTORS are skipped -
+         * the mmix yaw coefficients alone decide which wheels turn which way.
+         */
+        reversibleMotorsThrottleState = MOTOR_DIRECTION_FORWARD;
+        throttleRangeMin = motorConfig()->mincommand;
+        throttleRangeMax = getMaxThrottle();
+        motorValueWhenStopped = reversibleMotorsConfig()->neutral;
+        mixerThrottleCommand = constrain(rcCommand[THROTTLE], throttleRangeMin, throttleRangeMax);
+    } else if (feature(FEATURE_REVERSIBLE_MOTORS)) {
         if (rcCommand[THROTTLE] >= (throttleDeadbandHigh) || STATE(SET_REVERSIBLE_MOTORS_FORWARD)) {
             /*
              * Throttle is above deadband, FORWARD direction
@@ -613,13 +671,24 @@ void FAST_CODE mixTable(void)
         for (int i = 0; i < motorCount; i++) {
             rpyMix[i] /= motorMixRange;
         }
+    }
 
-        // Allow some clipping on edges to soften correction response
-        throttleMin = throttleMin + (throttleRange / 2) - (throttleRange * THROTTLE_CLIPPING_FACTOR / 2);
-        throttleMax = throttleMin + (throttleRange / 2) + (throttleRange * THROTTLE_CLIPPING_FACTOR / 2);
-    } else {
-        throttleMin = MIN(throttleMin + (rpyMixRange / 2), throttleMin + (throttleRange / 2) - (throttleRange * THROTTLE_CLIPPING_FACTOR / 2));
-        throttleMax = MAX(throttleMax - (rpyMixRange / 2), throttleMin + (throttleRange / 2) + (throttleRange * THROTTLE_CLIPPING_FACTOR / 2));
+    /*
+     * Centered-bidirectional protocols do not re-window the throttle command. The window
+     * below is biased towards the top of the throttle range, which is right for a
+     * unipolar throttle but would make a centered command asymmetric - full reverse plus
+     * full yaw would drive one side forwards. Clipping happens per motor instead, which
+     * stays symmetric about neutral.
+     */
+    if (!isMotorProtocolCenteredBidirectional()) {
+        if (motorMixRange > 1.0f) {
+            // Allow some clipping on edges to soften correction response
+            throttleMin = throttleMin + (throttleRange / 2) - (throttleRange * THROTTLE_CLIPPING_FACTOR / 2);
+            throttleMax = throttleMin + (throttleRange / 2) + (throttleRange * THROTTLE_CLIPPING_FACTOR / 2);
+        } else {
+            throttleMin = MIN(throttleMin + (rpyMixRange / 2), throttleMin + (throttleRange / 2) - (throttleRange * THROTTLE_CLIPPING_FACTOR / 2));
+            throttleMax = MAX(throttleMax - (rpyMixRange / 2), throttleMin + (throttleRange / 2) + (throttleRange * THROTTLE_CLIPPING_FACTOR / 2));
+        }
     }
 
     // Now add in the desired throttle, but keep in a range that doesn't clip adjusted
@@ -686,6 +755,12 @@ motorStatus_e getMotorStatus(void)
             // If user is holding stick low, we are not in failsafe and either on a plane or on a quad with inactive
             // airmode - we need to check if we are allowing navigation to override MOTOR_STOP
 
+            if (isMotorProtocolCenteredBidirectional()) {
+                // Centered throttle means zero speed, not motors off. The mixer has to keep
+                // running so that yaw can still pivot the vehicle on the spot.
+                return MOTOR_RUNNING;
+            }
+
             switch (navConfig()->general.flags.nav_overrides_motor_stop) {
                 case NOMS_ALL_NAV:
                     return navigationInAutomaticThrottleMode() ? MOTOR_RUNNING : MOTOR_STOPPED_USER;
@@ -729,7 +804,11 @@ uint16_t getMaxThrottle(void) {
     static uint16_t throttle = 0;
 
     if (throttle == 0) {
-        if (STATE(ROVER) || STATE(BOAT)) {
+        if (isMotorProtocolCenteredBidirectional()) {
+            // The centered domain has to stay symmetric: 1000 full reverse, 1500 stopped,
+            // 2000 full forward. Clipping the top to the rover limit would not.
+            throttle = MAX_THROTTLE;
+        } else if (STATE(ROVER) || STATE(BOAT)) {
             throttle = MAX_THROTTLE_ROVER;
         } else {
             throttle = MAX_THROTTLE;

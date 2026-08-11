@@ -127,7 +127,7 @@ void applyRoverBoatPitchRollThrottleController(navigationFSMStateFlags_t navStat
                 rcCommand[YAW] = posControl.rcAdjustment[YAW];
             }
 
-            rcCommand[THROTTLE] = constrain(currentBatteryProfile->nav.fw.cruise_throttle, motorConfig()->mincommand, getMaxThrottle());
+            rcCommand[THROTTLE] = mixerConvertToCenteredThrottle(constrain(currentBatteryProfile->nav.fw.cruise_throttle, motorConfig()->mincommand, getMaxThrottle()));
         }
     }
 }
@@ -138,7 +138,7 @@ void applyRoverBoatNavigationController(navigationFSMStateFlags_t navStateFlags,
         rcCommand[ROLL] = 0;
         rcCommand[PITCH] = 0;
         rcCommand[YAW] = 0;
-        rcCommand[THROTTLE] = setDesiredThrottle(currentBatteryProfile->failsafe_throttle, true);
+        rcCommand[THROTTLE] = mixerConvertToCenteredThrottle(setDesiredThrottle(currentBatteryProfile->failsafe_throttle, true));
     } else if (navStateFlags & NAV_CTL_POS) {
         applyRoverBoatPositionController(currentTimeUs);
         applyRoverBoatPitchRollThrottleController(navStateFlags, currentTimeUs);

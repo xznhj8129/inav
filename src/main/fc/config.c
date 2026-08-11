@@ -250,8 +250,23 @@ void validateAndFixConfig(void)
 
     // Limitations of different protocols
 #if !defined(USE_DSHOT)
-    if (motorConfig()->motorPwmProtocol > PWM_TYPE_BRUSHED) {
+    if (motorConfig()->motorPwmProtocol >= PWM_TYPE_DSHOT150 && motorConfig()->motorPwmProtocol <= PWM_TYPE_DSHOT600) {
         motorConfigMutable()->motorPwmProtocol = PWM_TYPE_MULTISHOT;
+    }
+#endif
+
+#if defined(USE_MOTOR_I2C_HAT)
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_I2C_HAT) {
+        /*
+         * The HAT drivetrain is centered-bidirectional - 1500 is stop, 1000/2000 are full
+         * reverse/forward. Reversible motors supplies the matching neutral and deadband
+         * handling that arming and the throttle stick depend on, so it is not optional.
+         */
+        featureSet(FEATURE_REVERSIBLE_MOTORS);
+    }
+#else
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_I2C_HAT) {
+        motorConfigMutable()->motorPwmProtocol = PWM_TYPE_STANDARD;
     }
 #endif
 

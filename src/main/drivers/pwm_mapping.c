@@ -33,6 +33,7 @@
 
 #include "drivers/io.h"
 #include "drivers/io_impl.h"
+#include "drivers/motor_i2c_hat.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_output.h"
 #include "drivers/pwm_mapping.h"
@@ -66,7 +67,9 @@ static const char * pwmInitErrorMsg[] = {
     /* PWM_INIT_ERROR_TOO_MANY_SERVOS */          "Mixer defines too many servos",
     /* PWM_INIT_ERROR_NOT_ENOUGH_MOTOR_OUTPUTS */ "Not enough motor outputs/timers",
     /* PWM_INIT_ERROR_NOT_ENOUGH_SERVO_OUTPUTS */ "Not enough servo outputs/timers",
-    /* PWM_INIT_ERROR_TIMER_INIT_FAILED */        "Output timer init failed"
+    /* PWM_INIT_ERROR_TIMER_INIT_FAILED */        "Output timer init failed",
+    /* PWM_INIT_ERROR_I2C_HAT_TOO_MANY_MOTORS */  "I2C motor HAT supports 4 motors",
+    /* PWM_INIT_ERROR_I2C_HAT_NOT_DETECTED */     "I2C motor HAT not detected"
 };
 
 static const motorProtocolProperties_t motorProtocolProperties[] = {
@@ -77,6 +80,7 @@ static const motorProtocolProperties_t motorProtocolProperties[] = {
     [PWM_TYPE_DSHOT150]     = { .usesHwTimer = true,    .isDSHOT = true },
     [PWM_TYPE_DSHOT300]     = { .usesHwTimer = true,    .isDSHOT = true },
     [PWM_TYPE_DSHOT600]     = { .usesHwTimer = true,    .isDSHOT = true },
+    [PWM_TYPE_I2C_HAT]      = { .usesHwTimer = false,   .isDSHOT = false },
 };
 
 pwmInitError_e getPwmInitError(void)
@@ -392,6 +396,22 @@ static void pwmInitMotors(timMotorServoHardware_t * timOutputs)
 
     // Do the pre-configuration. For motors w/o hardware timers this should be sufficient
     pwmMotorPreconfigure();
+
+#ifdef USE_MOTOR_I2C_HAT
+    if (motorConfig()->motorPwmProtocol == PWM_TYPE_I2C_HAT) {
+        if (motorCount > MOTOR_I2C_HAT_MOTOR_COUNT) {
+            pwmInitError = PWM_INIT_ERROR_I2C_HAT_TOO_MANY_MOTORS;
+            LOG_ERROR(PWM, "Too many motors for the I2C motor HAT. Mixer requested %d, max %d", motorCount, MOTOR_I2C_HAT_MOTOR_COUNT);
+            return;
+        }
+
+        if (!motorI2CHatIsReady()) {
+            pwmInitError = PWM_INIT_ERROR_I2C_HAT_NOT_DETECTED;
+            LOG_ERROR(PWM, "I2C motor HAT not detected at 0x%02X", MOTOR_I2C_HAT_I2C_ADDRESS);
+            return;
+        }
+    }
+#endif
 
     // Now if we need to configure individual motor outputs - do that
     if (!motorsUseHardwareTimers()) {

@@ -31,6 +31,7 @@
 #include "common/circular_queue.h"
 
 #include "drivers/io.h"
+#include "drivers/motor_i2c_hat.h"
 #include "drivers/timer.h"
 #include "drivers/pwm_mapping.h"
 #include "drivers/pwm_output.h"
@@ -220,6 +221,11 @@ void pwmWriteMotor(uint8_t index, uint16_t value)
 
 void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 {
+#ifdef USE_MOTOR_I2C_HAT
+    // The HAT has no timer outputs to shut down - it keeps driving until told otherwise
+    motorI2CHatReleaseAll();
+#endif
+
     for (int index = 0; index < motorCount; index++) {
         // Set the compare register to 0, which stops the output pulsing if the timer overflows
         if (motors[index].pwmPort) {
@@ -231,6 +237,11 @@ void pwmShutdownPulsesForAllMotors(uint8_t motorCount)
 void pwmDisableMotors(void)
 {
     pwmMotorsEnabled = false;
+
+#ifdef USE_MOTOR_I2C_HAT
+    // pwmWriteMotor() stops feeding the HAT while disabled, so release it explicitly
+    motorI2CHatReleaseAll();
+#endif
 }
 
 void pwmEnableMotors(void)
@@ -518,7 +529,29 @@ static bool executeDShotCommands(void){
 }
 #endif
 
+#else // digital motor protocol
+
+// This stub is needed to avoid ESC_SENSOR dependency on DSHOT
+void pwmRequestMotorTelemetry(int motorIndex)
+{
+    UNUSED(motorIndex);
+}
+
+#endif
+
+#if defined(USE_DSHOT) || defined(USE_MOTOR_I2C_HAT)
+
 void pwmCompleteMotorUpdate(void) {
+#ifdef USE_MOTOR_I2C_HAT
+    if (initMotorProtocol == PWM_TYPE_I2C_HAT) {
+        // Flush the cached motor commands. The driver rate limits itself, so this does
+        // not put I2C traffic on the gyro/PID loop.
+        motorI2CHatUpdate();
+        return;
+    }
+#endif
+
+#ifdef USE_DSHOT
     // This only makes sense for digital motor protocols
     if (!isMotorProtocolDigital()) {
         return;
@@ -574,14 +607,7 @@ void pwmCompleteMotorUpdate(void) {
 #endif
     }
 #endif
-}
-
-#else // digital motor protocol
-
-// This stub is needed to avoid ESC_SENSOR dependency on DSHOT
-void pwmRequestMotorTelemetry(int motorIndex)
-{
-    UNUSED(motorIndex);
+#endif
 }
 
 #endif
@@ -616,6 +642,15 @@ void pwmMotorPreconfigure(void)
             motorWritePtr = pwmWriteDigital;
             break;
 #endif
+
+#ifdef USE_MOTOR_I2C_HAT
+        case PWM_TYPE_I2C_HAT:
+            // No hardware timer outputs are claimed - motors go out over I2C. Failure to
+            // detect the HAT is turned into a PWM init error by pwmInitMotors().
+            motorI2CHatInit();
+            motorWritePtr = motorI2CHatWrite;
+            break;
+#endif
     }
 }
 
@@ -641,6 +676,11 @@ uint32_t getEscUpdateFrequency(void) {
 
         case PWM_TYPE_DSHOT600:
             return 16000;
+
+#ifdef USE_MOTOR_I2C_HAT
+        case PWM_TYPE_I2C_HAT:
+            return MOTOR_I2C_HAT_UPDATE_HZ;
+#endif
 
         case PWM_TYPE_ONESHOT125:
         default:

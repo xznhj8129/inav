@@ -107,6 +107,17 @@ extern int16_t motor_disarmed[MAX_SUPPORTED_MOTORS];
 extern int mixerThrottleCommand;
 
 bool ifMotorstopFeatureEnabled(void);
+
+/*
+ * True when the active motor protocol expects each motor to be an independently signed
+ * command centered on reversibleMotorsConfig()->neutral, spanning mincommand (full
+ * reverse) to getMaxThrottle() (full forward). Unlike FEATURE_REVERSIBLE_MOTORS this has
+ * no single global motor direction, so the mixer can drive one side forward and the other
+ * backward at the same instant - which is what a skid-steer rover needs.
+ */
+bool isMotorProtocolCenteredBidirectional(void);
+uint16_t mixerConvertToCenteredThrottle(uint16_t throttle);
+
 int getThrottleIdleValue(void);
 int16_t getThrottlePercent(bool);
 uint16_t setDesiredThrottle(uint16_t throttle, bool allowMotorStop);

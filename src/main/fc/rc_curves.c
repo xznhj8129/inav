@@ -38,7 +38,12 @@ int16_t lookupThrottleRCMid;                         // THROTTLE curve mid point
 
 void generateThrottleCurve(const controlConfig_t *controlConfig)
 {
-    const int minThrottle = getThrottleIdleValue();
+    /*
+     * A centered-bidirectional drivetrain has no idle: the bottom of the stick is full
+     * reverse and the middle is stop. Anchoring the curve at throttle idle instead would
+     * push a centered stick above neutral and make the vehicle creep forward.
+     */
+    const int minThrottle = isMotorProtocolCenteredBidirectional() ? motorConfig()->mincommand : getThrottleIdleValue();
     lookupThrottleRCMid = minThrottle + (int32_t)(getMaxThrottle() - minThrottle) * controlConfig->throttle.rcMid8 / 100; // [MINTHROTTLE;MAXTHROTTLE]
 
     for (int i = 0; i < THROTTLE_LOOKUP_LENGTH; i++) {

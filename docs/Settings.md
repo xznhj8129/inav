@@ -3054,7 +3054,7 @@ The number of motor poles. Required to compute motor RPM
 
 ### motor_pwm_protocol
 
-Protocol that is used to send motor updates to ESCs. Possible values - STANDARD, ONESHOT125, ONESHOT42, MULTISHOT, DSHOT150, DSHOT300, DSHOT600, DSHOT1200, BRUSHED
+Protocol that is used to send motor updates to ESCs. Possible values - STANDARD, ONESHOT125, MULTISHOT, BRUSHED, DSHOT150, DSHOT300, DSHOT600, I2C_HAT. I2C_HAT drives an Adafruit DC motor HAT (PCA9685 at 0x60) over I2C instead of the motor pins, and uses a centered 1000/1500/2000 motor command range.
 
 | Default | Min | Max |
 | --- | --- | --- |

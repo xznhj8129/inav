@@ -27,7 +27,7 @@ tables:
   - name: blackbox_device
     values: ["SERIAL", "SPIFLASH", "SDCARD", "FILE"]
   - name: motor_pwm_protocol
-    values: ["STANDARD", "ONESHOT125", "MULTISHOT", "BRUSHED", "DSHOT150", "DSHOT300", "DSHOT600"]
+    values: ["STANDARD", "ONESHOT125", "MULTISHOT", "BRUSHED", "DSHOT150", "DSHOT300", "DSHOT600", "I2C_HAT"]
   - name: servo_protocol
     values: ["PWM", "SBUS", "SBUS_PWM"]
   - name: failsafe_procedure
@@ -847,7 +847,7 @@ groups:
         min: 50
         max: 32000
       - name: motor_pwm_protocol
-        description: "Protocol that is used to send motor updates to ESCs. Possible values - STANDARD, ONESHOT125, ONESHOT42, MULTISHOT, DSHOT150, DSHOT300, DSHOT600, DSHOT1200, BRUSHED"
+        description: "Protocol that is used to send motor updates to ESCs. Possible values - STANDARD, ONESHOT125, MULTISHOT, BRUSHED, DSHOT150, DSHOT300, DSHOT600, I2C_HAT. I2C_HAT drives an Adafruit DC motor HAT (PCA9685 at 0x60) over I2C instead of the motor pins, and uses a centered 1000/1500/2000 motor command range."
         default_value: "ONESHOT125"
         field: motorPwmProtocol
         table: motor_pwm_protocol

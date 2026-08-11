@@ -149,6 +149,7 @@ typedef enum {
     DEVHW_SDCARD,       // Generic SD-Card
     DEVHW_IRLOCK,       // IR-Lock visual positioning hardware
     DEVHW_PCF8574,      // 8-bit I/O expander
+    DEVHW_ADAFRUIT_MOTOR_HAT,   // PCA9685 + TB6612 DC motor driver (Adafruit product 2348)
 } devHardwareType_e;
 
 typedef enum {

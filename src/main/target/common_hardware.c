@@ -18,6 +18,7 @@
 #include <platform.h>
 #include "drivers/io.h"
 #include "drivers/bus.h"
+#include "drivers/motor_i2c_hat.h"
 #include "drivers/sensor.h"
 
 #if !defined(USE_TARGET_HARDWARE_DESCRIPTORS)
@@ -483,6 +484,23 @@
     #endif
 
     BUSDEV_REGISTER_I2C(busdev_pcf8574,      DEVHW_PCF8574,       PCF8574_I2C_BUS,     0x20,               NONE,           DEVFLAGS_NONE, 0);
+#endif
+
+#if defined(USE_I2C) && defined(USE_MOTOR_I2C_HAT)
+
+    #if !defined(MOTOR_I2C_HAT_BUS) && defined(EXTERNAL_I2C_BUS)
+        #define MOTOR_I2C_HAT_BUS EXTERNAL_I2C_BUS
+    #endif
+
+    #if !defined(MOTOR_I2C_HAT_BUS) && defined(DEFAULT_I2C_BUS)
+        #define MOTOR_I2C_HAT_BUS DEFAULT_I2C_BUS
+    #endif
+
+    #if !defined(MOTOR_I2C_HAT_BUS)
+        #define MOTOR_I2C_HAT_BUS BUS_I2C1
+    #endif
+
+    BUSDEV_REGISTER_I2C(busdev_motor_i2c_hat, DEVHW_ADAFRUIT_MOTOR_HAT, MOTOR_I2C_HAT_BUS, MOTOR_I2C_HAT_I2C_ADDRESS, NONE, DEVFLAGS_NONE, 0);
 #endif
 
 #endif  // USE_TARGET_HARDWARE_DESCRIPTORS

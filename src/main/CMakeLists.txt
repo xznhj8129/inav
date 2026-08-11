@@ -197,6 +197,8 @@ main_sources(COMMON_SRC
     drivers/irlock.h
     drivers/light_led.c
     drivers/light_led.h
+    drivers/motor_i2c_hat.c
+    drivers/motor_i2c_hat.h
     drivers/light_ws2811strip.c
     drivers/light_ws2811strip.h
     drivers/lights_io.c
