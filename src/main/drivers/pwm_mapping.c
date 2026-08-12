@@ -314,13 +314,28 @@ void pwmEnsureEnoughtMotors(uint8_t motorCount)
     }
 }
 
+static bool motorsUseHardwareTimers(void)
+{
+    return getMotorProtocolProperties(motorConfig()->motorPwmProtocol)->usesHwTimer;
+}
+
 void pwmBuildTimerOutputList(timMotorServoHardware_t * timOutputs, bool isMixerUsingServos)
 {
     UNUSED(isMixerUsingServos);
     timOutputs->maxTimMotorCount = 0;
     timOutputs->maxTimServoCount = 0;
 
-    uint8_t motorCount = getMotorCount();
+    /*
+     * Protocols that drive motors off-board claim no timer outputs, so none are reserved
+     * here either - every output stays available to servos without needing a
+     * timer_output_mode override. Only I2C_HAT does this today, so targets built without
+     * it keep the original behaviour exactly.
+     */
+#ifdef USE_MOTOR_I2C_HAT
+    const uint8_t motorCount = motorsUseHardwareTimers() ? getMotorCount() : 0;
+#else
+    const uint8_t motorCount = getMotorCount();
+#endif
     uint8_t motorIdx = 0;
 
     pwmEnsureEnoughtMotors(motorCount);
@@ -370,11 +385,6 @@ void pwmBuildTimerOutputList(timMotorServoHardware_t * timOutputs, bool isMixerU
                 break;
         }
     }
-}
-
-static bool motorsUseHardwareTimers(void)
-{
-    return getMotorProtocolProperties(motorConfig()->motorPwmProtocol)->usesHwTimer;
 }
 
 static bool servosUseHardwareTimers(void)
