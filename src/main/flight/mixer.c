@@ -718,6 +718,20 @@ int16_t getThrottlePercent(bool useScaled)
 {
     int16_t thr = constrain(mixerThrottleCommand, PWM_RANGE_MIN, PWM_RANGE_MAX);
 
+    if (isMotorProtocolCenteredBidirectional()) {
+        /*
+         * Neutral is zero propulsion, so report a signed percentage: -100 full reverse,
+         * 0 stopped, +100 full forward. Measuring against the bottom of the range like a
+         * unipolar throttle would report ~50% while the vehicle is standing still.
+         */
+        const int16_t value = useScaled ? thr : constrain(rxGetChannelValue(THROTTLE), PWM_RANGE_MIN, PWM_RANGE_MAX);
+        const int16_t neutral = reversibleMotorsConfig()->neutral;
+        const int16_t range = (value >= neutral) ? (getMaxThrottle() - neutral)
+                                                 : (neutral - motorConfig()->mincommand);
+
+        return (range > 0) ? ((value - neutral) * 100 / range) : 0;
+    }
+
     if (useScaled) {
        thr = (thr - throttleIdleValue) * 100 / (getMaxThrottle() - throttleIdleValue);
     } else {

@@ -1235,7 +1235,12 @@ static void osdFormatThrottlePosition(char *buff, bool useScaled, textAttributes
     }
 #endif
     int8_t throttlePercent = getThrottlePercent(useScaled);
-    if ((useScaled && throttlePercent <= 0) || !ARMING_FLAG(ARMED)) {
+    // A centered-bidirectional drivetrain reports negatives for reverse, which is a real
+    // throttle setting rather than "stopped"
+    const bool throttleIsStopped = isMotorProtocolCenteredBidirectional() ? (throttlePercent == 0)
+                                                                         : (throttlePercent <= 0);
+
+    if ((useScaled && throttleIsStopped) || !ARMING_FLAG(ARMED)) {
         const char* message = ARMING_FLAG(ARMED) ? (throttlePercent == 0 && !ifMotorstopFeatureEnabled()) ? "IDLE" : "STOP" : "DARM";
         buff[0] = SYM_THR;
         strcpy(buff + 1, message);
