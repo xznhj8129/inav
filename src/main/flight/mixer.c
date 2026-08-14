@@ -107,6 +107,15 @@ void pgResetFn_timerOverrides(timerOverride_t *instance)
 
 bool isMotorProtocolCenteredBidirectional(void)
 {
+    /*
+     * A skid-steered ground vehicle needs each motor to be an independently signed
+     * command, so it can drive one side forward while the other reverses. The global
+     * direction that FEATURE_REVERSIBLE_MOTORS otherwise applies makes that impossible.
+     */
+    if ((STATE(ROVER) || STATE(BOAT)) && feature(FEATURE_REVERSIBLE_MOTORS)) {
+        return true;
+    }
+
 #ifdef USE_MOTOR_I2C_HAT
     return motorConfig()->motorPwmProtocol == PWM_TYPE_I2C_HAT;
 #else
