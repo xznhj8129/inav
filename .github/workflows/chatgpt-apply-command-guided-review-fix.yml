@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - chatgpt/command-guided-review-fix
+  pull_request:
+    branches:
+      - mav/06-command-guided
 
 permissions:
   contents: write
