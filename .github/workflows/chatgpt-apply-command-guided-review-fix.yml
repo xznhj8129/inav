@@ -1,0 +1,181 @@
+name: Apply command-guided review fix
+
+on:
+  push:
+    branches:
+      - chatgpt/command-guided-review-fix
+  pull_request:
+    branches:
+      - mav/06-command-guided
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/command-guided-review-fix
+          fetch-depth: 0
+
+      - name: Apply review fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/command-guided-review.patch <<'PATCH'
+          diff --git a/src/main/fc/rc_modes.c b/src/main/fc/rc_modes.c
+          --- a/src/main/fc/rc_modes.c
+          +++ b/src/main/fc/rc_modes.c
+          @@ -209,13 +209,18 @@ void rcModeUpdate(boxBitmask_t *newState)
+               rcModeUpdateEffectiveActivationMask();
+           }
+           
+          -void rcModeSetActivationOverride(boxId_e boxId)
+          +boxId_e rcModeSetActivationOverride(boxId_e boxId)
+           {
+          +    const int previousOverrideIndex = rcModeActivationOverrideActive ? BITARRAY_FIND_FIRST_SET(rcModeActivationOverrideMask.bits, 0) : -1;
+          +    const boxId_e previousOverride = previousOverrideIndex >= 0 ? (boxId_e)previousOverrideIndex : (boxId_e)BOXID_NONE;
+          +
+               rcModeActivationOverrideSnapshot = rcModeFlightModeMask(&rcModeRawActivationMask);
+               BITARRAY_CLR_ALL(rcModeActivationOverrideMask.bits);
+               bitArraySet(rcModeActivationOverrideMask.bits, boxId);
+               rcModeActivationOverrideActive = true;
+               rcModeUpdateEffectiveActivationMask();
+          +
+          +    return previousOverride;
+           }
+           
+           void rcModeClearActivationOverride(boxId_e boxId)
+          diff --git a/src/main/fc/rc_modes.h b/src/main/fc/rc_modes.h
+          --- a/src/main/fc/rc_modes.h
+          +++ b/src/main/fc/rc_modes.h
+          @@ -136,7 +136,7 @@ PG_DECLARE(modeActivationOperatorConfig_t, modeActivationOperatorConfig);
+           
+           bool IS_RC_MODE_ACTIVE(boxId_e boxId);
+           void rcModeUpdate(boxBitmask_t *newState);
+          -void rcModeSetActivationOverride(boxId_e boxId);
+          +boxId_e rcModeSetActivationOverride(boxId_e boxId);
+           void rcModeClearActivationOverride(boxId_e boxId);
+           
+           bool isModeActivationConditionPresent(boxId_e modeId);
+          diff --git a/src/main/mavlink/mavlink_guided.c b/src/main/mavlink/mavlink_guided.c
+          --- a/src/main/mavlink/mavlink_guided.c
+          +++ b/src/main/mavlink/mavlink_guided.c
+          @@ -107,12 +107,18 @@ bool mavlinkHandleIncomingSetPositionTargetGlobalInt(void)
+                   return true;
+               }
+           
+          +    if (!zIgnored && (!isfinite(msg.alt) ||
+          +        msg.alt < (float)INT32_MIN / 100.0f ||
+          +        msg.alt > (float)INT32_MAX / 100.0f)) {
+          +        return true;
+          +    }
+          +
+               if (isGCSValid()) {
+                   navWaypoint_t wp = {0};
+                   wp.action = NAV_WP_ACTION_WAYPOINT;
+                   wp.lat = msg.lat_int;
+                   wp.lon = msg.lon_int;
+          -        wp.alt = zIgnored ? 0 : (int32_t)(msg.alt * 100.0f);
+          +        wp.alt = zIgnored ? 0 : (int32_t)lrintf(msg.alt * 100.0f);
+                   wp.p1 = 0;
+                   wp.p2 = 0;
+                   wp.p3 = mavlinkFrameUsesAbsoluteAltitude(frame) ? NAV_WP_ALTMODE : 0;
+          @@ -146,12 +152,22 @@ bool mavlinkHandleIncomingSetPositionTargetLocalNed(void)
+                   return true;
+               }
+           
+          +    if ((!xIgnored && !isfinite(msg.x)) ||
+          +        (!yIgnored && !isfinite(msg.y)) ||
+          +        !isfinite(msg.z)) {
+          +        return true;
+          +    }
+          +
+               if ((!xIgnored && fabsf(msg.x) > 0.01f) || (!yIgnored && fabsf(msg.y) > 0.01f)) {
+                   return true;
+               }
+           
+          -    const int32_t targetAltitudeCm = (int32_t)lrintf((float)getEstimatedActualPosition(Z) - (msg.z * 100.0f));
+          -    navigationSetAltitudeTargetWithDatum(NAV_WP_TAKEOFF_DATUM, targetAltitudeCm);
+          +    const float targetAltitudeCm = getEstimatedActualPosition(Z) - (msg.z * 100.0f);
+          +    if (!isfinite(targetAltitudeCm) || targetAltitudeCm < (float)INT32_MIN || targetAltitudeCm > (float)INT32_MAX) {
+          +        return true;
+          +    }
+          +
+          +    navigationSetAltitudeTargetWithDatum(NAV_WP_TAKEOFF_DATUM, (int32_t)lrintf(targetAltitudeCm));
+           
+               return true;
+           }
+          diff --git a/src/main/navigation/navigation.c b/src/main/navigation/navigation.c
+          --- a/src/main/navigation/navigation.c
+          +++ b/src/main/navigation/navigation.c
+          @@ -2605,7 +2605,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_FW_LANDING_ABORT(naviga
+           
+               if (posControl.flags.forcedLandingActivated) {
+                   posControl.flags.forcedLandingActivated = false;
+          -        return NAV_FSM_EVENT_SWITCH_TO_IDLE;
+          +        return NAV_FSM_EVENT_SWITCH_TO_RTH;
+               }
+           
+               return posControl.fwLandState.landWp ? NAV_FSM_EVENT_SWITCH_TO_WAYPOINT : NAV_FSM_EVENT_SWITCH_TO_RTH;
+          @@ -2695,6 +2695,10 @@ static void navProcessFSMEvents(navigationFSMEvent_t injectedEvent)
+           
+               /* Process new injected event if event defined,
+                * otherwise process timeout event if defined */
+          +    // Command-triggered LAND is a cross-state preemption: it must be able to
+          +    // enter the prepared landing path from any current nav state, including RTH.
+          +    // Keep this deliberate exception instead of requiring every FSM state to
+          +    // expose a landing transition.
+               if (injectedEvent == NAV_FSM_EVENT_SWITCH_TO_LANDING) {
+                   previousState = navSetNewFSMState(NAV_STATE_WAYPOINT_RTH_LAND);
+               } else if (injectedEvent != NAV_FSM_EVENT_NONE && navFSM[posControl.navState].onEvent[injectedEvent] != NAV_STATE_UNDEFINED) {
+          @@ -5273,7 +5277,7 @@ bool activateRTHMode(void)
+           
+               abortFixedWingLaunch();
+               posControl.flags.forcedLandingActivated = false;
+          -    rcModeSetActivationOverride(BOXNAVRTH);
+          +    const boxId_e previousOverride = rcModeSetActivationOverride(BOXNAVRTH);
+           #ifdef USE_SAFE_HOME
+               checkSafeHomeState(true);
+           #endif
+          @@ -5284,6 +5288,9 @@ bool activateRTHMode(void)
+               }
+           
+               rcModeClearActivationOverride(BOXNAVRTH);
+          +    if (previousOverride != BOXID_NONE) {
+          +        rcModeSetActivationOverride(previousOverride);
+          +    }
+               return false;
+           }
+           
+          @@ -5302,7 +5309,7 @@ bool activatePositionHoldMode(void)
+               abortFixedWingLaunch();
+               posControl.flags.forcedRTHActivated = false;
+               posControl.flags.forcedLandingActivated = false;
+          -    rcModeSetActivationOverride(BOXNAVPOSHOLD);
+          +    const boxId_e previousOverride = rcModeSetActivationOverride(BOXNAVPOSHOLD);
+               navProcessFSMEvents(selectNavEventFromBoxModeInput());
+           
+               if (navGetStateFlags(posControl.navState) & NAV_CTL_HOLD) {
+          @@ -5313,6 +5320,9 @@ bool activatePositionHoldMode(void)
+               }
+           
+               rcModeClearActivationOverride(BOXNAVPOSHOLD);
+          +    if (previousOverride != BOXID_NONE) {
+          +        rcModeSetActivationOverride(previousOverride);
+          +    }
+               return false;
+           }
+          PATCH
+
+          git apply --check /tmp/command-guided-review.patch
+          git apply /tmp/command-guided-review.patch
+          rm .github/workflows/chatgpt-apply-command-guided-review-fix.yml
+
+          git config user.name "ChatGPT review fix"
+          git config user.email "7685285+xznhj8129@users.noreply.github.com"
+          git add -- src/main/fc/rc_modes.c src/main/fc/rc_modes.h src/main/mavlink/mavlink_guided.c src/main/navigation/navigation.c .github/workflows/chatgpt-apply-command-guided-review-fix.yml
+          git commit -m "Apply command-guided review fixes"
+          git push origin HEAD:chatgpt/command-guided-review-fix
