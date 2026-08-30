@@ -351,7 +351,7 @@ static void initMavlinkTestState(void)
     requestedArmState = false;
     setArmStateResult = true;
     activateRthCalls = 0;
-    forcedRthState = RTH_IDLE;
+    forcedRthState = RTH_IN_PROGRESS;
     activatePositionHoldCalls = 0;
     activatePositionHoldResult = true;
     lastLoiterRadiusOverride = 0;
@@ -385,8 +385,11 @@ static void initMavlinkTestState(void)
     telemetryConfigMutable()->halfDuplex = 0;
 
     rxConfigMutable()->receiverType = RX_TYPE_NONE;
+    rxConfigMutable()->dualRxEnabled = 0;
     rxConfigMutable()->serialrx_provider = SERIALRX_SBUS;
     rxConfigMutable()->halfDuplex = 0;
+    rxConfigMutable()->receiverTypeSecondary = RX_TYPE_NONE;
+    rxConfigMutable()->serialrx_provider_secondary = SERIALRX_SBUS;
 
     systemConfigMutable()->current_mixer_profile_index = 0;
     mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_AIRPLANE;
@@ -489,7 +492,6 @@ TEST(MavlinkTelemetryTest, TunnelLargeReplyFragmentsAcrossMultipleMessages)
 
     EXPECT_EQ(collectTunnelPayload(messages), encodeMspV1Reply(testLargeReplyMspCommand, MSP_RESULT_ACK, expectedPayload));
 }
-
 
 TEST(MavlinkTelemetryTest, TunnelProcessesEveryCompleteFrameInOnePayload)
 {
@@ -1849,7 +1851,7 @@ TEST(MavlinkTelemetryTest, MissionRequestSendsWaypointInt)
     ASSERT_EQ(itemMsg.msgid, MAVLINK_MSG_ID_MISSION_ITEM_INT);
 
     mavlink_mission_item_int_t item;
-    mavlink_msg_mission_item_int_decode(&itemMsg, &item);
+    mavlink_msg_mission_item_int_decode(&msg, &item);
 
     EXPECT_EQ(item.seq, 0);
     EXPECT_EQ(item.command, MAV_CMD_NAV_WAYPOINT);
@@ -2712,6 +2714,7 @@ TEST(MavlinkTelemetryTest, RadioStatusUpdatesRxLinkStats)
     rxConfigMutable()->receiverType = RX_TYPE_SERIAL;
     rxConfigMutable()->serialrx_provider = SERIALRX_MAVLINK;
     telemetryConfigMutable()->mavlink[0].radio_type = MAVLINK_RADIO_ELRS;
+    testPortConfig.functionMask |= FUNCTION_RX_SERIAL;
 
     mavlink_message_t msg;
     mavlink_msg_radio_status_pack(
@@ -2729,6 +2732,9 @@ TEST(MavlinkTelemetryTest, RadioStatusUpdatesRxLinkStats)
 TEST(MavlinkTelemetryTest, RcChannelsOverrideIsForwarded)
 {
     initMavlinkTestState();
+    rxConfigMutable()->receiverType = RX_TYPE_SERIAL;
+    rxConfigMutable()->serialrx_provider = SERIALRX_MAVLINK;
+    testPortConfig.functionMask |= FUNCTION_RX_SERIAL;
 
     mavlink_message_t msg;
     mavlink_msg_rc_channels_override_pack(
@@ -2743,9 +2749,12 @@ TEST(MavlinkTelemetryTest, RcChannelsOverrideIsForwarded)
     EXPECT_EQ(mavlinkRxHandleCalls, 1);
 }
 
-TEST(MavlinkTelemetryTest, RcChannelsOverrideIgnoresTargetSystemMismatch)
+TEST(MavlinkTelemetryTest, RcChannelsOverrideRejectsTargetSystemMismatch)
 {
     initMavlinkTestState();
+    rxConfigMutable()->receiverType = RX_TYPE_SERIAL;
+    rxConfigMutable()->serialrx_provider = SERIALRX_MAVLINK;
+    testPortConfig.functionMask |= FUNCTION_RX_SERIAL;
 
     mavlink_message_t msg;
     mavlink_msg_rc_channels_override_pack(
@@ -2757,7 +2766,7 @@ TEST(MavlinkTelemetryTest, RcChannelsOverrideIgnoresTargetSystemMismatch)
     pushRxMessage(&msg);
     handleMAVLinkTelemetry(1000);
 
-    EXPECT_EQ(mavlinkRxHandleCalls, 1);
+    EXPECT_EQ(mavlinkRxHandleCalls, 0);
 }
 
 TEST(MavlinkTelemetryTest, PingRequestEchoesSequenceAndTimestamp)
@@ -3255,8 +3264,6 @@ TEST(MavlinkTelemetryTest, MissionCurrentCompletionOutranksWpModeAndClearsOnReen
     mavlink_msg_mission_current_decode(&currentMsg, &current);
     EXPECT_EQ(current.mission_state, MISSION_STATE_ACTIVE);
 
-    // Final item reached; the FSM parks in WAYPOINT_FINISHED which still maps
-    // to NAV_WP_MODE - the landed vehicle must report COMPLETE, not ACTIVE.
     posControl.wpReachedSeq = 1;
     posControl.wpReachedNotificationPending = true;
     resetSerialBuffers();
@@ -3265,7 +3272,6 @@ TEST(MavlinkTelemetryTest, MissionCurrentCompletionOutranksWpModeAndClearsOnReen
     mavlink_msg_mission_current_decode(&currentMsg, &current);
     EXPECT_EQ(current.mission_state, MISSION_STATE_COMPLETE);
 
-    // Leaving WP mode keeps COMPLETE.
     flightModeFlags = 0;
     resetSerialBuffers();
     handleMAVLinkTelemetry(3000000);
@@ -3273,7 +3279,6 @@ TEST(MavlinkTelemetryTest, MissionCurrentCompletionOutranksWpModeAndClearsOnReen
     mavlink_msg_mission_current_decode(&currentMsg, &current);
     EXPECT_EQ(current.mission_state, MISSION_STATE_COMPLETE);
 
-    // Re-engaging WP mode is a new run: stale COMPLETE must clear.
     flightModeFlags = NAV_WP_MODE;
     resetSerialBuffers();
     handleMAVLinkTelemetry(4000000);
@@ -3289,9 +3294,6 @@ TEST(MavlinkTelemetryTest, MissionItemReachedSurvivesPortlessCycle)
     posControl.wpReachedSeq = 1;
     posControl.wpReachedNotificationPending = true;
 
-    // No active port: the latch must not be consumed and discarded (a shared
-    // port closing on disarm right after landing would otherwise eat the
-    // final item's notification).
     mavlinkRuntimeFreePorts();
     handleMAVLinkTelemetry(1000);
     EXPECT_TRUE(posControl.wpReachedNotificationPending);
@@ -3323,7 +3325,6 @@ TEST(MavlinkTelemetryTest, MissionClearAllDeniedForNonOwningSender)
     ASSERT_TRUE(findTxMessageById(MAVLINK_MSG_ID_MISSION_REQUEST_INT, &reqMsg));
     resetSerialBuffers();
 
-    // A different GCS may not cancel another partner's transfer.
     mavlink_msg_mission_clear_all_pack(
         43, 200, &msg,
         1, testTargetComponent, MAV_MISSION_TYPE_MISSION);
@@ -3339,8 +3340,6 @@ TEST(MavlinkTelemetryTest, MissionClearAllDeniedForNonOwningSender)
     EXPECT_EQ(ack.type, MAV_MISSION_DENIED);
     EXPECT_EQ(resetWaypointCalls, 0);
 
-    // The owning sender's transfer is still alive: item 0 is accepted and
-    // item 1 requested.
     resetSerialBuffers();
     mavlink_msg_mission_item_int_pack(
         42, 200, &msg,
@@ -3728,6 +3727,33 @@ int16_t rxGetChannelValue(unsigned channel)
     return 1500;
 }
 
+rxLinkStatistics_t *rxGetLinkStatisticsMutable(rxLink_e link)
+{
+    return (unsigned)link < RX_LINK_COUNT ? &rxLinkStatistics : NULL;
+}
+
+void rxLinkStatisticsUpdated(rxLink_e link, uint16_t validFields)
+{
+    UNUSED(link);
+    UNUSED(validFields);
+}
+
+int8_t mavlinkRxLinkForPortFunctionMask(uint32_t functionMask)
+{
+    const bool rx1 = (functionMask & FUNCTION_RX_SERIAL) &&
+        rxConfig()->receiverType == RX_TYPE_SERIAL &&
+        rxConfig()->serialrx_provider == SERIALRX_MAVLINK;
+    const bool rx2 = (functionMask & FUNCTION_RX_SERIAL_SECONDARY) &&
+        rxConfig()->dualRxEnabled &&
+        rxConfig()->receiverTypeSecondary == RX_TYPE_SERIAL &&
+        rxConfig()->serialrx_provider_secondary == SERIALRX_MAVLINK;
+
+    if (rx1 == rx2) {
+        return -1;
+    }
+    return rx2 ? RX_LINK_SECONDARY : RX_LINK_PRIMARY;
+}
+
 hardwareSensorStatus_e getHwGyroStatus(void) { return HW_SENSOR_NONE; }
 hardwareSensorStatus_e getHwAccelerometerStatus(void) { return HW_SENSOR_NONE; }
 hardwareSensorStatus_e getHwCompassStatus(void) { return HW_SENSOR_NONE; }
@@ -3921,8 +3947,9 @@ textAttributes_t osdGetSystemMessage(char *message, size_t length, bool remove)
     return testOsdSystemMessageAttributes;
 }
 
-void mavlinkRxHandleMessage(const mavlink_rc_channels_override_t *msg)
+void mavlinkRxHandleMessage(rxLink_e link, const mavlink_rc_channels_override_t *msg)
 {
+    UNUSED(link);
     UNUSED(msg);
     mavlinkRxHandleCalls++;
 }
