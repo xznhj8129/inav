@@ -134,6 +134,7 @@ typedef struct mavlinkMlrsPortRuntime_s {
 } mavlinkMlrsPortRuntime_t;
 
 typedef struct mavlinkPortRuntime_s {
+    uint8_t configIndex;            // which mavlink_portN_* settings group drives this port
     serialPort_t *port;
     const serialPortConfig_t *portConfig;
     portSharing_e portSharing;

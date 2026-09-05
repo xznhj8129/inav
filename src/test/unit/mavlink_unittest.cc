@@ -372,6 +372,7 @@ static void initMavlinkTestState(void)
     posControl.wpReachedSeq = 0;
     posControl.wpReachedNotificationPending = false;
 
+    telemetryConfigMutable()->mavlink[0].uart = 1;   // port 1 is UART1, matching the stub below
     telemetryConfigMutable()->mavlink_common.sysid = 1;
     telemetryConfigMutable()->mavlink_common.autopilot_type = MAVLINK_AUTOPILOT_ARDUPILOT;
     telemetryConfigMutable()->mavlink_common.version = 2;
@@ -3503,6 +3504,18 @@ serialPortConfig_t *findNextSerialPortConfig(serialPortFunction_e function)
 {
     UNUSED(function);
     return NULL;
+}
+
+serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier)
+{
+    if (identifier != SERIAL_PORT_USART1) {
+        return NULL;
+    }
+
+    testPortConfig.functionMask |= FUNCTION_TELEMETRY_MAVLINK;
+    testPortConfig.identifier = SERIAL_PORT_USART1;
+    testPortConfig.telemetry_baudrateIndex = BAUD_115200;
+    return &testPortConfig;
 }
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)

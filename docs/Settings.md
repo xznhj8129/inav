@@ -3033,6 +3033,16 @@ Rate of the RC channels message for MAVLink telemetry on port 1
 
 ---
 
+### mavlink_port1_uart
+
+UART carrying MAVLink port 1 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+
+| Default | Min | Max |
+| --- | --- | --- |
+| 0 | 0 | 8 |
+
+---
+
 ### mavlink_port2_high_latency
 
 Enable MAVLink high-latency mode on port 2
@@ -3063,6 +3073,16 @@ MAVLink radio type for port 2. Affects RSSI and LQ reporting on OSD.
 | ELRS |  |
 | SIK |  |
 | MLRS |  |
+
+---
+
+### mavlink_port2_uart
+
+UART carrying MAVLink port 2 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+
+| Default | Min | Max |
+| --- | --- | --- |
+| 0 | 0 | 8 |
 
 ---
 
@@ -3099,6 +3119,16 @@ MAVLink radio type for port 3. Affects RSSI and LQ reporting on OSD.
 
 ---
 
+### mavlink_port3_uart
+
+UART carrying MAVLink port 3 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+
+| Default | Min | Max |
+| --- | --- | --- |
+| 0 | 0 | 8 |
+
+---
+
 ### mavlink_port4_high_latency
 
 Enable MAVLink high-latency mode on port 4
@@ -3129,6 +3159,16 @@ MAVLink radio type for port 4. Affects RSSI and LQ reporting on OSD.
 | ELRS |  |
 | SIK |  |
 | MLRS |  |
+
+---
+
+### mavlink_port4_uart
+
+UART carrying MAVLink port 4 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+
+| Default | Min | Max |
+| --- | --- | --- |
+| 0 | 0 | 8 |
 
 ---
 

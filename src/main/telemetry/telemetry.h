@@ -64,6 +64,7 @@ typedef enum {
 } smartportFuelUnit_e;
 
 typedef struct mavlinkTelemetryPortConfig_s {
+    uint8_t uart;                   // UART number this port is bound to, 1-8. 0 = slot unused.
     uint8_t extended_status_rate;
     uint8_t rc_channels_rate;
     uint8_t position_rate;
