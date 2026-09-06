@@ -372,7 +372,7 @@ static void initMavlinkTestState(void)
     posControl.wpReachedSeq = 0;
     posControl.wpReachedNotificationPending = false;
 
-    telemetryConfigMutable()->mavlink[0].uart = 1;   // port 1 is UART1, matching the stub below
+    telemetryConfigMutable()->mavlink[0].serial_port = SERIAL_PORT_USART1;  // matches the stub below
     telemetryConfigMutable()->mavlink_common.sysid = 1;
     telemetryConfigMutable()->mavlink_common.autopilot_type = MAVLINK_AUTOPILOT_ARDUPILOT;
     telemetryConfigMutable()->mavlink_common.version = 2;

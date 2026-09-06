@@ -3033,13 +3033,13 @@ Rate of the RC channels message for MAVLink telemetry on port 1
 
 ---
 
-### mavlink_port1_uart
+### mavlink_port1_serial_port
 
-UART carrying MAVLink port 1 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+Serial port carrying MAVLink port 1, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 0 | 0 | 8 |
+| -1 | -1 | 31 |
 
 ---
 
@@ -3076,13 +3076,13 @@ MAVLink radio type for port 2. Affects RSSI and LQ reporting on OSD.
 
 ---
 
-### mavlink_port2_uart
+### mavlink_port2_serial_port
 
-UART carrying MAVLink port 2 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+Serial port carrying MAVLink port 2, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 0 | 0 | 8 |
+| -1 | -1 | 31 |
 
 ---
 
@@ -3119,13 +3119,13 @@ MAVLink radio type for port 3. Affects RSSI and LQ reporting on OSD.
 
 ---
 
-### mavlink_port3_uart
+### mavlink_port3_serial_port
 
-UART carrying MAVLink port 3 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+Serial port carrying MAVLink port 3, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 0 | 0 | 8 |
+| -1 | -1 | 31 |
 
 ---
 
@@ -3162,13 +3162,13 @@ MAVLink radio type for port 4. Affects RSSI and LQ reporting on OSD.
 
 ---
 
-### mavlink_port4_uart
+### mavlink_port4_serial_port
 
-UART carrying MAVLink port 4 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
+Serial port carrying MAVLink port 4, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order.
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 0 | 0 | 8 |
+| -1 | -1 | 31 |
 
 ---
 

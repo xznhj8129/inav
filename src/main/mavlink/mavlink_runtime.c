@@ -19,16 +19,6 @@ const mavlinkTelemetryPortConfig_t *mavlinkGetPortConfig(uint8_t portIndex)
     return &telemetryConfig()->mavlink[configIndex];
 }
 
-// mavlink_portN_uart holds a UART number as the user sees it (UART1 is 1), so that a
-// setting a human types is a port a human can point at. 0 means the slot is unused.
-static serialPortIdentifier_e mavlinkUartNumberToIdentifier(uint8_t uartNumber)
-{
-    if (uartNumber < 1 || uartNumber > 8) {
-        return SERIAL_PORT_NONE;
-    }
-
-    return (serialPortIdentifier_e)(SERIAL_PORT_USART1 + (uartNumber - 1));
-}
 
 const mavlinkTelemetryCommonConfig_t *mavlinkGetCommonConfig(void)
 {
@@ -109,14 +99,10 @@ void mavlinkRuntimeInit(void)
     // derived from discovery order, so enabling MAVLink on another port cannot move an
     // existing port's settings onto different hardware.
     for (uint8_t configIndex = 0; configIndex < MAX_MAVLINK_PORTS; configIndex++) {
-        const uint8_t uartNumber = telemetryConfig()->mavlink[configIndex].uart;
-        if (uartNumber == 0) {
-            continue;   // slot deliberately unused
-        }
-
-        const serialPortIdentifier_e identifier = mavlinkUartNumberToIdentifier(uartNumber);
+        const serialPortIdentifier_e identifier =
+            (serialPortIdentifier_e)telemetryConfig()->mavlink[configIndex].serial_port;
         if (identifier == SERIAL_PORT_NONE) {
-            continue;
+            continue;   // slot deliberately unused
         }
 
         const serialPortConfig_t *serialPortConfig = serialFindPortConfiguration(identifier);

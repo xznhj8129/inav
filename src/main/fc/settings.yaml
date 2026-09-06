@@ -3424,13 +3424,13 @@ groups:
         min: 1
         max: 2
         default_value: 2
-      - name: mavlink_port1_uart
-        field: mavlink[0].uart
-        description: "UART carrying MAVLink port 1 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
-        type: uint8_t
-        min: 0
-        max: 8
-        default_value: 0
+      - name: mavlink_port1_serial_port
+        field: mavlink[0].serial_port
+        description: "Serial port carrying MAVLink port 1, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port1_min_txbuffer
         field: mavlink[0].min_txbuff
         description: "Minimum percent of TX buffer space free for MAVLink port 1. Requires RADIO_STATUS messages."
@@ -3455,13 +3455,13 @@ groups:
         description: "Enable MAVLink high-latency mode on port 1"
         type: bool
         default_value: OFF
-      - name: mavlink_port2_uart
-        field: mavlink[1].uart
-        description: "UART carrying MAVLink port 2 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
-        type: uint8_t
-        min: 0
-        max: 8
-        default_value: 0
+      - name: mavlink_port2_serial_port
+        field: mavlink[1].serial_port
+        description: "Serial port carrying MAVLink port 2, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port2_min_txbuffer
         field: mavlink[1].min_txbuff
         description: "Minimum percent of TX buffer space free for MAVLink port 2. Requires RADIO_STATUS messages."
@@ -3479,13 +3479,13 @@ groups:
         description: "Enable MAVLink high-latency mode on port 2"
         type: bool
         default_value: OFF
-      - name: mavlink_port3_uart
-        field: mavlink[2].uart
-        description: "UART carrying MAVLink port 3 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
-        type: uint8_t
-        min: 0
-        max: 8
-        default_value: 0
+      - name: mavlink_port3_serial_port
+        field: mavlink[2].serial_port
+        description: "Serial port carrying MAVLink port 3, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port3_min_txbuffer
         field: mavlink[2].min_txbuff
         description: "Minimum percent of TX buffer space free for MAVLink port 3. Requires RADIO_STATUS messages."
@@ -3503,13 +3503,13 @@ groups:
         description: "Enable MAVLink high-latency mode on port 3"
         type: bool
         default_value: OFF
-      - name: mavlink_port4_uart
-        field: mavlink[3].uart
-        description: "UART carrying MAVLink port 4 (1 = UART1). 0 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
-        type: uint8_t
-        min: 0
-        max: 8
-        default_value: 0
+      - name: mavlink_port4_serial_port
+        field: mavlink[3].serial_port
+        description: "Serial port carrying MAVLink port 4, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port4_min_txbuffer
         field: mavlink[3].min_txbuff
         description: "Minimum percent of TX buffer space free for MAVLink port 4. Requires RADIO_STATUS messages."
