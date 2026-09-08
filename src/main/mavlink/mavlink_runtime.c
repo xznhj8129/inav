@@ -19,7 +19,6 @@ const mavlinkTelemetryPortConfig_t *mavlinkGetPortConfig(uint8_t portIndex)
     return &telemetryConfig()->mavlink[configIndex];
 }
 
-
 const mavlinkTelemetryCommonConfig_t *mavlinkGetCommonConfig(void)
 {
     return &telemetryConfig()->mavlink_common;
@@ -95,9 +94,9 @@ void mavlinkRuntimeInit(void)
     mavSystemId = 1;
     mavComponentId = MAV_COMP_ID_AUTOPILOT1;
 
-    // Each mavlink_portN_* settings group names the UART it belongs to. Nothing is
-    // derived from discovery order, so enabling MAVLink on another port cannot move an
-    // existing port's settings onto different hardware.
+    // Each mavlink_portN_* settings group names the serial port it belongs to. Nothing
+    // is derived from discovery order, so enabling MAVLink on another port cannot move
+    // an existing port's settings onto different hardware.
     for (uint8_t configIndex = 0; configIndex < MAX_MAVLINK_PORTS; configIndex++) {
         const serialPortIdentifier_e identifier =
             (serialPortIdentifier_e)telemetryConfig()->mavlink[configIndex].serial_port;
@@ -118,7 +117,7 @@ void mavlinkRuntimeInit(void)
             }
         }
         if (alreadyClaimed) {
-            continue;   // two slots naming one UART; the first one wins
+            continue;   // two slots naming one serial port; the first one wins
         }
 
         mavlinkPortRuntime_t *state = &mavPortStates[mavPortCount];
