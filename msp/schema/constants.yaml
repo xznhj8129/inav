@@ -1,0 +1,198 @@
+# MSP protocol constants. Authored: this is the source, nothing generates it.
+
+version: 1
+package: inav.constants
+constants:
+  ADSB_CALL_SIGN_MAX_LENGTH:
+    type: uint8
+    value: 9
+  API_VERSION_LENGTH:
+    type: uint8
+    value: 2
+    header: v1
+  API_VERSION_MAJOR:
+    type: uint8
+    value: 2
+    description: Incremented on a breaking API change.
+    header: v1
+  API_VERSION_MINOR:
+    type: uint8
+    value: 6
+    description: Incremented on any API change; reset when MAJOR changes.
+    header: v1
+  BASEFLIGHT_IDENTIFIER:
+    type: char[4]
+    value: BAFL
+    header: v1
+  BETAFLIGHT_IDENTIFIER:
+    type: char[4]
+    value: BTFL
+    header: v1
+  BOARD_HARDWARE_REVISION_LENGTH:
+    type: uint8
+    value: 2
+    header: v1
+  BOARD_IDENTIFIER_LENGTH:
+    type: uint8
+    value: 4
+    description: 4 upper-case alphanumerics identifying the board.
+    header: v1
+  BUILD_DATE_LENGTH:
+    type: uint8
+    value: 11
+  BUILD_TIME_LENGTH:
+    type: uint8
+    value: 8
+  CAP_BASEFLIGHT_CONFIG:
+    type: uint32
+    value: 1073741824
+    description: Capability bit 30.
+    header: v1
+  CAP_DYNBALANCE:
+    type: uint8
+    value: 4
+    header: v1
+  CAP_EXTAUX:
+    type: uint8
+    value: 32
+    header: v1
+  CAP_FLAPS:
+    type: uint8
+    value: 8
+    header: v1
+  CAP_NAVCAP:
+    type: uint8
+    value: 16
+    header: v1
+  CAP_NAVI_VERSION_BIT_1_LSB:
+    type: uint32
+    value: 268435456
+    header: v1
+  CAP_NAVI_VERSION_BIT_2:
+    type: uint32
+    value: 536870912
+    header: v1
+  CAP_NAVI_VERSION_BIT_3:
+    type: uint32
+    value: 1073741824
+    description: Navigation version bit 3. Shares bit 30.
+    header: v1
+  CAP_NAVI_VERSION_BIT_4_MSB:
+    type: uint32
+    value: 2147483648
+    description: Navigation version bit 4 (MSB). Shares bit 31.
+    header: v1
+  CAP_PLATFORM_32BIT:
+    type: uint32
+    value: 2147483648
+    description: Capability bit 31.
+    header: v1
+  CHANNEL_RANGE_MIN:
+    type: uint16
+    value: 900
+    description: Lowest PWM value a mode-activation range step maps to.
+  CHANNEL_RANGE_STEP_WIDTH:
+    type: uint8
+    value: 25
+    description: PWM microseconds per mode-activation range step.
+  CLEANFLIGHT_IDENTIFIER:
+    type: char[4]
+    value: CLFL
+    header: v1
+  CUSTOM_ELEMENTS_PARTS:
+    type: uint8
+    value: 3
+  DEBUG32_VALUE_COUNT:
+    type: uint8
+    value: 8
+  FLIGHT_CONTROLLER_IDENTIFIER_LENGTH:
+    type: uint8
+    value: 4
+    header: v1
+  FLIGHT_CONTROLLER_VERSION_LENGTH:
+    type: uint8
+    value: 3
+    header: v1
+  FLIGHT_CONTROLLER_VERSION_MASK:
+    type: uint16
+    value: 4095
+    header: v1
+  GIT_SHORT_REVISION_LENGTH:
+    type: uint8
+    value: 8
+  HARDWARE_TIMER_DEFINITION_COUNT:
+    type: uint16
+    configurable: HARDWARE_TIMER_DEFINITION_COUNT
+    description: Build-configuration dependent; supplied at generation time.
+  INAV_IDENTIFIER:
+    type: char[4]
+    value: INAV
+    header: v1
+  LED_CONFIGURABLE_COLOR_COUNT:
+    type: uint8
+    value: 16
+  LED_MAX_STRIP_LENGTH:
+    type: uint8
+    value: 128
+  MAX_ADJUSTMENT_RANGE_COUNT:
+    type: uint8
+    value: 20
+  MAX_GLOBAL_VARIABLES:
+    type: uint8
+    value: 8
+  MAX_LOGIC_CONDITIONS:
+    type: uint8
+    value: 64
+  MAX_MAPPABLE_RX_INPUTS:
+    type: uint8
+    value: 4
+  MAX_MODE_ACTIVATION_CONDITION_COUNT:
+    type: uint8
+    value: 40
+  MAX_PROGRAMMING_PID_COUNT:
+    type: uint8
+    value: 4
+  MAX_SERVO_RULES:
+    type: uint8
+    value: 36
+  MAX_SUPPORTED_MOTORS:
+    type: uint16
+    configurable: MAX_SUPPORTED_MOTORS
+    description: Build-configuration dependent; supplied at generation time.
+  MAX_SUPPORTED_SERVOS:
+    type: uint8
+    value: 18
+  MAX_TEMP_SENSORS:
+    type: uint8
+    value: 8
+  MSP_PROTOCOL_VERSION:
+    type: uint8
+    value: 0
+    description: MSP protocol version. Same over MSPv1 and MSPv2.
+    header: v1
+  MULTIWII_IDENTIFIER:
+    type: char[4]
+    value: MWII
+    header: v1
+  OSD_CHAR_BYTES:
+    type: uint8
+    value: 64
+  OSD_CHAR_VISIBLE_BYTES:
+    type: uint8
+    value: 54
+  OSD_ITEM_COUNT:
+    type: uint8
+    value: 172
+  PID_ITEM_COUNT:
+    type: uint8
+    value: 12
+  RACEFLIGHT_IDENTIFIER:
+    type: char[4]
+    value: RCFL
+    header: v1
+  RADAR_MAX_POIS:
+    type: uint8
+    value: 5
+  TEMPERATURE_LABEL_LEN:
+    type: uint8
+    value: 4

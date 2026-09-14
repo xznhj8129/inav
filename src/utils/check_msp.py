@@ -35,10 +35,10 @@ REPO_ROOT = SCRIPT_DIR.parents[1]
 MSP_JSON = REPO_ROOT / "docs/development/msp/msp_messages.json"
 
 MSP_HEADERS = [
-    REPO_ROOT / "src/main/msp/msp_protocol.h",
-    REPO_ROOT / "src/main/msp/msp_protocol_v2_common.h",
-    REPO_ROOT / "src/main/msp/msp_protocol_v2_sensor.h",
-    REPO_ROOT / "src/main/msp/msp_protocol_v2_inav.h",
+    REPO_ROOT / "msp/c/msp_protocol.h",
+    REPO_ROOT / "msp/c/msp_protocol_v2_common.h",
+    REPO_ROOT / "msp/c/msp_protocol_v2_sensor.h",
+    REPO_ROOT / "msp/c/msp_protocol_v2_inav.h",
 ]
 
 # Numeric MSP-prefixed macros that are protocol constants rather than entries

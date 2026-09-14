@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# MSP library build orchestration (lives in the INAV repo).
+#
+#   build.sh generate   Regenerate the C library, the Python message table and
+#                       Pydantic models, stage the C headers into the Arduino
+#                       library, and stamp the INAV version.
+#   build.sh test       Compile the generated C library, run the schema
+#                       conformance suite and the Python unit tests.
+#                       (--with-arduino also builds the Arduino example via PlatformIO.)
+#   build.sh release    generate + test.
+#
+# The schema in schema/ is the source of truth; everything here is generated
+# from it. No INAV clone or header mirror: this repo is the INAV checkout.
+set -euo pipefail
+
+MSP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${MSP_ROOT}/.." && pwd)"
+GEN="${MSP_ROOT}/generator"
+SCHEMA="${MSP_ROOT}/schema"
+CDIR="${MSP_ROOT}/c"
+PYDIR="${MSP_ROOT}/python"
+ARDUINO="${MSP_ROOT}/arduino"
+
+WITH_ARDUINO=0
+
+# Values a firmware target supplies; the standalone compile needs them too.
+TARGET_DEFS=(-DMAX_SUPPORTED_MOTORS=12 -DHARDWARE_TIMER_DEFINITION_COUNT=16)
+
+GENERATED_C=(msp_consts.h msp_enums.h msp_msgs.h
+             msp_protocol.h msp_protocol_v2_common.h
+             msp_protocol_v2_sensor.h msp_protocol_v2_inav.h)
+# Vendored, not generated; the Arduino library has no INAV source.
+VENDORED_SUPPORT=(msp_wire_types.h bitarray.h bitarray.c)
+
+cmd_generate() {
+    echo "- Generating the C library (schema -> c/)"
+    python3 "${GEN}/gen_c.py"
+
+    echo "- Generating the Python message table and enums (schema -> python/)"
+    python3 "${GEN}/gen_python.py"
+
+    echo "- Generating Pydantic models (schema -> python/.../models)"
+    python3 "${GEN}/gen_pydantic.py" \
+        "${SCHEMA}/msp_v2.yaml" "${SCHEMA}/enums.yaml" "${SCHEMA}/constants.yaml" \
+        --output-dir "${PYDIR}/src/mspapi2/models"
+
+    echo "- Staging the generated C library into arduino/src/generated/"
+    mkdir -p "${ARDUINO}/src/generated"
+    for h in "${GENERATED_C[@]}" "${VENDORED_SUPPORT[@]}"; do
+        cp "${CDIR}/${h}" "${ARDUINO}/src/generated/${h}"
+    done
+
+    echo "- Stamping the INAV version from the repo"
+    local maj min pat
+    read -r maj min pat <<< "$(sed -nE 's/^[[:space:]]*project\([[:space:]]*INAV[[:space:]]+VERSION[[:space:]]+([0-9]+)\.([0-9]+)\.([0-9]+).*/\1 \2 \3/p' "${REPO_ROOT}/CMakeLists.txt" | head -n1)"
+    [[ -n "${maj}" ]] || { echo "Failed to parse INAV version from ${REPO_ROOT}/CMakeLists.txt" >&2; exit 1; }
+    mkdir -p "${PYDIR}/src/mspapi2/lib"
+    cat > "${PYDIR}/src/mspapi2/lib/inav_version.py" <<PY
+VERSION = "${maj}.${min}.${pat}"
+MAJOR = ${maj}
+MINOR = ${min}
+PATCH = ${pat}
+PY
+    echo "  INAV snapshot version: ${maj}.${min}.${pat}"
+}
+
+cmd_test() {
+    echo "- Compiling the generated C library"
+    gcc -std=c11 -Wall -Wextra -Werror "${TARGET_DEFS[@]}" \
+        -I "${CDIR}" -I "${CDIR}/tests" "${CDIR}/tests/compile_test.c" -o "${WORK:-/tmp}/msp_compile_test"
+    "${WORK:-/tmp}/msp_compile_test"
+    bash "${CDIR}/tests/check_external_types.sh"
+
+    echo "- Schema conformance suite"
+    python3 "${GEN}/test_yaml.py"
+
+    echo "- Python unit tests"
+    PYTHONPATH="${PYDIR}/src" python3 -m unittest discover \
+        --start-directory "${PYDIR}/tests" --pattern "test_*.py"
+
+    if [[ "${WITH_ARDUINO}" -eq 1 ]]; then
+        echo "- Arduino example (PlatformIO)"
+        command -v pio >/dev/null || { echo "pio not found in PATH" >&2; exit 1; }
+        pio run --project-dir "${ARDUINO}/tests/esp32"
+    fi
+}
+
+COMMAND="${1:-}"; [[ -n "${COMMAND}" ]] && shift || true
+while (($#)); do
+    case "$1" in
+        --with-arduino) WITH_ARDUINO=1; shift ;;
+        *) echo "Unknown argument: $1" >&2; exit 1 ;;
+    esac
+done
+
+case "${COMMAND}" in
+    generate) cmd_generate ;;
+    test)     cmd_test ;;
+    release)  cmd_generate; cmd_test ;;
+    *) echo "usage: build.sh {generate|test|release} [--with-arduino]" >&2; exit 1 ;;
+esac

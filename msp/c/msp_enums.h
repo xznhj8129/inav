@@ -1,0 +1,792 @@
+#pragma once
+// Generated from the MSP YAML schema by msp/generator/gen_c.py (enums.yaml). Do not edit by hand.
+//
+// 53 of 391 enums are referenced by a payload; only those are emitted.
+
+#include <stdint.h>
+
+// From inav/src/main/sensors/acceleration.h
+typedef enum {
+    ACC_NONE = 0,
+    ACC_AUTODETECT = 1,
+    ACC_MPU6000 = 2,
+    ACC_MPU6500 = 3,
+    ACC_MPU9250 = 4,
+    ACC_BMI160 = 5,
+    ACC_ICM20689 = 6,
+    ACC_BMI088 = 7,
+    ACC_ICM42605 = 8,
+    ACC_BMI270 = 9,
+    ACC_LSM6DXX = 10,
+    ACC_ICM45686 = 11,
+    ACC_ICM40609D = 12,
+    ACC_FAKE = 13,
+    ACC_MAX = ACC_FAKE,
+} accelerationSensor_e;
+
+// From inav/src/main/fc/rc_adjustments.h
+typedef enum {
+    ADJUSTMENT_NONE = 0,
+    ADJUSTMENT_RC_RATE = 1,
+    ADJUSTMENT_RC_EXPO = 2,
+    ADJUSTMENT_THROTTLE_EXPO = 3,
+    ADJUSTMENT_PITCH_ROLL_RATE = 4,
+    ADJUSTMENT_YAW_RATE = 5,
+    ADJUSTMENT_PITCH_ROLL_P = 6,
+    ADJUSTMENT_PITCH_ROLL_I = 7,
+    ADJUSTMENT_PITCH_ROLL_D = 8,
+    ADJUSTMENT_PITCH_ROLL_FF = 9,
+    ADJUSTMENT_PITCH_P = 10,
+    ADJUSTMENT_PITCH_I = 11,
+    ADJUSTMENT_PITCH_D = 12,
+    ADJUSTMENT_PITCH_FF = 13,
+    ADJUSTMENT_ROLL_P = 14,
+    ADJUSTMENT_ROLL_I = 15,
+    ADJUSTMENT_ROLL_D = 16,
+    ADJUSTMENT_ROLL_FF = 17,
+    ADJUSTMENT_YAW_P = 18,
+    ADJUSTMENT_YAW_I = 19,
+    ADJUSTMENT_YAW_D = 20,
+    ADJUSTMENT_YAW_FF = 21,
+    ADJUSTMENT_RATE_PROFILE = 22,
+    ADJUSTMENT_PITCH_RATE = 23,
+    ADJUSTMENT_ROLL_RATE = 24,
+    ADJUSTMENT_RC_YAW_EXPO = 25,
+    ADJUSTMENT_MANUAL_RC_EXPO = 26,
+    ADJUSTMENT_MANUAL_RC_YAW_EXPO = 27,
+    ADJUSTMENT_MANUAL_PITCH_ROLL_RATE = 28,
+    ADJUSTMENT_MANUAL_ROLL_RATE = 29,
+    ADJUSTMENT_MANUAL_PITCH_RATE = 30,
+    ADJUSTMENT_MANUAL_YAW_RATE = 31,
+    ADJUSTMENT_NAV_FW_CRUISE_THR = 32,
+    ADJUSTMENT_NAV_FW_PITCH2THR = 33,
+    ADJUSTMENT_ROLL_BOARD_ALIGNMENT = 34,
+    ADJUSTMENT_PITCH_BOARD_ALIGNMENT = 35,
+    ADJUSTMENT_LEVEL_P = 36,
+    ADJUSTMENT_LEVEL_I = 37,
+    ADJUSTMENT_LEVEL_D = 38,
+    ADJUSTMENT_POS_XY_P = 39,
+    ADJUSTMENT_POS_XY_I = 40,
+    ADJUSTMENT_POS_XY_D = 41,
+    ADJUSTMENT_POS_Z_P = 42,
+    ADJUSTMENT_POS_Z_I = 43,
+    ADJUSTMENT_POS_Z_D = 44,
+    ADJUSTMENT_HEADING_P = 45,
+    ADJUSTMENT_VEL_XY_P = 46,
+    ADJUSTMENT_VEL_XY_I = 47,
+    ADJUSTMENT_VEL_XY_D = 48,
+    ADJUSTMENT_VEL_Z_P = 49,
+    ADJUSTMENT_VEL_Z_I = 50,
+    ADJUSTMENT_VEL_Z_D = 51,
+    ADJUSTMENT_FW_MIN_THROTTLE_DOWN_PITCH_ANGLE = 52,
+    ADJUSTMENT_VTX_POWER_LEVEL = 53,
+    ADJUSTMENT_TPA = 54,
+    ADJUSTMENT_TPA_BREAKPOINT = 55,
+    ADJUSTMENT_NAV_FW_CONTROL_SMOOTHNESS = 56,
+    ADJUSTMENT_FW_TPA_TIME_CONSTANT = 57,
+    ADJUSTMENT_FW_LEVEL_TRIM = 58,
+    ADJUSTMENT_NAV_WP_MULTI_MISSION_INDEX = 59,
+    ADJUSTMENT_NAV_FW_ALT_CONTROL_RESPONSE = 60,
+    ADJUSTMENT_FUNCTION_COUNT = 61,
+} adjustmentFunction_e;
+
+// From inav/src/main/sensors/barometer.h
+typedef enum {
+    BARO_NONE = 0,
+    BARO_AUTODETECT = 1,
+    BARO_BMP085 = 2,
+    BARO_MS5611 = 3,
+    BARO_BMP280 = 4,
+    BARO_MS5607 = 5,
+    BARO_LPS25H = 6,
+    BARO_SPL06 = 7,
+    BARO_BMP388 = 8,
+    BARO_DPS310 = 9,
+    BARO_B2SMPB = 10,
+    BARO_MSP = 11,
+    BARO_FAKE = 12,
+    BARO_CRSF = 13,
+    BARO_MAX = BARO_CRSF,
+} baroSensor_e;
+
+// From inav/src/main/sensors/battery_config_structs.h
+typedef enum {
+    BAT_CAPACITY_UNIT_MAH = 0,
+    BAT_CAPACITY_UNIT_MWH = 1,
+} batCapacityUnit_e;
+
+// From inav/src/main/sensors/battery.h
+typedef enum {
+    BATTERY_OK = 0,
+    BATTERY_WARNING = 1,
+    BATTERY_CRITICAL = 2,
+    BATTERY_NOT_PRESENT = 3,
+} batteryState_e;
+
+// From inav/src/main/sensors/battery_config_structs.h
+typedef enum {
+    BAT_VOLTAGE_RAW = 0,
+    BAT_VOLTAGE_SAG_COMP = 1,
+} batVoltageSource_e;
+
+// From inav/src/main/blackbox/blackbox_io.h
+typedef enum {
+    BLACKBOX_DEVICE_SERIAL = 0,
+#if USE_FLASHFS
+    BLACKBOX_DEVICE_FLASH = 1,
+#endif
+#if USE_SDCARD
+    BLACKBOX_DEVICE_SDCARD = 2,
+#endif
+#if SITL_BUILD
+    BLACKBOX_DEVICE_FILE = 3,
+#endif
+    BLACKBOX_DEVICE_END = 4,
+} BlackboxDevice;
+
+// From inav/src/main/sensors/battery_config_structs.h
+typedef enum {
+    CURRENT_SENSOR_NONE = 0,
+    CURRENT_SENSOR_ADC = 1,
+    CURRENT_SENSOR_VIRTUAL = 2,
+    CURRENT_SENSOR_FAKE = 3,
+    CURRENT_SENSOR_ESC = 4,
+    CURRENT_SENSOR_SMARTPORT = 5,
+    CURRENT_SENSOR_CRSF = 6,
+    CURRENT_SENSOR_CAN = 7,
+    CURRENT_SENSOR_INA226 = 8,
+    CURRENT_SENSOR_MAX = CURRENT_SENSOR_INA226,
+} currentSensor_e;
+
+// From inav/src/main/io/displayport_msp.h
+typedef enum {
+    MSP_DP_HEARTBEAT = 0,
+    MSP_DP_RELEASE = 1,
+    MSP_DP_CLEAR_SCREEN = 2,
+    MSP_DP_WRITE_STRING = 3,
+    MSP_DP_DRAW_SCREEN = 4,
+    MSP_DP_OPTIONS = 5,
+    MSP_DP_SYS = 6,
+    MSP_DP_COUNT = 7,
+} displayportMspCommand_e;
+
+// From inav/src/main/flight/failsafe.h
+typedef enum {
+    FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
+    FAILSAFE_PROCEDURE_DROP_IT = 1,
+    FAILSAFE_PROCEDURE_RTH = 2,
+    FAILSAFE_PROCEDURE_NONE = 3,
+} failsafeProcedure_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    GEOFENCE_ACTION_NONE = 0,
+    GEOFENCE_ACTION_AVOID = 1,
+    GEOFENCE_ACTION_POS_HOLD = 2,
+    GEOFENCE_ACTION_RTH = 3,
+} fenceAction_e;
+
+// From inav/src/main/flight/mixer.h
+typedef enum {
+    PLATFORM_MULTIROTOR = 0,
+    PLATFORM_AIRPLANE = 1,
+    PLATFORM_HELICOPTER = 2,
+    PLATFORM_TRICOPTER = 3,
+    PLATFORM_ROVER = 4,
+    PLATFORM_BOAT = 5,
+} flyingPlatformType_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    FW_AUTOLAND_APPROACH_DIRECTION_LEFT = 0,
+    FW_AUTOLAND_APPROACH_DIRECTION_RIGHT = 1,
+} fwAutolandApproachDirection_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    NAV_WP_TAKEOFF_DATUM = 0,
+    NAV_WP_MSL_DATUM = 1,
+    NAV_WP_TERRAIN_DATUM = 2,
+    NAV_WP_RELATIVE_DATUM = 3,
+} geoAltitudeDatumFlag_e;
+
+// From inav/src/main/io/gps.h
+typedef enum {
+    GPS_NO_FIX = 0,
+    GPS_FIX_2D = 1,
+    GPS_FIX_3D = 2,
+} gpsFixType_e;
+
+// From inav/src/main/io/gps.h
+typedef enum {
+    GPS_UBLOX = 0,
+    GPS_MSP = 1,
+    GPS_CRSF = 2,
+    GPS_FAKE = 3,
+    GPS_DRONECAN = 4,
+    GPS_PROVIDER_COUNT = 5,
+} gpsProvider_e;
+
+// From inav/src/main/sensors/diagnostics.h
+typedef enum {
+    HW_SENSOR_NONE = 0,
+    HW_SENSOR_OK = 1,
+    HW_SENSOR_UNAVAILABLE = 2,
+    HW_SENSOR_UNHEALTHY = 3,
+} hardwareSensorStatus_e;
+
+// From inav/src/main/flight/servos.h
+typedef enum {
+    INPUT_STABILIZED_ROLL = 0,
+    INPUT_STABILIZED_PITCH = 1,
+    INPUT_STABILIZED_YAW = 2,
+    INPUT_STABILIZED_THROTTLE = 3,
+    INPUT_RC_ROLL = 4,
+    INPUT_RC_PITCH = 5,
+    INPUT_RC_YAW = 6,
+    INPUT_RC_THROTTLE = 7,
+    INPUT_RC_CH5 = 8,
+    INPUT_RC_CH6 = 9,
+    INPUT_RC_CH7 = 10,
+    INPUT_RC_CH8 = 11,
+    INPUT_GIMBAL_PITCH = 12,
+    INPUT_GIMBAL_ROLL = 13,
+    INPUT_FEATURE_FLAPS = 14,
+    INPUT_RC_CH9 = 15,
+    INPUT_RC_CH10 = 16,
+    INPUT_RC_CH11 = 17,
+    INPUT_RC_CH12 = 18,
+    INPUT_RC_CH13 = 19,
+    INPUT_RC_CH14 = 20,
+    INPUT_RC_CH15 = 21,
+    INPUT_RC_CH16 = 22,
+    INPUT_STABILIZED_ROLL_PLUS = 23,
+    INPUT_STABILIZED_ROLL_MINUS = 24,
+    INPUT_STABILIZED_PITCH_PLUS = 25,
+    INPUT_STABILIZED_PITCH_MINUS = 26,
+    INPUT_STABILIZED_YAW_PLUS = 27,
+    INPUT_STABILIZED_YAW_MINUS = 28,
+    INPUT_MAX = 29,
+    INPUT_GVAR_0 = 30,
+    INPUT_GVAR_1 = 31,
+    INPUT_GVAR_2 = 32,
+    INPUT_GVAR_3 = 33,
+    INPUT_GVAR_4 = 34,
+    INPUT_GVAR_5 = 35,
+    INPUT_GVAR_6 = 36,
+    INPUT_GVAR_7 = 37,
+    INPUT_MIXER_TRANSITION = 38,
+    INPUT_HEADTRACKER_PAN = 39,
+    INPUT_HEADTRACKER_TILT = 40,
+    INPUT_HEADTRACKER_ROLL = 41,
+    INPUT_RC_CH17 = 42,
+    INPUT_RC_CH18 = 43,
+    INPUT_RC_CH19 = 44,
+    INPUT_RC_CH20 = 45,
+    INPUT_RC_CH21 = 46,
+    INPUT_RC_CH22 = 47,
+    INPUT_RC_CH23 = 48,
+    INPUT_RC_CH24 = 49,
+    INPUT_RC_CH25 = 50,
+    INPUT_RC_CH26 = 51,
+    INPUT_RC_CH27 = 52,
+    INPUT_RC_CH28 = 53,
+    INPUT_RC_CH29 = 54,
+    INPUT_RC_CH30 = 55,
+    INPUT_RC_CH31 = 56,
+    INPUT_RC_CH32 = 57,
+    INPUT_RC_CH33 = 58,
+    INPUT_RC_CH34 = 59,
+    INPUT_MIXER_SWITCH_HELPER = 60,
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_ROLL = 61,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_PITCH = 62,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_YAW = 63,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_ROLL_PLUS = 64,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_ROLL_MINUS = 65,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_PITCH_PLUS = 66,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_PITCH_MINUS = 67,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_YAW_PLUS = 68,
+#endif
+#if USE_AUTO_TRANSITION
+    INPUT_AUTOTRANSITION_TARGET_STABILIZED_YAW_MINUS = 69,
+#endif
+    INPUT_SOURCE_COUNT = 70,
+} inputSource_e;
+
+// From inav/src/main/io/ledstrip.h
+typedef enum {
+    LED_MODE_ORIENTATION = 0,
+    LED_MODE_HEADFREE = 1,
+    LED_MODE_HORIZON = 2,
+    LED_MODE_ANGLE = 3,
+    LED_MODE_MAG = 4,
+    LED_MODE_BARO = 5,
+    LED_MODE_LOITER = 6,
+    LED_SPECIAL = 7,
+} ledModeIndex_e;
+
+// From inav/src/main/programming/logic_condition.h
+typedef enum {
+    LOGIC_CONDITION_OPERAND_TYPE_VALUE = 0,
+    LOGIC_CONDITION_OPERAND_TYPE_RC_CHANNEL = 1,
+    LOGIC_CONDITION_OPERAND_TYPE_FLIGHT = 2,
+    LOGIC_CONDITION_OPERAND_TYPE_FLIGHT_MODE = 3,
+    LOGIC_CONDITION_OPERAND_TYPE_LC = 4,
+    LOGIC_CONDITION_OPERAND_TYPE_GVAR = 5,
+    LOGIC_CONDITION_OPERAND_TYPE_PID = 6,
+    LOGIC_CONDITION_OPERAND_TYPE_WAYPOINTS = 7,
+    LOGIC_CONDITION_OPERAND_TYPE_LAST = 8,
+} logicOperandType_e;
+
+// From inav/src/main/programming/logic_condition.h
+typedef enum {
+    LOGIC_CONDITION_TRUE = 0,
+    LOGIC_CONDITION_EQUAL = 1,
+    LOGIC_CONDITION_GREATER_THAN = 2,
+    LOGIC_CONDITION_LOWER_THAN = 3,
+    LOGIC_CONDITION_LOW = 4,
+    LOGIC_CONDITION_MID = 5,
+    LOGIC_CONDITION_HIGH = 6,
+    LOGIC_CONDITION_AND = 7,
+    LOGIC_CONDITION_OR = 8,
+    LOGIC_CONDITION_XOR = 9,
+    LOGIC_CONDITION_NAND = 10,
+    LOGIC_CONDITION_NOR = 11,
+    LOGIC_CONDITION_NOT = 12,
+    LOGIC_CONDITION_STICKY = 13,
+    LOGIC_CONDITION_ADD = 14,
+    LOGIC_CONDITION_SUB = 15,
+    LOGIC_CONDITION_MUL = 16,
+    LOGIC_CONDITION_DIV = 17,
+    LOGIC_CONDITION_GVAR_SET = 18,
+    LOGIC_CONDITION_GVAR_INC = 19,
+    LOGIC_CONDITION_GVAR_DEC = 20,
+    LOGIC_CONDITION_PORT_SET = 21,
+    LOGIC_CONDITION_OVERRIDE_ARMING_SAFETY = 22,
+    LOGIC_CONDITION_OVERRIDE_THROTTLE_SCALE = 23,
+    LOGIC_CONDITION_SWAP_ROLL_YAW = 24,
+    LOGIC_CONDITION_SET_VTX_POWER_LEVEL = 25,
+    LOGIC_CONDITION_INVERT_ROLL = 26,
+    LOGIC_CONDITION_INVERT_PITCH = 27,
+    LOGIC_CONDITION_INVERT_YAW = 28,
+    LOGIC_CONDITION_OVERRIDE_THROTTLE = 29,
+    LOGIC_CONDITION_SET_VTX_BAND = 30,
+    LOGIC_CONDITION_SET_VTX_CHANNEL = 31,
+    LOGIC_CONDITION_SET_OSD_LAYOUT = 32,
+    LOGIC_CONDITION_SIN = 33,
+    LOGIC_CONDITION_COS = 34,
+    LOGIC_CONDITION_TAN = 35,
+    LOGIC_CONDITION_MAP_INPUT = 36,
+    LOGIC_CONDITION_MAP_OUTPUT = 37,
+    LOGIC_CONDITION_RC_CHANNEL_OVERRIDE = 38,
+    LOGIC_CONDITION_SET_HEADING_TARGET = 39,
+    LOGIC_CONDITION_MODULUS = 40,
+    LOGIC_CONDITION_LOITER_OVERRIDE = 41,
+    LOGIC_CONDITION_SET_PROFILE = 42,
+    LOGIC_CONDITION_MIN = 43,
+    LOGIC_CONDITION_MAX = 44,
+    LOGIC_CONDITION_FLIGHT_AXIS_ANGLE_OVERRIDE = 45,
+    LOGIC_CONDITION_FLIGHT_AXIS_RATE_OVERRIDE = 46,
+    LOGIC_CONDITION_EDGE = 47,
+    LOGIC_CONDITION_DELAY = 48,
+    LOGIC_CONDITION_TIMER = 49,
+    LOGIC_CONDITION_DELTA = 50,
+    LOGIC_CONDITION_APPROX_EQUAL = 51,
+    LOGIC_CONDITION_PINIO_PWM = 52,
+    LOGIC_CONDITION_DISABLE_GPS_FIX = 53,
+    LOGIC_CONDITION_RESET_MAG_CALIBRATION = 54,
+    LOGIC_CONDITION_SET_GIMBAL_SENSITIVITY = 55,
+    LOGIC_CONDITION_OVERRIDE_MIN_GROUND_SPEED = 56,
+    LOGIC_CONDITION_SET_ALTITUDE_TARGET = 57,
+    LOGIC_CONDITION_ACOS = 58,
+    LOGIC_CONDITION_ASIN = 59,
+    LOGIC_CONDITION_ATAN2 = 60,
+    LOGIC_CONDITION_DISABLE_AUTOSPEED_AIRSPEED = 61,
+    LOGIC_CONDITION_ACTIVATE_RTH = 62,
+    LOGIC_CONDITION_ACTIVATE_LANDING = 63,
+    LOGIC_CONDITION_LAST = 64,
+} logicOperation_e;
+
+// From inav/src/main/sensors/compass.h
+typedef enum {
+    MAG_NONE = 0,
+    MAG_AUTODETECT = 1,
+    MAG_HMC5883 = 2,
+    MAG_AK8975 = 3,
+    MAG_MAG3110 = 4,
+    MAG_AK8963 = 5,
+    MAG_IST8310 = 6,
+    MAG_QMC5883 = 7,
+    MAG_QMC5883P = 8,
+    MAG_MPU9250 = 9,
+    MAG_IST8308 = 10,
+    MAG_LIS3MDL = 11,
+    MAG_MSP = 12,
+    MAG_RM3100 = 13,
+    MAG_VCM5883 = 14,
+    MAG_MLX90393 = 15,
+    MAG_LIS2MDL = 16,
+    MAG_FAKE = 17,
+    MAG_MAX = MAG_FAKE,
+} magSensor_e;
+
+// From inav/src/main/drivers/pwm_mapping.h
+typedef enum {
+    PWM_TYPE_STANDARD = 0,
+    PWM_TYPE_ONESHOT125 = 1,
+    PWM_TYPE_MULTISHOT = 2,
+    PWM_TYPE_BRUSHED = 3,
+    PWM_TYPE_DSHOT150 = 4,
+    PWM_TYPE_DSHOT300 = 5,
+    PWM_TYPE_DSHOT600 = 6,
+} motorPwmProtocolTypes_e;
+
+// From inav/src/main/fc/fc_msp.c
+typedef enum {
+    MSP_SDCARD_STATE_NOT_PRESENT = 0,
+    MSP_SDCARD_STATE_FATAL = 1,
+    MSP_SDCARD_STATE_CARD_INIT = 2,
+    MSP_SDCARD_STATE_FS_INIT = 3,
+    MSP_SDCARD_STATE_READY = 4,
+} mspSDCardState_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    NAV_GPS_ATTI = 0,
+    NAV_GPS_CRUISE = 1,
+} nav_control_type_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    NAV_RTH_NO_ALT = 0,
+    NAV_RTH_EXTRA_ALT = 1,
+    NAV_RTH_CONST_ALT = 2,
+    NAV_RTH_MAX_ALT = 3,
+    NAV_RTH_AT_LEAST_ALT = 4,
+    NAV_RTH_AT_LEAST_ALT_LINEAR_DESCENT = 5,
+} nav_rth_alt_profile_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    MC_ALT_HOLD_STICK = 0,
+    MC_ALT_HOLD_MID = 1,
+    MC_ALT_HOLD_HOVER = 2,
+} navMcAltHoldThrottle_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    MW_NAV_ERROR_NONE = 0,
+    MW_NAV_ERROR_TOOFAR = 1,
+    MW_NAV_ERROR_SPOILED_GPS = 2,
+    MW_NAV_ERROR_WP_CRC = 3,
+    MW_NAV_ERROR_FINISH = 4,
+    MW_NAV_ERROR_TIMEWAIT = 5,
+    MW_NAV_ERROR_INVALID_JUMP = 6,
+    MW_NAV_ERROR_INVALID_DATA = 7,
+    MW_NAV_ERROR_WAIT_FOR_RTH_ALT = 8,
+    MW_NAV_ERROR_GPS_FIX_LOST = 9,
+    MW_NAV_ERROR_DISARMED = 10,
+    MW_NAV_ERROR_LANDING = 11,
+} navSystemStatus_Error_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    MW_GPS_MODE_NONE = 0,
+    MW_GPS_MODE_HOLD = 1,
+    MW_GPS_MODE_RTH = 2,
+    MW_GPS_MODE_NAV = 3,
+    MW_GPS_MODE_EMERG = 15,
+} navSystemStatus_Mode_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    MW_NAV_STATE_NONE = 0,
+    MW_NAV_STATE_RTH_START = 1,
+    MW_NAV_STATE_RTH_ENROUTE = 2,
+    MW_NAV_STATE_HOLD_INFINIT = 3,
+    MW_NAV_STATE_HOLD_TIMED = 4,
+    MW_NAV_STATE_WP_ENROUTE = 5,
+    MW_NAV_STATE_PROCESS_NEXT = 6,
+    MW_NAV_STATE_DO_JUMP = 7,
+    MW_NAV_STATE_LAND_START = 8,
+    MW_NAV_STATE_LAND_IN_PROGRESS = 9,
+    MW_NAV_STATE_LANDED = 10,
+    MW_NAV_STATE_LAND_SETTLE = 11,
+    MW_NAV_STATE_LAND_START_DESCENT = 12,
+    MW_NAV_STATE_HOVER_ABOVE_HOME = 13,
+    MW_NAV_STATE_EMERGENCY_LANDING = 14,
+    MW_NAV_STATE_RTH_CLIMB = 15,
+} navSystemStatus_State_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    NAV_WP_ACTION_WAYPOINT = 1,
+    NAV_WP_ACTION_HOLD_TIME = 3,
+    NAV_WP_ACTION_RTH = 4,
+    NAV_WP_ACTION_SET_POI = 5,
+    NAV_WP_ACTION_JUMP = 6,
+    NAV_WP_ACTION_SET_HEAD = 7,
+    NAV_WP_ACTION_LAND = 8,
+} navWaypointActions_e;
+
+// From inav/src/main/navigation/navigation.h
+typedef enum {
+    NAV_WP_FLAG_HOME = 72,
+    NAV_WP_FLAG_LAST = 165,
+} navWaypointFlags_e;
+
+// From inav/src/main/sensors/opflow.h
+typedef enum {
+    OPFLOW_NONE = 0,
+    OPFLOW_CXOF = 1,
+    OPFLOW_MSP = 2,
+    OPFLOW_FAKE = 3,
+} opticalFlowSensor_e;
+
+// From inav/src/main/io/osd.h
+typedef enum {
+    OSD_CROSSHAIRS_STYLE_DEFAULT = 0,
+    OSD_CROSSHAIRS_STYLE_AIRCRAFT = 1,
+    OSD_CROSSHAIRS_STYLE_TYPE3 = 2,
+    OSD_CROSSHAIRS_STYLE_TYPE4 = 3,
+    OSD_CROSSHAIRS_STYLE_TYPE5 = 4,
+    OSD_CROSSHAIRS_STYLE_TYPE6 = 5,
+    OSD_CROSSHAIRS_STYLE_TYPE7 = 6,
+} osd_crosshairs_style_e;
+
+// From inav/src/main/io/osd.h
+typedef enum {
+    OSD_SIDEBAR_SCROLL_NONE = 0,
+    OSD_SIDEBAR_SCROLL_ALTITUDE = 1,
+    OSD_SIDEBAR_SCROLL_SPEED = 2,
+    OSD_SIDEBAR_SCROLL_HOME_DISTANCE = 3,
+    OSD_SIDEBAR_SCROLL_MAX = OSD_SIDEBAR_SCROLL_HOME_DISTANCE,
+} osd_sidebar_scroll_e;
+
+// From inav/src/main/io/osd.h
+typedef enum {
+    OSD_STATS_ENERGY_UNIT_MAH = 0,
+    OSD_STATS_ENERGY_UNIT_WH = 1,
+} osd_stats_energy_unit_e;
+
+// From inav/src/main/io/osd.h
+typedef enum {
+    OSD_UNIT_IMPERIAL = 0,
+    OSD_UNIT_METRIC = 1,
+    OSD_UNIT_METRIC_MPH = 2,
+    OSD_UNIT_UK = 3,
+    OSD_UNIT_GA = 4,
+    OSD_UNIT_MAX = OSD_UNIT_GA,
+} osd_unit_e;
+
+// From inav/src/main/io/osd/custom_elements.h
+typedef enum {
+    CUSTOM_ELEMENT_TYPE_NONE = 0,
+    CUSTOM_ELEMENT_TYPE_TEXT = 1,
+    CUSTOM_ELEMENT_TYPE_ICON_STATIC = 2,
+    CUSTOM_ELEMENT_TYPE_ICON_GV = 3,
+    CUSTOM_ELEMENT_TYPE_ICON_LC = 4,
+    CUSTOM_ELEMENT_TYPE_GV_1 = 5,
+    CUSTOM_ELEMENT_TYPE_GV_2 = 6,
+    CUSTOM_ELEMENT_TYPE_GV_3 = 7,
+    CUSTOM_ELEMENT_TYPE_GV_4 = 8,
+    CUSTOM_ELEMENT_TYPE_GV_5 = 9,
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_1_1 = 10,
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_1_2 = 11,
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_2_1 = 12,
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_2_2 = 13,
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_3_1 = 14,
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_3_2 = 15,
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_4_1 = 16,
+    CUSTOM_ELEMENT_TYPE_LC_1 = 17,
+    CUSTOM_ELEMENT_TYPE_LC_2 = 18,
+    CUSTOM_ELEMENT_TYPE_LC_3 = 19,
+    CUSTOM_ELEMENT_TYPE_LC_4 = 20,
+    CUSTOM_ELEMENT_TYPE_LC_5 = 21,
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_1_1 = 22,
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_1_2 = 23,
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_2_1 = 24,
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_2_2 = 25,
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_3_1 = 26,
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_3_2 = 27,
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_4_1 = 28,
+    CUSTOM_ELEMENT_TYPE_END = 29,
+} osdCustomElementType_e;
+
+// From inav/src/main/io/osd/custom_elements.h
+typedef enum {
+    CUSTOM_ELEMENT_VISIBILITY_ALWAYS = 0,
+    CUSTOM_ELEMENT_VISIBILITY_GV = 1,
+    CUSTOM_ELEMENT_VISIBILITY_LOGIC_CON = 2,
+} osdCustomElementTypeVisibility_e;
+
+// From inav/src/main/drivers/osd.h
+typedef enum {
+    OSD_DRIVER_NONE = 0,
+    OSD_DRIVER_MAX7456 = 1,
+} osdDriver_e;
+
+// From inav/src/main/flight/mixer.h
+typedef enum {
+    OUTPUT_MODE_AUTO = 0,
+    OUTPUT_MODE_MOTORS = 1,
+    OUTPUT_MODE_SERVOS = 2,
+    OUTPUT_MODE_LED = 3,
+    OUTPUT_MODE_PINIO = 4,
+    OUTPUT_MODE_BEEPER = 5,
+} outputMode_e;
+
+// From inav/src/main/drivers/pwm_mapping.h
+typedef enum {
+    PIN_LABEL_NONE = 0,
+    PIN_LABEL_LED = 1,
+    PIN_LABEL_PINIO_BASE = 2,
+} pinLabel_e;
+
+// From inav/src/main/sensors/pitotmeter.h
+typedef enum {
+    PITOT_NONE = 0,
+    PITOT_AUTODETECT = 1,
+    PITOT_MS4525 = 2,
+    PITOT_ADC = 3,
+    PITOT_VIRTUAL = 4,
+    PITOT_FAKE = 5,
+    PITOT_MSP = 6,
+    PITOT_DLVR = 7,
+    PITOT_MS5525 = 8,
+} pitotSensor_e;
+
+// From inav/src/main/sensors/rangefinder.h
+typedef enum {
+    RANGEFINDER_NONE = 0,
+    RANGEFINDER_SRF10 = 1,
+    RANGEFINDER_VL53L0X = 2,
+    RANGEFINDER_MSP = 3,
+    RANGEFINDER_BENEWAKE = 4,
+    RANGEFINDER_VL53L1X = 5,
+    RANGEFINDER_US42 = 6,
+    RANGEFINDER_TOF10102I2C = 7,
+    RANGEFINDER_FAKE = 8,
+    RANGEFINDER_TERARANGER_EVO = 9,
+    RANGEFINDER_USD1_V0 = 10,
+    RANGEFINDER_NANORADAR = 11,
+} rangefinderType_e;
+
+// From inav/src/main/rx/rx.h
+typedef enum {
+    RSSI_SOURCE_NONE = 0,
+    RSSI_SOURCE_AUTO = 1,
+    RSSI_SOURCE_ADC = 2,
+    RSSI_SOURCE_RX_CHANNEL = 3,
+    RSSI_SOURCE_RX_PROTOCOL = 4,
+    RSSI_SOURCE_MSP = 5,
+} rssiSource_e;
+
+// From inav/src/main/rx/rx.h
+typedef enum {
+    RX_TYPE_NONE = 0,
+    RX_TYPE_SERIAL = 1,
+    RX_TYPE_MSP = 2,
+    RX_TYPE_SIM = 3,
+} rxReceiverType_e;
+
+// From inav/src/main/rx/rx.h
+typedef enum {
+    SERIALRX_SPEKTRUM1024 = 0,
+    SERIALRX_SPEKTRUM2048 = 1,
+    SERIALRX_SBUS = 2,
+    SERIALRX_SUMD = 3,
+    SERIALRX_IBUS = 4,
+    SERIALRX_JETIEXBUS = 5,
+    SERIALRX_CRSF = 6,
+    SERIALRX_FPORT = 7,
+    SERIALRX_SBUS_FAST = 8,
+    SERIALRX_FPORT2 = 9,
+    SERIALRX_SRXL2 = 10,
+    SERIALRX_GHST = 11,
+    SERIALRX_MAVLINK = 12,
+    SERIALRX_FBUS = 13,
+    SERIALRX_SBUS2 = 14,
+} rxSerialReceiverType_e;
+
+// From inav/src/main/io/gps.h
+typedef enum {
+    SBAS_AUTO = 0,
+    SBAS_EGNOS = 1,
+    SBAS_WAAS = 2,
+    SBAS_MSAS = 3,
+    SBAS_GAGAN = 4,
+    SBAS_SPAN = 5,
+    SBAS_NONE = 6,
+} sbasMode_e;
+
+// From inav/src/main/io/serial.h
+typedef enum {
+    SERIAL_PORT_NONE = -1,
+    SERIAL_PORT_USART1 = 0,
+    SERIAL_PORT_USART2 = 1,
+    SERIAL_PORT_USART3 = 2,
+    SERIAL_PORT_USART4 = 3,
+    SERIAL_PORT_USART5 = 4,
+    SERIAL_PORT_USART6 = 5,
+    SERIAL_PORT_USART7 = 6,
+    SERIAL_PORT_USART8 = 7,
+    SERIAL_PORT_USB_VCP = 20,
+    SERIAL_PORT_SOFTSERIAL1 = 30,
+    SERIAL_PORT_SOFTSERIAL2 = 31,
+    SERIAL_PORT_IDENTIFIER_MAX = SERIAL_PORT_SOFTSERIAL2,
+} serialPortIdentifier_e;
+
+// From inav/src/main/sensors/temperature.h
+typedef enum {
+    TEMP_SENSOR_NONE = 0,
+    TEMP_SENSOR_LM75 = 1,
+    TEMP_SENSOR_DS18B20 = 2,
+} tempSensorType_e;
+
+// From inav/src/main/drivers/osd.h
+typedef enum {
+    VIDEO_SYSTEM_AUTO = 0,
+    VIDEO_SYSTEM_PAL = 1,
+    VIDEO_SYSTEM_NTSC = 2,
+    VIDEO_SYSTEM_HDZERO = 3,
+    VIDEO_SYSTEM_DJIWTF = 4,
+    VIDEO_SYSTEM_AVATAR = 5,
+    VIDEO_SYSTEM_DJICOMPAT = 6,
+    VIDEO_SYSTEM_DJICOMPAT_HD = 7,
+    VIDEO_SYSTEM_DJI_NATIVE = 8,
+} videoSystem_e;
+
+// From inav/src/main/drivers/vtx_common.h
+typedef enum {
+    VTXDEV_UNSUPPORTED = 0,
+    VTXDEV_RTC6705 = 1,
+    VTXDEV_SMARTAUDIO = 3,
+    VTXDEV_TRAMP = 4,
+    VTXDEV_FFPV = 5,
+    VTXDEV_MSP = 6,
+    VTXDEV_UNKNOWN = 255,
+} vtxDevType_e;
+
+// From inav/src/main/io/vtx.h
+typedef enum {
+    VTX_LOW_POWER_DISARM_OFF = 0,
+    VTX_LOW_POWER_DISARM_ALWAYS = 1,
+    VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM = 2,
+} vtxLowerPowerDisarm_e;
+
