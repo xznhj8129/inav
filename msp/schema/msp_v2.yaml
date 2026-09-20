@@ -999,6 +999,7 @@ messages:
       fields:
         featureMask:
           type: uint32
+          enum: features_e
           bitmask: true
           description: 'Bitmask: active features (see `featureMask()`)'
 
@@ -1012,6 +1013,7 @@ messages:
       fields:
         featureMask:
           type: uint32
+          enum: features_e
           bitmask: true
           description: 'Bitmask: features to enable'
     reply: null
@@ -2777,6 +2779,7 @@ messages:
 
         sensorStatus:
           type: uint16
+          enum: sensors_e
           bitmask: true
           description: 'Bitmask: available/active sensors (`packSensorStatus()`). See notes'
 
@@ -3598,6 +3601,7 @@ messages:
 
         sensorStatus:
           type: uint16
+          enum: sensors_e
           bitmask: true
           description: 'Bitmask: Sensor status'
 
@@ -3618,6 +3622,7 @@ messages:
 
         armingFlags:
           type: uint16
+          enum: armingFlag_e
           bitmask: true
           description: 'Bitmask: Flight controller arming flags (`armingFlags`). Note: Truncated to 16 bits'
 
@@ -4316,6 +4321,7 @@ messages:
       fields:
         modeIndex:
           type: uint8
+          enum: ledModeIndex_e
           description: Index of the LED mode (`ledModeIndex_e` or `LED_MODE_COUNT` for special)
 
         directionOrSpecialIndex:
@@ -4803,6 +4809,7 @@ messages:
 
         functionMask:
           type: uint32
+          enum: serialPortFunction_e
           bitmask: true
           description: 'Bitmask: enabled functions (`FUNCTION_*`)'
 
@@ -4839,6 +4846,7 @@ messages:
 
         functionMask:
           type: uint32
+          enum: serialPortFunction_e
           bitmask: true
           description: 'Bitmask: functions to enable'
 
@@ -5309,6 +5317,7 @@ messages:
 
         sensorStatus:
           type: uint16
+          enum: sensors_e
           bitmask: true
           description: 'Bitmask: Sensor status'
 
@@ -5324,6 +5333,7 @@ messages:
 
         armingFlags:
           type: uint32
+          enum: armingFlag_e
           bitmask: true
           description: 'Bitmask: Full 32-bit flight controller arming flags (`armingFlags`)'
 
@@ -6745,6 +6755,7 @@ messages:
 
         simulatorFlags_t:
           type: uint8
+          enum: simulatorFlags_t
           bitmask: true
           description: 'Bitmask: Options for HITL (`HITL_*` flags)'
 
@@ -7056,6 +7067,7 @@ messages:
 
         flags:
           type: uint8
+          enum: logicConditionFlags_e
           bitmask: true
           description: 'Bitmask: Condition flags (`logicConditionFlags_e`)'
     reply: null
@@ -7465,6 +7477,7 @@ messages:
 
         flags:
           type: uint8
+          enum: logicConditionFlags_e
           bitmask: true
           description: 'Bitmask: Condition flags (`logicConditionFlags_e`)'
 

@@ -1,7 +1,7 @@
 #pragma once
 // Generated from the MSP YAML schema by msp/generator/gen_c.py (enums.yaml). Do not edit by hand.
 //
-// 53 of 391 enums are referenced by a payload; only those are emitted.
+// 59 of 391 enums are referenced by a payload; only those are emitted.
 
 #include <stdint.h>
 
@@ -89,6 +89,39 @@ typedef enum {
     ADJUSTMENT_NAV_FW_ALT_CONTROL_RESPONSE = 60,
     ADJUSTMENT_FUNCTION_COUNT = 61,
 } adjustmentFunction_e;
+
+// From inav/src/main/fc/runtime_config.h
+typedef enum {
+    ARMED = 4,
+    WAS_EVER_ARMED = 8,
+    SIMULATOR_MODE_HITL = 16,
+    SIMULATOR_MODE_SITL = 32,
+    ARMING_DISABLED_GEOZONE = 64,
+    ARMING_DISABLED_FAILSAFE_SYSTEM = 128,
+    ARMING_DISABLED_NOT_LEVEL = 256,
+    ARMING_DISABLED_SENSORS_CALIBRATING = 512,
+    ARMING_DISABLED_SYSTEM_OVERLOADED = 1024,
+    ARMING_DISABLED_NAVIGATION_UNSAFE = 2048,
+    ARMING_DISABLED_COMPASS_NOT_CALIBRATED = 4096,
+    ARMING_DISABLED_ACCELEROMETER_NOT_CALIBRATED = 8192,
+    ARMING_DISABLED_ARM_SWITCH = 16384,
+    ARMING_DISABLED_HARDWARE_FAILURE = 32768,
+    ARMING_DISABLED_BOXFAILSAFE = 65536,
+    ARMING_DISABLED_RC_LINK = 262144,
+    ARMING_DISABLED_THROTTLE = 524288,
+    ARMING_DISABLED_CLI = 1048576,
+    ARMING_DISABLED_CMS_MENU = 2097152,
+    ARMING_DISABLED_OSD_MENU = 4194304,
+    ARMING_DISABLED_ROLLPITCH_NOT_CENTERED = 8388608,
+    ARMING_DISABLED_SERVO_AUTOTRIM = 16777216,
+    ARMING_DISABLED_OOM = 33554432,
+    ARMING_DISABLED_INVALID_SETTING = 67108864,
+    ARMING_DISABLED_PWM_OUTPUT_ERROR = 134217728,
+    ARMING_DISABLED_NO_PREARM = 268435456,
+    ARMING_DISABLED_DSHOT_BEEPER = 536870912,
+    ARMING_DISABLED_LANDING_DETECTED = 1073741824,
+    ARMING_DISABLED_ALL_FLAGS = 2147352512,
+} armingFlag_e;
 
 // From inav/src/main/sensors/barometer.h
 typedef enum {
@@ -789,4 +822,113 @@ typedef enum {
     VTX_LOW_POWER_DISARM_ALWAYS = 1,
     VTX_LOW_POWER_DISARM_UNTIL_FIRST_ARM = 2,
 } vtxLowerPowerDisarm_e;
+
+// From inav/src/main/fc/config.h
+typedef enum {
+    FEATURE_THR_VBAT_COMP = (1UL << 0),
+    FEATURE_VBAT = (1UL << 1),
+    FEATURE_TX_PROF_SEL = (1UL << 2),
+    FEATURE_BAT_PROFILE_AUTOSWITCH = (1UL << 3),
+    FEATURE_GEOZONE = (1UL << 4),
+    FEATURE_UNUSED_1 = (1UL << 5),
+    FEATURE_SOFTSERIAL = (1UL << 6),
+    FEATURE_GPS = (1UL << 7),
+    FEATURE_UNUSED_3 = (1UL << 8),
+    FEATURE_UNUSED_4 = (1UL << 9),
+    FEATURE_TELEMETRY = (1UL << 10),
+    FEATURE_CURRENT_METER = (1UL << 11),
+    FEATURE_REVERSIBLE_MOTORS = (1UL << 12),
+    FEATURE_UNUSED_5 = (1UL << 13),
+    FEATURE_UNUSED_6 = (1UL << 14),
+    FEATURE_RSSI_ADC = (1UL << 15),
+    FEATURE_LED_STRIP = (1UL << 16),
+    FEATURE_DASHBOARD = (1UL << 17),
+    FEATURE_UNUSED_7 = (1UL << 18),
+    FEATURE_BLACKBOX = (1UL << 19),
+    FEATURE_UNUSED_10 = (1UL << 20),
+    FEATURE_TRANSPONDER = (1UL << 21),
+    FEATURE_AIRMODE = (1UL << 22),
+    FEATURE_SUPEREXPO_RATES = (1UL << 23),
+    FEATURE_VTX = (1UL << 24),
+    FEATURE_UNUSED_8 = (1UL << 25),
+    FEATURE_UNUSED_9 = (1UL << 26),
+    FEATURE_UNUSED_11 = (1UL << 27),
+    FEATURE_PWM_OUTPUT_ENABLE = (1UL << 28),
+    FEATURE_OSD = (1UL << 29),
+    FEATURE_FW_LAUNCH = (1UL << 30),
+    FEATURE_FW_AUTOTRIM = (1UL << 31),
+} features_e;
+
+// From inav/src/main/programming/logic_condition.h
+typedef enum {
+    LOGIC_CONDITION_FLAG_LATCH = (1UL << 0),
+    LOGIC_CONDITION_FLAG_TIMEOUT_SATISFIED = (1UL << 1),
+} logicConditionFlags_e;
+
+// From inav/src/main/sensors/sensors.h
+typedef enum {
+    SENSOR_GYRO = (1UL << 0),
+    SENSOR_ACC = (1UL << 1),
+    SENSOR_BARO = (1UL << 2),
+    SENSOR_MAG = (1UL << 3),
+    SENSOR_RANGEFINDER = (1UL << 4),
+    SENSOR_PITOT = (1UL << 5),
+    SENSOR_OPFLOW = (1UL << 6),
+    SENSOR_GPS = (1UL << 7),
+    SENSOR_GPSMAG = (1UL << 8),
+    SENSOR_TEMP = (1UL << 9),
+} sensors_e;
+
+// From inav/src/main/io/serial.h
+typedef enum {
+    FUNCTION_NONE = 0,
+    FUNCTION_MSP = (1UL << 0),
+    FUNCTION_GPS = (1UL << 1),
+    FUNCTION_UNUSED_3 = (1UL << 2),
+    FUNCTION_TELEMETRY_HOTT = (1UL << 3),
+    FUNCTION_TELEMETRY_LTM = (1UL << 4),
+    FUNCTION_TELEMETRY_SMARTPORT = (1UL << 5),
+    FUNCTION_RX_SERIAL = (1UL << 6),
+    FUNCTION_BLACKBOX = (1UL << 7),
+    FUNCTION_TELEMETRY_MAVLINK = (1UL << 8),
+    FUNCTION_TELEMETRY_IBUS = (1UL << 9),
+    FUNCTION_RCDEVICE = (1UL << 10),
+    FUNCTION_VTX_SMARTAUDIO = (1UL << 11),
+    FUNCTION_VTX_TRAMP = (1UL << 12),
+    FUNCTION_UNUSED_1 = (1UL << 13),
+    FUNCTION_OPTICAL_FLOW = (1UL << 14),
+    FUNCTION_LOG = (1UL << 15),
+    FUNCTION_RANGEFINDER = (1UL << 16),
+    FUNCTION_VTX_FFPV = (1UL << 17),
+    FUNCTION_ESCSERIAL = (1UL << 18),
+    FUNCTION_TELEMETRY_SIM = (1UL << 19),
+    FUNCTION_FRSKY_OSD = (1UL << 20),
+    FUNCTION_DJI_HD_OSD = (1UL << 21),
+    FUNCTION_SERVO_SERIAL = (1UL << 22),
+    FUNCTION_TELEMETRY_SMARTPORT_MASTER = (1UL << 23),
+    FUNCTION_CRSF_SENSOR = (1UL << 24),
+    FUNCTION_MSP_OSD = (1UL << 25),
+    FUNCTION_GIMBAL = (1UL << 26),
+    FUNCTION_GIMBAL_HEADTRACKER = (1UL << 27),
+} serialPortFunction_e;
+
+// From inav/src/main/fc/runtime_config.h
+typedef enum {
+    HITL_RESET_FLAGS = 0,
+    HITL_ENABLE = (1UL << 0),
+    HITL_SIMULATE_BATTERY = (1UL << 1),
+    HITL_MUTE_BEEPER = (1UL << 2),
+    HITL_USE_IMU = (1UL << 3),
+    HITL_HAS_NEW_GPS_DATA = (1UL << 4),
+    HITL_EXT_BATTERY_VOLTAGE = (1UL << 5),
+    HITL_AIRSPEED = (1UL << 6),
+    HITL_EXTENDED_FLAGS = (1UL << 7),
+    HITL_GPS_TIMEOUT = (1UL << 8),
+    HITL_PITOT_FAILURE = (1UL << 9),
+    HITL_CURRENT_SENSOR = (1UL << 10),
+    HITL_SIM_RC_INPUT = (1UL << 11),
+    HITL_RANGEFINDER = (1UL << 12),
+    HITL_FAILSAFE_TRIGGERED = (1UL << 13),
+    HITL_SITL_MODE = (1UL << 14),
+} simulatorFlags_t;
 
