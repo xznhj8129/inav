@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "msp_consts.h"
+#include "msp_protocol.h"   // message ids
 
 #if defined(_MSC_VER)
 #  pragma pack(push, 1)
@@ -20,9 +21,6 @@
 #    define MSP_STATIC_ASSERT(cond, name) typedef char name[(cond) ? 1 : -1]
 #  endif
 #endif
-
-#include "msp_protocol.h"   // message ids
-
 
 // MSP_API_VERSION (MSPv1) id=1
 // Provides the MSP protocol version and the INAV API version.
@@ -344,7 +342,7 @@ MSP_STATIC_ASSERT(sizeof(mspSetModeRangeRequest_t) == 5, mspSetModeRangeRequest_
 // Returns a bitmask of enabled features.
 // Notes: Feature bits are defined in `feature.h`.
 typedef struct MSP_PACKED {
-    uint32_t featureMask;  // Bitmask: active features (see `featureMask()`) | bitmask
+    uint32_t featureMask;  // Bitmask: active features (see `featureMask()`) | bitmask | enum features_e
 } mspFeatureReply_t;
 MSP_STATIC_ASSERT(sizeof(mspFeatureReply_t) == 4, mspFeatureReply_t_size);
 
@@ -352,7 +350,7 @@ MSP_STATIC_ASSERT(sizeof(mspFeatureReply_t) == 4, mspFeatureReply_t_size);
 // Sets the enabled features using a bitmask. Clears all previous features first.
 // Notes: Expects 4 bytes. Updates feature configuration and related settings (e.g., RSSI source).
 typedef struct MSP_PACKED {
-    uint32_t featureMask;  // Bitmask: features to enable | bitmask
+    uint32_t featureMask;  // Bitmask: features to enable | bitmask | enum features_e
 } mspSetFeatureRequest_t;
 MSP_STATIC_ASSERT(sizeof(mspSetFeatureRequest_t) == 4, mspSetFeatureRequest_t_size);
 
@@ -1009,7 +1007,7 @@ MSP_STATIC_ASSERT(sizeof(mspSetSensorConfigRequest_t) == 6, mspSetSensorConfigRe
 typedef struct MSP_PACKED {
     uint16_t cycleTime;  // Main loop cycle time (`cycleTime`) | µs
     uint16_t i2cErrors;  // Number of I2C errors encountered (`i2cGetErrorCounter()`). 0 if `USE_I2C` not defined | Count
-    uint16_t sensorStatus;  // Bitmask: available/active sensors (`packSensorStatus()`). See notes | bitmask
+    uint16_t sensorStatus;  // Bitmask: available/active sensors (`packSensorStatus()`). See notes | bitmask | enum sensors_e
     uint32_t activeModesLow;  // Bitmask: First 32 bits of the active flight modes bitmask (`packBoxModeFlags()`) | bitmask
     uint8_t profile;  // Current configuration profile index (0-based) (`getConfigProfile()`) | Index
 } mspStatusReply_t;
@@ -1310,11 +1308,11 @@ typedef struct MSP_PACKED {
 typedef struct MSP_PACKED {
     uint16_t cycleTime;  // Main loop cycle time | µs
     uint16_t i2cErrors;  // I2C errors | Count
-    uint16_t sensorStatus;  // Bitmask: Sensor status | bitmask
+    uint16_t sensorStatus;  // Bitmask: Sensor status | bitmask | enum sensors_e
     uint32_t activeModesLow;  // Bitmask: First 32 active modes | bitmask
     uint8_t profile;  // Current config profile index | Index
     uint16_t cpuLoad;  // Average system load percentage (`averageSystemLoadPercent`) | %
-    uint16_t armingFlags;  // Bitmask: Flight controller arming flags (`armingFlags`). Note: Truncated to 16 bits | bitmask
+    uint16_t armingFlags;  // Bitmask: Flight controller arming flags (`armingFlags`). Note: Truncated to 16 bits | bitmask | enum armingFlag_e
     uint8_t accCalibAxisFlags;  // Bitmask: Accelerometer calibrated axes flags (`accGetCalibrationAxisFlags()`) | bitmask
 } mspStatusExReply_t;
 MSP_STATIC_ASSERT(sizeof(mspStatusExReply_t) == 16, mspStatusExReply_t_size);
@@ -1549,7 +1547,7 @@ MSP_STATIC_ASSERT(sizeof(mspSetSensorAlignmentRequest_t) == 4, mspSetSensorAlign
 // Sets the color index for a specific LED mode/function combination.
 // Notes: Only available if `USE_LED_STRIP` is defined. Expects 3 bytes. Returns error if setting fails (invalid index).
 typedef struct MSP_PACKED {
-    uint8_t modeIndex;  // Index of the LED mode (`ledModeIndex_e` or `LED_MODE_COUNT` for special)
+    uint8_t modeIndex;  // Index of the LED mode (`ledModeIndex_e` or `LED_MODE_COUNT` for special) | enum ledModeIndex_e
     uint8_t directionOrSpecialIndex;  // Index of the direction (`ledDirectionId_e`) or special color (`ledSpecialColorIds_e`)
     uint8_t colorIndex;  // Index of the color to assign from `ledStripConfig()->colors`
 } mspSetLedStripModecolorRequest_t;
@@ -1717,7 +1715,7 @@ MSP_STATIC_ASSERT(sizeof(msp2CommonPgListReplyElem_t) == 6, msp2CommonPgListRepl
 // header, so no wrapper struct. count = payload_size / sizeof(msp2CommonSerialConfigReplyElem_t)
 typedef struct MSP_PACKED {
     int8_t identifier;  // Port identifier Enum (`serialPortIdentifier_e`) | enum serialPortIdentifier_e
-    uint32_t functionMask;  // Bitmask: enabled functions (`FUNCTION_*`) | bitmask
+    uint32_t functionMask;  // Bitmask: enabled functions (`FUNCTION_*`) | bitmask | enum serialPortFunction_e
     uint8_t mspBaudIndex;  // Baud rate index for MSP function
     uint8_t gpsBaudIndex;  // Baud rate index for GPS function
     uint8_t telemetryBaudIndex;  // Baud rate index for Telemetry function
@@ -1732,7 +1730,7 @@ MSP_STATIC_ASSERT(sizeof(msp2CommonSerialConfigReplyElem_t) == 9, msp2CommonSeri
 // header, so no wrapper struct. count = payload_size / sizeof(msp2CommonSetSerialConfigRequestElem_t)
 typedef struct MSP_PACKED {
     int8_t identifier;  // Port identifier Enum (`serialPortIdentifier_e`) | enum serialPortIdentifier_e
-    uint32_t functionMask;  // Bitmask: functions to enable | bitmask
+    uint32_t functionMask;  // Bitmask: functions to enable | bitmask | enum serialPortFunction_e
     uint8_t mspBaudIndex;  // Baud rate index for MSP
     uint8_t gpsBaudIndex;  // Baud rate index for GPS
     uint8_t telemetryBaudIndex;  // Baud rate index for Telemetry
@@ -1894,10 +1892,10 @@ MSP_STATIC_ASSERT(sizeof(msp2SensorHeadtrackerRequest_t) == 9, msp2SensorHeadtra
 typedef struct MSP_PACKED {
     uint16_t cycleTime;  // Main loop cycle time | µs
     uint16_t i2cErrors;  // I2C errors | Count
-    uint16_t sensorStatus;  // Bitmask: Sensor status | bitmask
+    uint16_t sensorStatus;  // Bitmask: Sensor status | bitmask | enum sensors_e
     uint16_t cpuLoad;  // Average system load percentage | %
     uint8_t profileAndBattProfile;  // Bits 0-3: Config profile index (`getConfigProfile()`), Bits 4-7: Battery profile index (`getConfigBatteryProfile()`) | Packed
-    uint32_t armingFlags;  // Bitmask: Full 32-bit flight controller arming flags (`armingFlags`) | bitmask
+    uint32_t armingFlags;  // Bitmask: Full 32-bit flight controller arming flags (`armingFlags`) | bitmask | enum armingFlag_e
     boxBitmask_t activeModes;  // Bitmask words for active flight modes (`packBoxModeFlags()`) | bitmask
     uint8_t mixerProfile;  // Current mixer profile index (`getConfigMixerProfile()`) | Index
 } msp2InavStatusReply_t;
@@ -2402,7 +2400,7 @@ MSP_STATIC_ASSERT(sizeof(msp2InavTemperaturesReply_t) == 16, msp2InavTemperature
 // Notes: Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details.
 typedef struct MSP_PACKED {
     uint8_t simulatorVersion;  // Version of the simulator protocol (`SIMULATOR_MSP_VERSION`)
-    uint8_t simulatorFlags_t;  // Bitmask: Options for HITL (`HITL_*` flags) | bitmask
+    uint8_t simulatorFlags_t;  // Bitmask: Options for HITL (`HITL_*` flags) | bitmask | enum simulatorFlags_t
     uint8_t gpsFixType;  // Enum `gpsFixType_e` Type of GPS fix (If `HITL_HAS_NEW_GPS_DATA`)
     uint8_t gpsNumSat;  // (If `HITL_HAS_NEW_GPS_DATA`) Simulated satellite count
     int32_t gpsLat;  // (If `HITL_HAS_NEW_GPS_DATA`) Simulated latitude (1e7 deg)
@@ -2497,7 +2495,7 @@ typedef struct MSP_PACKED {
     int32_t operandAValue;  // Value/ID of operand A
     uint8_t operandBType;  // Enum `logicOperandType_e` Type of operand B
     int32_t operandBValue;  // Value/ID of operand B
-    uint8_t flags;  // Bitmask: Condition flags (`logicConditionFlags_e`) | bitmask
+    uint8_t flags;  // Bitmask: Condition flags (`logicConditionFlags_e`) | bitmask | enum logicConditionFlags_e
 } msp2InavSetLogicConditionsRequest_t;
 MSP_STATIC_ASSERT(sizeof(msp2InavSetLogicConditionsRequest_t) == 15, msp2InavSetLogicConditionsRequest_t_size);
 
@@ -2668,7 +2666,7 @@ typedef struct MSP_PACKED {
     int32_t operandAValue;  // Value/ID of operand A
     uint8_t operandBType;  // Enum `logicOperandType_e` Type of operand B
     int32_t operandBValue;  // Value/ID of operand B
-    uint8_t flags;  // Bitmask: Condition flags (`logicConditionFlags_e`) | bitmask
+    uint8_t flags;  // Bitmask: Condition flags (`logicConditionFlags_e`) | bitmask | enum logicConditionFlags_e
 } msp2InavLogicConditionsSingleReply_t;
 MSP_STATIC_ASSERT(sizeof(msp2InavLogicConditionsSingleReply_t) == 14, msp2InavLogicConditionsSingleReply_t_size);
 

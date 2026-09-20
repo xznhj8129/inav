@@ -17,7 +17,7 @@
 
 #pragma once
 
-// Message ids generated from the MSP YAML schema by msp/generator/gen_c.py. Do not edit by hand.
+// Message ids below are generated from the MSP YAML schema by msp/generator/gen_c.py.
 
 #define MSP2_IS_SENSOR_MESSAGE(x)   ((x) >= 0x1F00 && (x) <= 0x1FFF)
 

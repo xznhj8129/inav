@@ -25,6 +25,8 @@ external_types:
 messages:
   MSP_API_VERSION:
     id: 1
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the MSP protocol version and the INAV API version.
@@ -46,6 +48,8 @@ messages:
 
   MSP_FC_VARIANT:
     id: 2
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Identifies the flight controller firmware variant (e.g., INAV, Betaflight).
@@ -59,6 +63,8 @@ messages:
 
   MSP_FC_VERSION:
     id: 3
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the specific version number of the flight controller firmware.
@@ -79,6 +85,8 @@ messages:
 
   MSP_BOARD_INFO:
     id: 4
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides information about the specific hardware board and its capabilities.
@@ -114,6 +122,8 @@ messages:
 
   MSP_BUILD_INFO:
     id: 5
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides build date, time, and Git revision of the firmware.
@@ -134,6 +144,8 @@ messages:
 
   MSP_INAV_PID:
     id: 6
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves legacy INAV-specific PID controller related settings. Many fields are now obsolete or placeholders.
@@ -203,6 +215,8 @@ messages:
 
   MSP_SET_INAV_PID:
     id: 7
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets legacy INAV-specific PID controller related settings.
@@ -263,6 +277,8 @@ messages:
 
   MSP_NAME:
     id: 10
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Returns the user-defined craft name.
@@ -276,6 +292,8 @@ messages:
 
   MSP_SET_NAME:
     id: 11
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the user-defined craft name.
@@ -290,6 +308,8 @@ messages:
 
   MSP_NAV_POSHOLD:
     id: 12
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves navigation position hold and general manual/auto flight parameters. Some parameters depend on the platform type (Multirotor vs Fixed Wing).
@@ -337,6 +357,8 @@ messages:
 
   MSP_SET_NAV_POSHOLD:
     id: 13
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets navigation position hold and general manual/auto flight parameters.
@@ -386,6 +408,8 @@ messages:
 
   MSP_CALIBRATION_DATA:
     id: 14
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves sensor calibration data (Accelerometer zero/gain, Magnetometer zero/gain, Optical Flow scale).
@@ -465,6 +489,8 @@ messages:
 
   MSP_SET_CALIBRATION_DATA:
     id: 15
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets sensor calibration data.
@@ -539,6 +565,8 @@ messages:
 
   MSP_POSITION_ESTIMATION_CONFIG:
     id: 16
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves parameters related to the INAV position estimation fusion weights and GPS minimum satellite count.
@@ -585,6 +613,8 @@ messages:
 
   MSP_SET_POSITION_ESTIMATION_CONFIG:
     id: 17
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets parameters related to the INAV position estimation fusion weights and GPS minimum satellite count.
@@ -631,6 +661,8 @@ messages:
 
   MSP_WP_MISSION_LOAD:
     id: 18
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Commands the FC to load the waypoint mission stored in non-volatile memory (e.g., EEPROM or FlashFS) into the active mission buffer.
@@ -644,6 +676,8 @@ messages:
 
   MSP_WP_MISSION_SAVE:
     id: 19
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Commands the FC to save the currently active waypoint mission from RAM to non-volatile memory (e.g., EEPROM or FlashFS).
@@ -657,6 +691,8 @@ messages:
 
   MSP_WP_GETINFO:
     id: 20
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves information about the waypoint mission capabilities and the status of the currently loaded mission.
@@ -682,6 +718,8 @@ messages:
 
   MSP_RTH_AND_LAND_CONFIG:
     id: 21
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves configuration parameters related to Return-to-Home (RTH) and automatic landing behaviors.
@@ -755,6 +793,8 @@ messages:
 
   MSP_SET_RTH_AND_LAND_CONFIG:
     id: 22
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets configuration parameters related to Return-to-Home (RTH) and automatic landing behaviors.
@@ -829,6 +869,8 @@ messages:
 
   MSP_FW_CONFIG:
     id: 23
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves configuration parameters specific to Fixed Wing navigation.
@@ -877,6 +919,8 @@ messages:
 
   MSP_SET_FW_CONFIG:
     id: 24
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets configuration parameters specific to Fixed Wing navigation.
@@ -926,6 +970,8 @@ messages:
 
   MSP_MODE_RANGES:
     id: 34
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Returns all defined mode activation ranges (aux channel assignments for flight modes).
@@ -956,6 +1002,8 @@ messages:
 
   MSP_SET_MODE_RANGE:
     id: 35
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets a single mode activation range by its index.
@@ -990,6 +1038,8 @@ messages:
 
   MSP_FEATURE:
     id: 36
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Returns a bitmask of enabled features.
@@ -1005,6 +1055,8 @@ messages:
 
   MSP_SET_FEATURE:
     id: 37
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the enabled features using a bitmask. Clears all previous features first.
@@ -1020,6 +1072,8 @@ messages:
 
   MSP_BOARD_ALIGNMENT:
     id: 38
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Returns the sensor board alignment angles relative to the craft frame.
@@ -1044,6 +1098,8 @@ messages:
 
   MSP_SET_BOARD_ALIGNMENT:
     id: 39
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the sensor board alignment angles.
@@ -1068,6 +1124,8 @@ messages:
 
   MSP_CURRENT_METER_CONFIG:
     id: 40
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the configuration for the current sensor.
@@ -1097,6 +1155,8 @@ messages:
 
   MSP_SET_CURRENT_METER_CONFIG:
     id: 41
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the configuration for the current sensor.
@@ -1126,6 +1186,8 @@ messages:
 
   MSP_MIXER:
     id: 42
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the mixer type (Legacy, INAV always returns QuadX).
@@ -1140,6 +1202,8 @@ messages:
 
   MSP_SET_MIXER:
     id: 43
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the mixer type (Legacy, ignored by INAV).
@@ -1153,6 +1217,8 @@ messages:
 
   MSP_RX_CONFIG:
     id: 44
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves receiver configuration settings. Some fields are Betaflight compatibility placeholders.
@@ -1236,6 +1302,8 @@ messages:
 
   MSP_SET_RX_CONFIG:
     id: 45
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets receiver configuration settings.
@@ -1313,6 +1381,8 @@ messages:
 
   MSP_LED_COLORS:
     id: 46
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the HSV color definitions for configurable LED colors.
@@ -1335,6 +1405,8 @@ messages:
 
   MSP_SET_LED_COLORS:
     id: 47
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the HSV color definitions for configurable LED colors.
@@ -1357,6 +1429,8 @@ messages:
 
   MSP_LED_STRIP_CONFIG:
     id: 48
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the configuration for each LED on the strip (legacy packed format).
@@ -1372,6 +1446,8 @@ messages:
 
   MSP_SET_LED_STRIP_CONFIG:
     id: 49
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the configuration for a single LED on the strip using the legacy packed format.
@@ -1389,6 +1465,8 @@ messages:
 
   MSP_RSSI_CONFIG:
     id: 50
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the channel used for analog RSSI input.
@@ -1401,6 +1479,8 @@ messages:
 
   MSP_SET_RSSI_CONFIG:
     id: 51
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the channel used for analog RSSI input.
@@ -1414,6 +1494,8 @@ messages:
 
   MSP_ADJUSTMENT_RANGES:
     id: 52
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Returns all defined RC adjustment ranges (tuning via aux channels).
@@ -1451,6 +1533,8 @@ messages:
 
   MSP_SET_ADJUSTMENT_RANGE:
     id: 53
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets a single RC adjustment range configuration by its index.
@@ -1491,6 +1575,8 @@ messages:
 
   MSP_CF_SERIAL_CONFIG:
     id: 54
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Deprecated command to get serial port configuration.
@@ -1499,6 +1585,8 @@ messages:
 
   MSP_SET_CF_SERIAL_CONFIG:
     id: 55
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Deprecated command to set serial port configuration.
@@ -1507,6 +1595,8 @@ messages:
 
   MSP_VOLTAGE_METER_CONFIG:
     id: 56
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves legacy voltage meter configuration (scaled values).
@@ -1536,6 +1626,8 @@ messages:
 
   MSP_SET_VOLTAGE_METER_CONFIG:
     id: 57
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets legacy voltage meter configuration (scaled values).
@@ -1565,6 +1657,8 @@ messages:
 
   MSP_SONAR_ALTITUDE:
     id: 58
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the altitude measured by the primary rangefinder (sonar or lidar).
@@ -1578,6 +1672,8 @@ messages:
 
   MSP_RX_MAP:
     id: 64
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the RC channel mapping array (AETR, etc.).
@@ -1591,6 +1687,8 @@ messages:
 
   MSP_SET_RX_MAP:
     id: 65
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the RC channel mapping array.
@@ -1604,6 +1702,8 @@ messages:
 
   MSP_REBOOT:
     id: 68
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Commands the flight controller to reboot.
@@ -1613,6 +1713,8 @@ messages:
 
   MSP_DATAFLASH_SUMMARY:
     id: 70
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves summary information about the onboard dataflash chip (if present and used for Blackbox via FlashFS).
@@ -1638,6 +1740,8 @@ messages:
 
   MSP_DATAFLASH_READ:
     id: 71
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Reads a block of data from the onboard dataflash (FlashFS).
@@ -1665,6 +1769,8 @@ messages:
 
   MSP_DATAFLASH_ERASE:
     id: 72
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Erases the entire onboard dataflash chip (FlashFS volume).
@@ -1674,6 +1780,8 @@ messages:
 
   MSP_LOOP_TIME:
     id: 73
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the configured loop time (PID loop frequency denominator).
@@ -1688,6 +1796,8 @@ messages:
 
   MSP_SET_LOOP_TIME:
     id: 74
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the configured loop time.
@@ -1702,6 +1812,8 @@ messages:
 
   MSP_FAILSAFE_CONFIG:
     id: 75
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the failsafe configuration settings.
@@ -1775,6 +1887,8 @@ messages:
 
   MSP_SET_FAILSAFE_CONFIG:
     id: 76
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the failsafe configuration settings.
@@ -1848,6 +1962,8 @@ messages:
 
   MSP_SDCARD_SUMMARY:
     id: 79
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves summary information about the SD card status and filesystem.
@@ -1879,6 +1995,8 @@ messages:
 
   MSP_BLACKBOX_CONFIG:
     id: 80
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Legacy command to retrieve Blackbox configuration. Superseded by `MSP2_BLACKBOX_CONFIG`.
@@ -1910,6 +2028,8 @@ messages:
 
   MSP_SET_BLACKBOX_CONFIG:
     id: 81
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Legacy command to set Blackbox configuration. Superseded by `MSP2_SET_BLACKBOX_CONFIG`.
@@ -1920,6 +2040,8 @@ messages:
 
   MSP_TRANSPONDER_CONFIG:
     id: 82
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Get VTX Transponder settings (likely specific to RaceFlight/Betaflight, not standard INAV VTX).
@@ -1928,6 +2050,8 @@ messages:
 
   MSP_SET_TRANSPONDER_CONFIG:
     id: 83
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Set VTX Transponder settings.
@@ -1936,6 +2060,8 @@ messages:
 
   MSP_OSD_CONFIG:
     id: 84
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves OSD configuration settings and layout for screen 0. Coordinates are packed as `(Y << 8) | X`. When `USE_OSD` is not compiled in, only `osdDriverType` = `OSD_DRIVER_NONE` is returned.
@@ -2000,6 +2126,8 @@ messages:
 
   MSP_SET_OSD_CONFIG:
     id: 85
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets OSD configuration or a single item's position on screen 0.
@@ -2076,6 +2204,8 @@ messages:
 
   MSP_OSD_CHAR_READ:
     id: 86
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Reads character data from the OSD font memory.
@@ -2084,6 +2214,8 @@ messages:
 
   MSP_OSD_CHAR_WRITE:
     id: 87
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Writes character data to the OSD font memory.
@@ -2144,6 +2276,8 @@ messages:
 
   MSP_VTX_CONFIG:
     id: 88
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the current VTX (Video Transmitter) configuration and capabilities.
@@ -2203,6 +2337,8 @@ messages:
 
   MSP_SET_VTX_CONFIG:
     id: 89
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets VTX band/channel and related options. Fields are a progressive superset based on payload length.
@@ -2325,6 +2461,8 @@ messages:
 
   MSP_ADVANCED_CONFIG:
     id: 90
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves advanced hardware-related configuration (PWM protocols, rates). Some fields are BF compatibility placeholders.
@@ -2368,6 +2506,8 @@ messages:
 
   MSP_SET_ADVANCED_CONFIG:
     id: 91
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets advanced hardware-related configuration (PWM protocols, rates).
@@ -2408,6 +2548,8 @@ messages:
 
   MSP_FILTER_CONFIG:
     id: 92
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves filter configuration settings (Gyro, D-term, Yaw, Accel). Some fields are BF compatibility placeholders or legacy.
@@ -2478,6 +2620,8 @@ messages:
 
   MSP_SET_FILTER_CONFIG:
     id: 93
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets filter configuration settings. Handles different payload lengths for backward compatibility.
@@ -2542,6 +2686,8 @@ messages:
 
   MSP_PID_ADVANCED:
     id: 94
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves advanced PID tuning parameters. Many fields are BF compatibility placeholders.
@@ -2608,6 +2754,8 @@ messages:
 
   MSP_SET_PID_ADVANCED:
     id: 95
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets advanced PID tuning parameters.
@@ -2665,6 +2813,8 @@ messages:
 
   MSP_SENSOR_CONFIG:
     id: 96
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the configured hardware type for various sensors.
@@ -2703,6 +2853,8 @@ messages:
 
   MSP_SET_SENSOR_CONFIG:
     id: 97
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the configured hardware type for various sensors.
@@ -2742,6 +2894,8 @@ messages:
 
   MSP_SPECIAL_PARAMETERS:
     id: 98
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Betaflight specific
@@ -2750,6 +2904,8 @@ messages:
 
   MSP_SET_SPECIAL_PARAMETERS:
     id: 99
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Betaflight specific
@@ -2758,6 +2914,8 @@ messages:
 
   MSP_STATUS:
     id: 101
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides basic flight controller status including cycle time, errors, sensor status, active modes (first 32), and the current configuration profile.
@@ -2795,6 +2953,8 @@ messages:
 
   MSP_RAW_IMU:
     id: 102
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides raw sensor readings from the IMU (Accelerometer, Gyroscope, Magnetometer).
@@ -2849,6 +3009,8 @@ messages:
 
   MSP_SERVO:
     id: 103
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the current output values for all supported servos.
@@ -2863,6 +3025,8 @@ messages:
 
   MSP_MOTOR:
     id: 104
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the current output values for the first 8 motors.
@@ -2876,6 +3040,8 @@ messages:
 
   MSP_RC:
     id: 105
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the current values of the received RC channels.
@@ -2891,6 +3057,8 @@ messages:
 
   MSP_RAW_GPS:
     id: 106
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides raw GPS data (fix status, coordinates, altitude, speed, course).
@@ -2940,6 +3108,8 @@ messages:
 
   MSP_COMP_GPS:
     id: 107
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: 'Provides computed GPS values: distance and direction to home.'
@@ -2964,6 +3134,8 @@ messages:
 
   MSP_ATTITUDE:
     id: 108
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the current attitude estimate (roll, pitch, yaw).
@@ -2988,6 +3160,8 @@ messages:
 
   MSP_ALTITUDE:
     id: 109
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides estimated altitude, vertical speed (variometer), and raw barometric altitude.
@@ -3011,6 +3185,8 @@ messages:
 
   MSP_ANALOG:
     id: 110
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: 'Provides analog sensor readings: battery voltage, current consumption (mAh), RSSI, and current draw (Amps).'
@@ -3042,6 +3218,8 @@ messages:
 
   MSP_RC_TUNING:
     id: 111
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves RC tuning parameters (rates, expos, TPA) for the current control rate profile.
@@ -3092,6 +3270,8 @@ messages:
 
   MSP_ACTIVEBOXES:
     id: 113
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the full bitmask of currently active flight modes (boxes).
@@ -3106,6 +3286,8 @@ messages:
 
   MSP_MISC:
     id: 114
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves miscellaneous configuration settings, mostly related to RC, GPS, Mag, and Battery voltage (legacy formats).
@@ -3197,6 +3379,8 @@ messages:
 
   MSP_BOXNAMES:
     id: 116
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides a semicolon-separated string containing the names of all available flight modes (boxes).
@@ -3211,6 +3395,8 @@ messages:
 
   MSP_PIDNAMES:
     id: 117
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides a semicolon-separated string containing the names of the PID controllers.
@@ -3224,6 +3410,8 @@ messages:
 
   MSP_WP:
     id: 118
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Get/Set a single waypoint from the mission plan.
@@ -3283,6 +3471,8 @@ messages:
 
   MSP_BOXIDS:
     id: 119
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides a list of permanent IDs associated with the available flight modes (boxes).
@@ -3297,6 +3487,8 @@ messages:
 
   MSP_SERVO_CONFIGURATIONS:
     id: 120
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the configuration parameters for all supported servos (min, max, middle, rate). Legacy format with unused fields.
@@ -3348,6 +3540,8 @@ messages:
 
   MSP_NAV_STATUS:
     id: 121
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the current status of the navigation system.
@@ -3386,12 +3580,16 @@ messages:
 
   MSP_NAV_CONFIG:
     id: 122
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     not_implemented: true
 
   MSP_3D:
     id: 124
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves settings related to 3D/reversible motor operation.
@@ -3416,6 +3614,8 @@ messages:
 
   MSP_RC_DEADBAND:
     id: 125
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves RC input deadband settings.
@@ -3444,6 +3644,8 @@ messages:
 
   MSP_SENSOR_ALIGNMENT:
     id: 126
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves sensor alignment settings (legacy format).
@@ -3471,6 +3673,8 @@ messages:
 
   MSP_LED_STRIP_MODECOLOR:
     id: 127
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the color index assigned to each LED mode and function/direction combination, including special colors.
@@ -3495,6 +3699,8 @@ messages:
 
   MSP_BATTERY_STATE:
     id: 130
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides battery state information, formatted primarily for DJI FPV Goggles compatibility.
@@ -3539,6 +3745,8 @@ messages:
 
   MSP_VTXTABLE_BAND:
     id: 137
+    inav_version:
+      since: "7.0"
     mspv: 1
     group: v1
     description: Retrieves information about a specific VTX band from the VTX table. (Implementation missing in provided `fc_msp.c`)
@@ -3548,6 +3756,8 @@ messages:
 
   MSP_VTXTABLE_POWERLEVEL:
     id: 138
+    inav_version:
+      since: "7.0"
     mspv: 1
     group: v1
     description: Retrieves information about a specific VTX power level from the VTX table.
@@ -3580,6 +3790,8 @@ messages:
 
   MSP_STATUS_EX:
     id: 150
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides extended flight controller status, including CPU load, arming flags, and calibration status, in addition to `MSP_STATUS` fields.
@@ -3633,6 +3845,8 @@ messages:
 
   MSP_SENSOR_STATUS:
     id: 151
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the hardware status for each individual sensor system.
@@ -3687,6 +3901,8 @@ messages:
 
   MSP_UID:
     id: 160
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides the unique identifier of the microcontroller.
@@ -3708,6 +3924,8 @@ messages:
 
   MSP_GPSSVINFO:
     id: 164
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides satellite signal strength information (legacy U-Blox compatibility stub).
@@ -3739,6 +3957,8 @@ messages:
 
   MSP_GPSSTATISTICS:
     id: 166
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides debugging statistics for the GPS communication link.
@@ -3787,18 +4007,24 @@ messages:
 
   MSP_OSD_VIDEO_CONFIG:
     id: 180
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     not_implemented: true
 
   MSP_SET_OSD_VIDEO_CONFIG:
     id: 181
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     not_implemented: true
 
   MSP_DISPLAYPORT:
     id: 182
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Drives an external MSP DisplayPort OSD (DJI, HDZero, Walksnail). Sent by the flight controller to the display device rather than requested from it, so it carries a reply payload with no request and expects no response.
@@ -3818,6 +4044,8 @@ messages:
 
   MSP_SET_TX_INFO:
     id: 186
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Allows a transmitter LUA script (or similar) to send runtime information (currently only RSSI) to the firmware.
@@ -3832,6 +4060,8 @@ messages:
 
   MSP_TX_INFO:
     id: 187
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides information potentially useful for transmitter LUA scripts.
@@ -3850,6 +4080,8 @@ messages:
 
   MSP_SET_RAW_RC:
     id: 200
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides raw RC channel data to the flight controller, typically used when the receiver is connected via MSP (e.g., MSP RX feature).
@@ -3865,6 +4097,8 @@ messages:
 
   MSP_SET_RAW_GPS:
     id: 201
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Provides raw GPS data to the flight controller, typically for simulation or external GPS injection.
@@ -3904,6 +4138,8 @@ messages:
 
   MSP_SET_BOX:
     id: 203
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the state of flight modes (boxes). (Likely unused/obsolete in INAV).
@@ -3912,6 +4148,8 @@ messages:
 
   MSP_SET_RC_TUNING:
     id: 204
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets RC tuning parameters (rates, expos, TPA) for the current control rate profile.
@@ -3961,6 +4199,8 @@ messages:
 
   MSP_ACC_CALIBRATION:
     id: 205
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Starts the accelerometer calibration procedure.
@@ -3970,6 +4210,8 @@ messages:
 
   MSP_MAG_CALIBRATION:
     id: 206
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Starts the magnetometer calibration procedure.
@@ -3979,6 +4221,8 @@ messages:
 
   MSP_SET_MISC:
     id: 207
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets miscellaneous configuration settings (legacy formats/scaling).
@@ -4065,6 +4309,8 @@ messages:
 
   MSP_RESET_CONF:
     id: 208
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Resets all configuration settings to their default values and saves to EEPROM.
@@ -4074,6 +4320,8 @@ messages:
 
   MSP_SET_WP:
     id: 209
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets a single waypoint in the mission plan.
@@ -4129,6 +4377,8 @@ messages:
 
   MSP_SELECT_SETTING:
     id: 210
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Selects the active configuration profile and saves it.
@@ -4142,6 +4392,8 @@ messages:
 
   MSP_SET_HEAD:
     id: 211
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the target heading for the heading hold controller (e.g., during MAG mode).
@@ -4156,6 +4408,8 @@ messages:
 
   MSP_SET_SERVO_CONFIGURATION:
     id: 212
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the configuration for a single servo (legacy format).
@@ -4206,6 +4460,8 @@ messages:
 
   MSP_SET_MOTOR:
     id: 214
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the disarmed motor values, typically used for motor testing or propeller balancing functions in a configurator.
@@ -4220,12 +4476,16 @@ messages:
 
   MSP_SET_NAV_CONFIG:
     id: 215
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     not_implemented: true
 
   MSP_SET_3D:
     id: 217
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets parameters related to 3D/reversible motor operation.
@@ -4250,6 +4510,8 @@ messages:
 
   MSP_SET_RC_DEADBAND:
     id: 218
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets RC input deadband values.
@@ -4279,6 +4541,8 @@ messages:
 
   MSP_SET_RESET_CURR_PID:
     id: 219
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Resets the PIDs of the *current* profile to their default values. Does not save.
@@ -4288,6 +4552,8 @@ messages:
 
   MSP_SET_SENSOR_ALIGNMENT:
     id: 220
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets sensor alignment (legacy format).
@@ -4313,6 +4579,8 @@ messages:
 
   MSP_SET_LED_STRIP_MODECOLOR:
     id: 221
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the color index for a specific LED mode/function combination.
@@ -4335,6 +4603,8 @@ messages:
 
   MSP_SET_ACC_TRIM:
     id: 239
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the accelerometer trim values (leveling calibration).
@@ -4343,6 +4613,8 @@ messages:
 
   MSP_ACC_TRIM:
     id: 240
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Gets the accelerometer trim values.
@@ -4351,6 +4623,8 @@ messages:
 
   MSP_SERVO_MIX_RULES:
     id: 241
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the custom servo mixer rules (legacy format).
@@ -4399,6 +4673,8 @@ messages:
 
   MSP_SET_SERVO_MIX_RULE:
     id: 242
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets a single custom servo mixer rule (legacy format).
@@ -4443,6 +4719,8 @@ messages:
 
   MSP_SET_PASSTHROUGH:
     id: 245
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Enables serial passthrough mode to peripherals like ESCs (BLHeli 4-way) or other serial devices.
@@ -4456,6 +4734,8 @@ messages:
 
   MSP_RTC:
     id: 246
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves the current Real-Time Clock time.
@@ -4475,6 +4755,8 @@ messages:
 
   MSP_SET_RTC:
     id: 247
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Sets the Real-Time Clock time.
@@ -4494,6 +4776,8 @@ messages:
 
   MSP_EEPROM_WRITE:
     id: 250
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Saves the current configuration from RAM to non-volatile memory (EEPROM/Flash).
@@ -4503,18 +4787,24 @@ messages:
 
   MSP_RESERVE_1:
     id: 251
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     not_implemented: true
 
   MSP_RESERVE_2:
     id: 252
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     not_implemented: true
 
   MSP_DEBUGMSG:
     id: 253
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves debug ("serial printf") messages from the firmware.
@@ -4529,6 +4819,8 @@ messages:
 
   MSP_DEBUG:
     id: 254
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: Retrieves values from the firmware's `debug[]` array (legacy 16-bit version).
@@ -4544,6 +4836,8 @@ messages:
 
   MSP_V2_FRAME:
     id: 255
+    inav_version:
+      since: "1.0"
     mspv: 1
     group: v1
     description: This ID is used as a *payload indicator* within an MSPv1 message structure (`$M>`) to signify that the following payload conforms to the MSPv2 format. It's not a command itself.
@@ -4553,6 +4847,8 @@ messages:
 
   MSP2_COMMON_TZ:
     id: 4097
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Gets the time zone offset configuration.
@@ -4571,6 +4867,8 @@ messages:
 
   MSP2_COMMON_SET_TZ:
     id: 4098
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Sets the time zone offset configuration.
@@ -4603,6 +4901,8 @@ messages:
 
   MSP2_COMMON_SETTING:
     id: 4099
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Gets the value of a specific configuration setting, identified by name or index.
@@ -4631,6 +4931,8 @@ messages:
 
   MSP2_COMMON_SET_SETTING:
     id: 4100
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Sets the value of a specific configuration setting, identified by name or index.
@@ -4658,6 +4960,8 @@ messages:
 
   MSP2_COMMON_MOTOR_MIXER:
     id: 4101
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Retrieves the current motor mixer configuration (throttle, roll, pitch, yaw weights) for each motor.
@@ -4674,6 +4978,8 @@ messages:
 
   MSP2_COMMON_SET_MOTOR_MIXER:
     id: 4102
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Sets the motor mixer weights for a single motor in the primary mixer profile.
@@ -4708,6 +5014,8 @@ messages:
 
   MSP2_COMMON_SETTING_INFO:
     id: 4103
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Gets detailed information about a specific configuration setting (name, type, range, flags, current value, etc.).
@@ -4765,6 +5073,8 @@ messages:
 
   MSP2_COMMON_PG_LIST:
     id: 4104
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Gets a list of Parameter Group Numbers (PGNs) used by settings, along with the start and end setting indexes for each group. Can request info for a single PGN.
@@ -4793,6 +5103,8 @@ messages:
 
   MSP2_COMMON_SERIAL_CONFIG:
     id: 4105
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Retrieves the configuration for all available serial ports.
@@ -4831,6 +5143,8 @@ messages:
 
   MSP2_COMMON_SET_SERIAL_CONFIG:
     id: 4106
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Sets the configuration for one or more serial ports.
@@ -4869,6 +5183,8 @@ messages:
 
   MSP2_COMMON_SET_RADAR_POS:
     id: 4107
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Sets the position and status information for a "radar" Point of Interest (POI). Used for displaying other craft/objects on the OSD map.
@@ -4917,6 +5233,8 @@ messages:
 
   MSP2_COMMON_SET_RADAR_ITD:
     id: 4108
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: common
     description: Sets radar information to display (likely internal/unused).
@@ -4925,6 +5243,8 @@ messages:
 
   MSP2_COMMON_SET_MSP_RC_LINK_STATS:
     id: 4109
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: common
     description: Provides RC link statistics (RSSI, LQ) to the FC, typically from an MSP-based RC link (like ExpressLRS). Sent periodically by the RC link.
@@ -4968,6 +5288,8 @@ messages:
 
   MSP2_COMMON_SET_MSP_RC_INFO:
     id: 4110
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: common
     description: Provides additional RC link information (power levels, band, mode) to the FC from an MSP-based RC link. Sent less frequently than link stats.
@@ -4999,6 +5321,8 @@ messages:
 
   MSP2_COMMON_GET_RADAR_GPS:
     id: 4111
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: common
     description: Provides the GPS positions (latitude, longitude, altitude) for each radar point of interest.
@@ -5024,6 +5348,8 @@ messages:
 
   MSP2_SENSOR_RANGEFINDER:
     id: 7937
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: sensor
     description: Provides rangefinder data (distance, quality) from an external MSP-based sensor.
@@ -5043,6 +5369,8 @@ messages:
 
   MSP2_SENSOR_OPTIC_FLOW:
     id: 7938
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: sensor
     description: Provides optical flow data (motion, quality) from an external MSP-based sensor.
@@ -5064,6 +5392,8 @@ messages:
 
   MSP2_SENSOR_GPS:
     id: 7939
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: sensor
     description: Provides detailed GPS data from an external MSP-based GPS module.
@@ -5180,6 +5510,8 @@ messages:
 
   MSP2_SENSOR_COMPASS:
     id: 7940
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: sensor
     description: Provides magnetometer data from an external MSP-based compass module.
@@ -5213,6 +5545,8 @@ messages:
 
   MSP2_SENSOR_BAROMETER:
     id: 7941
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: sensor
     description: Provides barometer data from an external MSP-based barometer module.
@@ -5241,6 +5575,8 @@ messages:
 
   MSP2_SENSOR_AIRSPEED:
     id: 7942
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: sensor
     description: Provides airspeed data from an external MSP-based pitot sensor module.
@@ -5269,6 +5605,8 @@ messages:
 
   MSP2_SENSOR_HEADTRACKER:
     id: 7943
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: sensor
     description: Provides head tracker orientation data.
@@ -5298,6 +5636,8 @@ messages:
 
   MSP2_INAV_STATUS:
     id: 8192
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Provides comprehensive flight controller status, extending `MSP_STATUS_EX` with full arming flags, battery profile, and mixer profile.
@@ -5349,6 +5689,8 @@ messages:
 
   MSP2_INAV_OPTICAL_FLOW:
     id: 8193
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Provides data from the optical flow sensor.
@@ -5383,6 +5725,8 @@ messages:
 
   MSP2_INAV_ANALOG:
     id: 8194
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Provides detailed analog sensor readings, superseding `MSP_ANALOG` with higher precision and additional fields.
@@ -5437,6 +5781,8 @@ messages:
 
   MSP2_INAV_MISC:
     id: 8195
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves miscellaneous configuration settings, superseding `MSP_MISC` with higher precision and capacity fields.
@@ -5550,6 +5896,8 @@ messages:
 
   MSP2_INAV_SET_MISC:
     id: 8196
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets miscellaneous configuration settings, superseding `MSP_SET_MISC`.
@@ -5661,6 +6009,8 @@ messages:
 
   MSP2_INAV_BATTERY_CONFIG:
     id: 8197
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the configuration specific to the battery voltage and current sensors and capacity settings for the current battery profile.
@@ -5735,6 +6085,8 @@ messages:
 
   MSP2_INAV_SET_BATTERY_CONFIG:
     id: 8198
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the battery voltage/current sensor configuration and capacity settings for the current battery profile.
@@ -5809,6 +6161,8 @@ messages:
 
   MSP2_INAV_RATE_PROFILE:
     id: 8199
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the rates and expos for the current control rate profile, including both stabilized and manual flight modes. Supersedes `MSP_RC_TUNING`.
@@ -5873,6 +6227,8 @@ messages:
 
   MSP2_INAV_SET_RATE_PROFILE:
     id: 8200
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the rates and expos for the current control rate profile (stabilized and manual). Supersedes `MSP_SET_RC_TUNING`.
@@ -5938,6 +6294,8 @@ messages:
 
   MSP2_INAV_AIR_SPEED:
     id: 8201
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the estimated or measured airspeed.
@@ -5952,6 +6310,8 @@ messages:
 
   MSP2_INAV_OUTPUT_MAPPING:
     id: 8202
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the output mapping configuration (identifies which timer outputs are used for Motors/Servos). Legacy version sending only 8-bit usage flags.
@@ -5967,6 +6327,8 @@ messages:
 
   MSP2_INAV_MC_BRAKING:
     id: 8203
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves configuration parameters for the multirotor braking mode feature.
@@ -6016,6 +6378,8 @@ messages:
 
   MSP2_INAV_SET_MC_BRAKING:
     id: 8204
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets configuration parameters for the multirotor braking mode feature.
@@ -6065,6 +6429,8 @@ messages:
 
   MSP2_INAV_OUTPUT_MAPPING_EXT:
     id: 8205
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Retrieves extended output mapping configuration (timer ID and usage flags). Obsolete, use `MSP2_INAV_OUTPUT_MAPPING_EXT2`.
@@ -6084,6 +6450,8 @@ messages:
 
   MSP2_INAV_TIMER_OUTPUT_MODE:
     id: 8206
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Reads timer output mode overrides.
@@ -6126,6 +6494,8 @@ messages:
 
   MSP2_INAV_SET_TIMER_OUTPUT_MODE:
     id: 8207
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Set the output mode override for a specific hardware timer.
@@ -6144,6 +6514,8 @@ messages:
 
   MSP2_INAV_MIXER:
     id: 8208
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves INAV-specific mixer configuration details.
@@ -6186,6 +6558,8 @@ messages:
 
   MSP2_INAV_SET_MIXER:
     id: 8209
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets INAV-specific mixer configuration details.
@@ -6228,6 +6602,8 @@ messages:
 
   MSP2_INAV_OSD_LAYOUTS:
     id: 8210
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves OSD layout metadata or item positions for specific layouts/items.
@@ -6283,6 +6659,8 @@ messages:
 
   MSP2_INAV_OSD_SET_LAYOUT_ITEM:
     id: 8211
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the position of a single OSD item within a specific layout.
@@ -6307,6 +6685,8 @@ messages:
 
   MSP2_INAV_OSD_ALARMS:
     id: 8212
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves OSD alarm threshold settings.
@@ -6391,6 +6771,8 @@ messages:
 
   MSP2_INAV_OSD_SET_ALARMS:
     id: 8213
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets OSD alarm threshold settings.
@@ -6465,6 +6847,8 @@ messages:
 
   MSP2_INAV_OSD_PREFERENCES:
     id: 8214
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves OSD display preferences (video system, units, styles, etc.).
@@ -6516,6 +6900,8 @@ messages:
 
   MSP2_INAV_OSD_SET_PREFERENCES:
     id: 8215
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets OSD display preferences.
@@ -6567,6 +6953,8 @@ messages:
 
   MSP2_INAV_SELECT_BATTERY_PROFILE:
     id: 8216
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Selects the active battery profile and saves configuration.
@@ -6580,6 +6968,8 @@ messages:
 
   MSP2_INAV_DEBUG:
     id: 8217
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves values from the firmware's 32-bit `debug[]` array. Supersedes `MSP_DEBUG`.
@@ -6594,6 +6984,8 @@ messages:
 
   MSP2_BLACKBOX_CONFIG:
     id: 8218
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the Blackbox configuration. Supersedes `MSP_BLACKBOX_CONFIG`.
@@ -6625,6 +7017,8 @@ messages:
 
   MSP2_SET_BLACKBOX_CONFIG:
     id: 8219
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the Blackbox configuration. Supersedes `MSP_SET_BLACKBOX_CONFIG`.
@@ -6651,6 +7045,8 @@ messages:
 
   MSP2_INAV_TEMP_SENSOR_CONFIG:
     id: 8220
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the configuration for all onboard temperature sensors.
@@ -6689,6 +7085,8 @@ messages:
 
   MSP2_INAV_SET_TEMP_SENSOR_CONFIG:
     id: 8221
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the configuration for all onboard temperature sensors.
@@ -6726,6 +7124,8 @@ messages:
 
   MSP2_INAV_TEMPERATURES:
     id: 8222
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the current readings from all configured temperature sensors.
@@ -6742,6 +7142,8 @@ messages:
 
   MSP_SIMULATOR:
     id: 8223
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Handles Hardware-in-the-Loop (HITL) simulation data exchange. Receives simulated sensor data and options, sends back control outputs and debug info.
@@ -6928,6 +7330,8 @@ messages:
 
   MSP2_INAV_SERVO_MIXER:
     id: 8224
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the custom servo mixer rules, including programming framework condition IDs, for primary and secondary mixer profiles. Supersedes `MSP_SERVO_MIX_RULES`.
@@ -6981,6 +7385,8 @@ messages:
 
   MSP2_INAV_SET_SERVO_MIXER:
     id: 8225
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets a single custom servo mixer rule, including programming framework condition ID. Supersedes `MSP_SET_SERVO_MIX_RULE`.
@@ -7015,6 +7421,8 @@ messages:
 
   MSP2_INAV_LOGIC_CONDITIONS:
     id: 8226
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the configuration of all defined Logic Conditions. Requires `USE_PROGRAMMING_FRAMEWORK`. See `logicCondition_t` structure.
@@ -7024,6 +7432,8 @@ messages:
 
   MSP2_INAV_SET_LOGIC_CONDITIONS:
     id: 8227
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the configuration for a single Logic Condition by its index.
@@ -7074,18 +7484,24 @@ messages:
 
   MSP2_INAV_GLOBAL_FUNCTIONS:
     id: 8228
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     not_implemented: true
 
   MSP2_INAV_SET_GLOBAL_FUNCTIONS:
     id: 8229
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     not_implemented: true
 
   MSP2_INAV_LOGIC_CONDITIONS_STATUS:
     id: 8230
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the current evaluated status (true/false or numerical value) of all logic conditions.
@@ -7100,6 +7516,8 @@ messages:
 
   MSP2_INAV_GVAR_STATUS:
     id: 8231
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the current values of all Global Variables (GVARS).
@@ -7114,6 +7532,8 @@ messages:
 
   MSP2_INAV_PROGRAMMING_PID:
     id: 8232
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the configuration of all Programming PIDs.
@@ -7163,6 +7583,8 @@ messages:
 
   MSP2_INAV_SET_PROGRAMMING_PID:
     id: 8233
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the configuration for a single Programming PID by its index.
@@ -7214,6 +7636,8 @@ messages:
 
   MSP2_INAV_PROGRAMMING_PID_STATUS:
     id: 8234
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the current output value of all Programming PIDs.
@@ -7228,6 +7652,8 @@ messages:
 
   MSP2_PID:
     id: 8240
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the standard PID controller gains (P, I, D, FF) for the current PID profile.
@@ -7255,6 +7681,8 @@ messages:
 
   MSP2_SET_PID:
     id: 8241
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the standard PID controller gains (P, I, D, FF) for the current PID profile.
@@ -7282,6 +7710,8 @@ messages:
 
   MSP2_INAV_OPFLOW_CALIBRATION:
     id: 8242
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Starts the optical flow sensor calibration procedure.
@@ -7291,6 +7721,8 @@ messages:
 
   MSP2_INAV_FWUPDT_PREPARE:
     id: 8243
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Prepares the flight controller to receive a firmware update via MSP.
@@ -7304,6 +7736,8 @@ messages:
 
   MSP2_INAV_FWUPDT_STORE:
     id: 8244
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Stores a chunk of firmware data received via MSP.
@@ -7318,6 +7752,8 @@ messages:
 
   MSP2_INAV_FWUPDT_EXEC:
     id: 8245
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Executes the firmware update process (flashes the stored firmware and reboots).
@@ -7331,6 +7767,8 @@ messages:
 
   MSP2_INAV_FWUPDT_ROLLBACK_PREPARE:
     id: 8246
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Prepares the flight controller to perform a firmware rollback to the previously stored version.
@@ -7340,6 +7778,8 @@ messages:
 
   MSP2_INAV_FWUPDT_ROLLBACK_EXEC:
     id: 8247
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Executes the firmware rollback process (flashes the stored backup firmware and reboots).
@@ -7349,6 +7789,8 @@ messages:
 
   MSP2_INAV_SAFEHOME:
     id: 8248
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Get or Set configuration for a specific Safe Home location.
@@ -7379,6 +7821,8 @@ messages:
 
   MSP2_INAV_SET_SAFEHOME:
     id: 8249
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the configuration for a specific Safe Home location.
@@ -7404,6 +7848,8 @@ messages:
 
   MSP2_INAV_MISC2:
     id: 8250
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves miscellaneous runtime information including timers and throttle status.
@@ -7432,6 +7878,8 @@ messages:
 
   MSP2_INAV_LOGIC_CONDITIONS_SINGLE:
     id: 8251
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Gets the configuration for a single Logic Condition by its index.
@@ -7483,6 +7931,8 @@ messages:
 
   MSP2_INAV_LOGIC_CONDITIONS_CONFIGURED:
     id: 8252
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Returns a bitmask of which logic conditions are configured, so a client can fetch only the used slots instead of all of them.
@@ -7500,6 +7950,8 @@ messages:
 
   MSP2_INAV_ESC_RPM:
     id: 8256
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the RPM reported by each ESC via telemetry.
@@ -7516,6 +7968,8 @@ messages:
 
   MSP2_INAV_ESC_TELEM:
     id: 8257
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Retrieves the full telemetry data structure reported by each ESC.
@@ -7534,6 +7988,8 @@ messages:
 
   MSP2_INAV_DRONECAN_NODES:
     id: 8258
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Returns the list of all detected DroneCAN nodes with their current status.
@@ -7578,6 +8034,8 @@ messages:
 
   MSP2_INAV_DRONECAN_ASYNC_REQUEST:
     id: 8259
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Initiates an asynchronous DroneCAN service request (GetNodeInfo, ParamGetSet, ExecuteOpcode, RestartNode) to a specific node. Result retrieved via MSP2_INAV_DRONECAN_ASYNC_RESULT.
@@ -7605,6 +8063,8 @@ messages:
 
   MSP2_INAV_DRONECAN_ASYNC_RESULT:
     id: 8260
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Polls the result of the most recent MSP2_INAV_DRONECAN_ASYNC_REQUEST. Poll at ~100ms intervals until state is READY(2) or ERROR(3).
@@ -7631,6 +8091,8 @@ messages:
 
   MSP2_INAV_LED_STRIP_CONFIG_EX:
     id: 8264
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Retrieves the full configuration for each LED on the strip using the `ledConfig_t` structure. Supersedes `MSP_LED_STRIP_CONFIG`.
@@ -7646,6 +8108,8 @@ messages:
 
   MSP2_INAV_SET_LED_STRIP_CONFIG_EX:
     id: 8265
+    inav_version:
+      since: "1.0"
     mspv: 2
     group: inav
     description: Sets the configuration for a single LED on the strip using the `ledConfig_t` structure. Supersedes `MSP_SET_LED_STRIP_CONFIG`.
@@ -7663,6 +8127,8 @@ messages:
 
   MSP2_INAV_FW_APPROACH:
     id: 8266
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Get or Set configuration for a specific Fixed Wing Autoland approach.
@@ -7712,6 +8178,8 @@ messages:
 
   MSP2_INAV_SET_FW_APPROACH:
     id: 8267
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Sets the configuration for a specific Fixed Wing Autoland approach.
@@ -7756,6 +8224,8 @@ messages:
 
   MSP2_INAV_GPS_UBLOX_COMMAND:
     id: 8272
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Sends a raw command directly to a U-Blox GPS module connected to the FC.
@@ -7770,6 +8240,8 @@ messages:
 
   MSP2_INAV_RATE_DYNAMICS:
     id: 8288
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Retrieves Rate Dynamics configuration parameters for the current control rate profile.
@@ -7809,6 +8281,8 @@ messages:
 
   MSP2_INAV_SET_RATE_DYNAMICS:
     id: 8289
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Sets Rate Dynamics configuration parameters for the current control rate profile.
@@ -7848,6 +8322,8 @@ messages:
 
   MSP2_INAV_EZ_TUNE:
     id: 8304
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Retrieves the current EZ-Tune parameters.
@@ -7897,6 +8373,8 @@ messages:
 
   MSP2_INAV_EZ_TUNE_SET:
     id: 8305
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Sets the EZ-Tune parameters and triggers an update.
@@ -7946,6 +8424,8 @@ messages:
 
   MSP2_INAV_SELECT_MIXER_PROFILE:
     id: 8320
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Selects the active mixer profile and saves configuration.
@@ -7959,6 +8439,8 @@ messages:
 
   MSP2_ADSB_VEHICLE_LIST:
     id: 8336
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: "Retrieves the list of currently tracked ADSB (Automatic Dependent Surveillance\u2013Broadcast) vehicles. See `adsbVehicle_t` and `adsbVehicleValues_t` in `io/adsb.h` for the exact structure fields."
@@ -8030,6 +8512,8 @@ messages:
 
   MSP2_ADSB_LIMITS:
     id: 8337
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Retrieves the configured ADSB proximity distance limits used for OSD warnings and alerts.
@@ -8054,6 +8538,8 @@ messages:
 
   MSP2_ADSB_WARNING_VEHICLE_ICAO:
     id: 8338
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Returns the ICAO address of the ADSB vehicle currently triggering a proximity warning or alert.
@@ -8072,6 +8558,8 @@ messages:
 
   MSP2_ADSB_VEHICLE:
     id: 8339
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: 'Retrieves a single tracked ADSB (Automatic Dependent Surveillance-Broadcast) vehicle by slot index. Intended for polling one slot at a time: query `MSP2_ADSB_VEHICLE_COUNT` for the iteration bound, then request indices `0 .. count-1`, skipping slots with `ttl == 0`, and identify each aircraft by its `icao`. See `adsbVehicle_t` / `adsbVehicleValues_t` in `io/adsb.h`.'
@@ -8133,6 +8621,8 @@ messages:
 
   MSP2_ADSB_VEHICLE_COUNT:
     id: 8340
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Returns the number of ADSB vehicle slots available to iterate with `MSP2_ADSB_VEHICLE`.
@@ -8146,6 +8636,8 @@ messages:
 
   MSP2_INAV_CUSTOM_OSD_ELEMENTS:
     id: 8448
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Retrieves counts related to custom OSD elements defined by the programming framework.
@@ -8167,6 +8659,8 @@ messages:
 
   MSP2_INAV_CUSTOM_OSD_ELEMENT:
     id: 8449
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Gets the configuration of a single custom OSD element defined by the programming framework.
@@ -8207,6 +8701,8 @@ messages:
 
   MSP2_INAV_SET_CUSTOM_OSD_ELEMENTS:
     id: 8450
+    inav_version:
+      since: "7.0"
     mspv: 2
     group: inav
     description: Sets the configuration of one custom OSD element.
@@ -8246,6 +8742,8 @@ messages:
 
   MSP2_INAV_GET_LINK_STATS:
     id: 8451
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Provides uplink RC link statistics for monitoring on a GCS.
@@ -8270,6 +8768,8 @@ messages:
 
   MSP2_INAV_OUTPUT_MAPPING_EXT2:
     id: 8461
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Retrieves the full extended output mapping configuration (timer ID, full 32-bit usage flags, and pin label). Supersedes `MSP2_INAV_OUTPUT_MAPPING_EXT`.
@@ -8294,6 +8794,8 @@ messages:
 
   MSP2_INAV_OUTPUT_ASSIGNMENT:
     id: 8462
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Returns the finalized post-boot mapping of timer outputs to motors, servos and the beeper.
@@ -8322,6 +8824,8 @@ messages:
 
   MSP2_INAV_QUERY_OUTPUT_ASSIGNMENT:
     id: 8463
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Previews the output assignment that would result from a proposed set of timer output-mode overrides, without applying them.
@@ -8395,6 +8899,8 @@ messages:
 
   MSP2_INAV_OSD_UPDATE_POSITION:
     id: 8472
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Moves a single OSD item within the active layout and redraws it immediately.
@@ -8414,6 +8920,8 @@ messages:
 
   MSP2_INAV_SERVO_CONFIG:
     id: 8704
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Retrieves the configuration parameters for all supported servos (min, max, middle, rate). Supersedes `MSP_SERVO_CONFIGURATIONS`.
@@ -8444,6 +8952,8 @@ messages:
 
   MSP2_INAV_SET_SERVO_CONFIG:
     id: 8705
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Sets the configuration parameters for a single servo. Supersedes `MSP_SET_SERVO_CONFIGURATION`.
@@ -8478,6 +8988,8 @@ messages:
 
   MSP2_INAV_GEOZONE:
     id: 8720
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Get configuration for a specific Geozone.
@@ -8527,6 +9039,8 @@ messages:
 
   MSP2_INAV_SET_GEOZONE:
     id: 8721
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Sets the main configuration for a specific Geozone (type, shape, altitude, action). **This command resets (clears) all vertices associated with the zone.**
@@ -8571,6 +9085,8 @@ messages:
 
   MSP2_INAV_GEOZONE_VERTEX:
     id: 8722
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Get a specific vertex (or center+radius for circular zones) of a Geozone.
@@ -8615,6 +9131,8 @@ messages:
 
   MSP2_INAV_SET_GEOZONE_VERTEX:
     id: 8723
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: inav
     description: Sets a specific vertex (or center+radius for circular zones) for a Geozone.
@@ -8677,6 +9195,8 @@ messages:
 
   MSP2_INAV_SET_GVAR:
     id: 8724
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Sets the specified Global Variable (GVAR) to the provided value.
@@ -8695,6 +9215,8 @@ messages:
 
   MSP2_INAV_SET_ALT_TARGET:
     id: 8725
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Set the active altitude hold target using updateClimbRateToAltitudeController.
@@ -8714,6 +9236,8 @@ messages:
 
   MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE:
     id: 8726
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Enables or disables a flight-axis angle override for the selected axis.
@@ -8743,6 +9267,8 @@ messages:
 
   MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE:
     id: 8727
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Enables or disables a flight-axis rate override for the selected axis.
@@ -8772,6 +9298,8 @@ messages:
 
   MSP2_INAV_SET_LOCAL_TARGET:
     id: 8728
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Sets a body-frame offset target relative to the current vehicle position.
@@ -8797,6 +9325,8 @@ messages:
 
   MSP2_INAV_LOCAL_TARGET:
     id: 8729
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Returns the current navigation desired state (position, velocity, yaw, and climb rate).
@@ -8846,6 +9376,8 @@ messages:
 
   MSP2_INAV_SET_GLOBAL_TARGET:
     id: 8730
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Sets desired GCS Nav position with global coordinates (WP 254/GOTO).
@@ -8880,6 +9412,8 @@ messages:
 
   MSP2_INAV_NAV_TARGET:
     id: 8731
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Returns the current navigation desired global target (lat/lon/alt, heading, climb rate).
@@ -8919,6 +9453,8 @@ messages:
 
   MSP2_INAV_FULL_LOCAL_POSE:
     id: 8736
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Provides estimates of current attitude, local NEU position, and velocity.
@@ -8973,6 +9509,8 @@ messages:
 
   MSP2_INAV_SET_WP_INDEX:
     id: 8737
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Jumps to a specific waypoint during an active waypoint mission, causing the aircraft to immediately begin navigating toward the new target waypoint.
@@ -8987,6 +9525,8 @@ messages:
 
   MSP2_INAV_SET_CRUISE_HEADING:
     id: 8739
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Sets the course heading target while Cruise or Course Hold mode is active, causing the aircraft to turn to and maintain the new heading.
@@ -9001,6 +9541,8 @@ messages:
 
   MSP2_INAV_ACTIVATE_LANDING:
     id: 8740
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Commands an immediate normal landing at the current position.
@@ -9010,6 +9552,8 @@ messages:
 
   MSP2_INAV_ACTIVATE_RTH:
     id: 8741
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Commands the aircraft to execute its configured return-to-home sequence.
@@ -9019,6 +9563,8 @@ messages:
 
   MSP2_INAV_ARM_DISARM:
     id: 8743
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Arms or disarms the flight controller using the normal FC arming path.
@@ -9033,6 +9579,8 @@ messages:
 
   MSP2_INAV_TIMESYNC:
     id: 8744
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Returns the local monotonic boot time in nanoseconds.
@@ -9047,6 +9595,8 @@ messages:
 
   MSP2_INAV_SET_AUX_RC:
     id: 8752
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: inav
     description: Bandwidth-efficient auxiliary RC channel update. Sets CH13-CH32 with configurable resolution (2/4/8/16-bit) without affecting primary flight controls. Designed for extending channel count beyond native RC link capacity via MSP passthrough.
@@ -9066,6 +9616,8 @@ messages:
 
   MSP2_INAV_WIND:
     id: 8753
+    inav_version:
+      since: "10.0"
     mspv: 2
     group: inav
     description: Retrieves the estimated horizontal wind speed and direction from the internal wind estimator.
@@ -9089,6 +9641,8 @@ messages:
 
   MSP2_BETAFLIGHT_BIND:
     id: 12288
+    inav_version:
+      since: "8.0"
     mspv: 2
     group: common
     description: Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).
@@ -9098,6 +9652,8 @@ messages:
 
   MSP2_RX_BIND:
     id: 12289
+    inav_version:
+      since: "9.0"
     mspv: 2
     group: common
     description: Initiates binding for MSP receivers (mLRS).

@@ -65,7 +65,7 @@ class MSP_BOARD_INFO_reply_t(BaseModel):
     boardIdentifier: str = Field(max_length=4, description='4-character UPPER CASE board identifier (`TARGET_BOARD_IDENTIFIER`)')
     hardwareRevision: uint16 = Field(description='Hardware revision number. 0 if not detected (`USE_HARDWARE_REVISION_DETECTION`)')
     osdSupport: uint8 = Field(description='OSD chip type: 0=None, 2=Onboard (`USE_OSD`). INAV does not support slave OSD (1)')
-    commCapabilities: uint8 = Field(description='Bitmask: Communication capabilities: Bit 0=VCP support (`USE_VCP`), Bit 1=SoftSerial support (`USE_SOFTSERIAL1`/`2`) [Bitmask]')
+    commCapabilities: uint8 = Field(description='Bitmask: Communication capabilities: Bit 0=VCP support (`USE_VCP`), Bit 1=SoftSerial support (`USE_SOFTSERIAL1`/`2`)')
     targetNameLength: uint8 = Field(description='Length of the target name string that follows')
     targetName: str = Field(description='Target name string (e.g., "MATEKF405"). Length given by previous field')
 
@@ -157,7 +157,7 @@ class MSP_NAV_POSHOLD_reply_t(BaseModel):
     maxManualSpeed: uint16 = Field(description='Max speed in manual modes with GPS aiding (`navConfig()->general.max_manual_speed`) [cm/s]')
     maxManualClimbRate: uint16 = Field(description='Max climb rate in manual modes with GPS aiding (uses `fw.max_manual_climb_rate` or `mc.max_manual_climb_rate`) [cm/s]')
     mcMaxBankAngle: uint8 = Field(description='Max bank angle for multirotor position hold (`navConfig()->mc.max_bank_angle`) [degrees]')
-    mcAltHoldThrottleType: navMcAltHoldThrottle_e = Field(description='Enum `navMcAltHoldThrottle_e` mirrored from `navConfig()->mc.althold_throttle_type`. [Enum]')
+    mcAltHoldThrottleType: uint8 = Field(description='Enum `navMcAltHoldThrottle_e` mirrored from `navConfig()->mc.althold_throttle_type`.')
     mcHoverThrottle: uint16 = Field(description='Multirotor hover throttle PWM value (`currentBatteryProfile->nav.mc.hover_throttle`). [PWM]')
 
 
@@ -168,13 +168,13 @@ class MSP_SET_NAV_POSHOLD_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    userControlMode: nav_control_type_e = Field(description="Sets `navConfigMutable()->general.flags.user_control_mode`. WARNING: uses unnamed enum in navigation.h 'NAV_GPS_ATTI/NAV_GPS_CRUISE' [Enum]")
+    userControlMode: uint8 = Field(description="Sets `navConfigMutable()->general.flags.user_control_mode`. WARNING: uses unnamed enum in navigation.h 'NAV_GPS_ATTI/NAV_GPS_CRUISE'")
     maxAutoSpeed: uint16 = Field(description='Sets `navConfigMutable()->general.max_auto_speed`. [cm/s]')
     maxAutoClimbRate: uint16 = Field(description='Sets `navConfigMutable()->fw.max_auto_climb_rate` or `navConfigMutable()->mc.max_auto_climb_rate` based on `mixerConfig()->platformType`. [cm/s]')
     maxManualSpeed: uint16 = Field(description='Sets `navConfigMutable()->general.max_manual_speed`. [cm/s]')
     maxManualClimbRate: uint16 = Field(description='Sets `navConfigMutable()->fw.max_manual_climb_rate` or `navConfigMutable()->mc.max_manual_climb_rate`. [cm/s]')
     mcMaxBankAngle: uint8 = Field(description='Sets `navConfigMutable()->mc.max_bank_angle`. [degrees]')
-    mcAltHoldThrottleType: navMcAltHoldThrottle_e = Field(description='Enum `navMcAltHoldThrottle_e`; updates `navConfigMutable()->mc.althold_throttle_type`. [Enum]')
+    mcAltHoldThrottleType: uint8 = Field(description='Enum `navMcAltHoldThrottle_e`; updates `navConfigMutable()->mc.althold_throttle_type`.')
     mcHoverThrottle: uint16 = Field(description='Sets `currentBatteryProfileMutable->nav.mc.hover_throttle`. [PWM]')
 
 
@@ -185,7 +185,7 @@ class MSP_CALIBRATION_DATA_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    accCalibAxisFlags: uint8 = Field(description='Bitmask: Flags indicating which axes of the accelerometer have been calibrated (`accGetCalibrationAxisFlags()`) [Bitmask]')
+    accCalibAxisFlags: uint8 = Field(description='Bitmask: Flags indicating which axes of the accelerometer have been calibrated (`accGetCalibrationAxisFlags()`)')
     accZeroX: int16 = Field(description='Accelerometer zero offset for X-axis (`accelerometerConfig()->accZero.raw[X]`) [Raw ADC]')
     accZeroY: int16 = Field(description='Accelerometer zero offset for Y-axis (`accelerometerConfig()->accZero.raw[Y]`) [Raw ADC]')
     accZeroZ: int16 = Field(description='Accelerometer zero offset for Z-axis (`accelerometerConfig()->accZero.raw[Z]`) [Raw ADC]')
@@ -300,7 +300,7 @@ class MSP_RTH_AND_LAND_CONFIG_reply_t(BaseModel):
     rthClimbIgnoreEmerg: uint8 = Field(description='Flag: Climb even in emergency RTH (`navConfig()->general.flags.rth_climb_ignore_emerg`) [Boolean]')
     rthTailFirst: uint8 = Field(description='Flag: Return tail-first during RTH (`navConfig()->general.flags.rth_tail_first`) [Boolean]')
     rthAllowLanding: uint8 = Field(description='Flag: Allow automatic landing after RTH (`navConfig()->general.flags.rth_allow_landing`) [Boolean]')
-    rthAltControlMode: nav_rth_alt_profile_e = Field(description="RTH altitude control mode (`navConfig()->general.flags.rth_alt_control_mode`). WARNING: uses unnamed enum in navigation.h:253 'NAV_RTH_NO_ALT...' [Enum]")
+    rthAltControlMode: uint8 = Field(description="RTH altitude control mode (`navConfig()->general.flags.rth_alt_control_mode`). WARNING: uses unnamed enum in navigation.h:253 'NAV_RTH_NO_ALT...'")
     rthAbortThreshold: uint16 = Field(description='Distance increase threshold to abort RTH (`navConfig()->general.rth_abort_threshold`) [cm]')
     rthAltitude: uint16 = Field(description='Target RTH altitude (`navConfig()->general.rth_altitude`) [cm]')
     landMinAltVspd: uint16 = Field(description='Landing vertical speed at minimum slowdown altitude (`navConfig()->general.land_minalt_vspd`) [cm/s]')
@@ -322,7 +322,7 @@ class MSP_SET_RTH_AND_LAND_CONFIG_request_t(BaseModel):
     rthClimbIgnoreEmerg: uint8 = Field(description='Sets `navConfigMutable()->general.flags.rth_climb_ignore_emerg`. [Boolean]')
     rthTailFirst: uint8 = Field(description='Sets `navConfigMutable()->general.flags.rth_tail_first`. [Boolean]')
     rthAllowLanding: uint8 = Field(description='Sets `navConfigMutable()->general.flags.rth_allow_landing`. [Boolean]')
-    rthAltControlMode: nav_rth_alt_profile_e = Field(description='Sets `navConfigMutable()->general.flags.rth_alt_control_mode`. WARNING: uses unnamed enum in navigation.h:253 [Enum]')
+    rthAltControlMode: uint8 = Field(description='Sets `navConfigMutable()->general.flags.rth_alt_control_mode`. WARNING: uses unnamed enum in navigation.h:253')
     rthAbortThreshold: uint16 = Field(description='Sets `navConfigMutable()->general.rth_abort_threshold`. [cm]')
     rthAltitude: uint16 = Field(description='Sets `navConfigMutable()->general.rth_altitude`. [cm]')
     landMinAltVspd: uint16 = Field(description='Sets `navConfigMutable()->general.land_minalt_vspd`. [cm/s]')
@@ -405,7 +405,7 @@ class MSP_FEATURE_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    featureMask: uint32 = Field(description='Bitmask: active features (see `featureMask()`) [Bitmask]')
+    featureMask: uint32 = Field(description='Bitmask: active features (see `featureMask()`)')
 
 
 MSP_SET_FEATURE: Final[int] = 37
@@ -415,7 +415,7 @@ class MSP_SET_FEATURE_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    featureMask: uint32 = Field(description='Bitmask: features to enable [Bitmask]')
+    featureMask: uint32 = Field(description='Bitmask: features to enable')
 
 
 MSP_BOARD_ALIGNMENT: Final[int] = 38
@@ -451,7 +451,7 @@ class MSP_CURRENT_METER_CONFIG_reply_t(BaseModel):
 
     scale: int16 = Field(description='Current sensor scale factor (`batteryMetersConfig()->current.scale`). Stored in 0.1 mV/A; signed for calibration. [0.1 mV/A]')
     offset: int16 = Field(description='Current sensor offset (`batteryMetersConfig()->current.offset`). Signed millivolt adjustment. [mV]')
-    type: currentSensor_e = Field(description='Enum `currentSensor_e` Type of current sensor hardware [Enum]')
+    type: uint8 = Field(description='Enum `currentSensor_e` Type of current sensor hardware')
     capacity: uint16 = Field(description='Battery capacity (constrained 0-65535) (`currentBatteryProfile->capacity.value`). Note: This is legacy, use `MSP2_INAV_BATTERY_CONFIG` for full 32-bit capacity [mAh (legacy)]')
 
 
@@ -464,7 +464,7 @@ class MSP_SET_CURRENT_METER_CONFIG_request_t(BaseModel):
 
     scale: int16 = Field(description='Sets `batteryMetersConfigMutable()->current.scale` (0.1 mV/A, signed). [0.1 mV/A]')
     offset: int16 = Field(description='Sets `batteryMetersConfigMutable()->current.offset` (signed millivolts). [mV]')
-    type: currentSensor_e = Field(description='Enum `currentSensor_e` Sets `batteryMetersConfigMutable()->current.type`. [Enum]')
+    type: uint8 = Field(description='Enum `currentSensor_e` Sets `batteryMetersConfigMutable()->current.type`.')
     capacity: uint16 = Field(description='Sets `currentBatteryProfileMutable->capacity.value` (truncated to 16 bits) [mAh (legacy)]')
 
 
@@ -495,7 +495,7 @@ class MSP_RX_CONFIG_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    serialRxProvider: rxSerialReceiverType_e = Field(description='Enum `rxSerialReceiverType_e`. Serial RX provider (`rxConfig()->serialrx_provider`). [Enum]')
+    serialRxProvider: uint8 = Field(description='Enum `rxSerialReceiverType_e`. Serial RX provider (`rxConfig()->serialrx_provider`).')
     maxCheck: uint16 = Field(description='Upper channel value threshold for stick commands (`rxConfig()->maxcheck`) [PWM]')
     midRc: uint16 = Field(description='Center channel value (`PWM_RANGE_MIDDLE`, typically 1500) [PWM]')
     minCheck: uint16 = Field(description='Lower channel value threshold for stick commands (`rxConfig()->mincheck`) [PWM]')
@@ -509,7 +509,7 @@ class MSP_RX_CONFIG_reply_t(BaseModel):
     reserved2: uint32 = Field(description='Reserved/Padding. Always 0')
     reserved3: uint8 = Field(description='Reserved/Padding. Always 0')
     bfCompatFpvCamAngle: uint8 = Field(description='BF compatibility. Always 0')
-    receiverType: rxReceiverType_e = Field(description="Enum `rxReceiverType_e` Receiver type (Parallel PWM, PPM, Serial) ('rxConfig()->receiverType') [Enum]")
+    receiverType: uint8 = Field(description="Enum `rxReceiverType_e` Receiver type (Parallel PWM, PPM, Serial) ('rxConfig()->receiverType')")
 
 
 MSP_SET_RX_CONFIG: Final[int] = 45
@@ -519,7 +519,7 @@ class MSP_SET_RX_CONFIG_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    serialRxProvider: rxSerialReceiverType_e = Field(description='Enum `rxSerialReceiverType_e`. Sets `rxConfigMutable()->serialrx_provider`. [Enum]')
+    serialRxProvider: uint8 = Field(description='Enum `rxSerialReceiverType_e`. Sets `rxConfigMutable()->serialrx_provider`.')
     maxCheck: uint16 = Field(description='Sets `rxConfigMutable()->maxcheck`. [PWM]')
     midRc: uint16 = Field(description='Ignored (`PWM_RANGE_MIDDLE` is used) [PWM]')
     minCheck: uint16 = Field(description='Sets `rxConfigMutable()->mincheck`. [PWM]')
@@ -533,7 +533,7 @@ class MSP_SET_RX_CONFIG_request_t(BaseModel):
     reserved2: uint32 = Field(description='Ignored')
     reserved3: uint8 = Field(description='Ignored')
     bfCompatFpvCamAngle: uint8 = Field(description='Ignored')
-    receiverType: rxReceiverType_e = Field(description='Enum `rxReceiverType_e` Sets `rxConfigMutable()->receiverType`. [Enum]')
+    receiverType: uint8 = Field(description='Enum `rxReceiverType_e` Sets `rxConfigMutable()->receiverType`.')
 
 
 MSP_LED_COLORS: Final[int] = 46
@@ -625,7 +625,7 @@ class MSP_ADJUSTMENT_RANGES_reply_tItem(BaseModel):
     auxChannelIndex: uint8 = Field(description='0-based index of the AUX channel controlling the adjustment value')
     rangeStartStep: uint8 = Field(description='Start step (0-48). Each step is 25 PWM units; 0 is <=900 and 48 is >=2100. [step]')
     rangeEndStep: uint8 = Field(description='End step (0-48). Uses the same 25-PWM step mapping as rangeStartStep. [step]')
-    adjustmentFunction: adjustmentFunction_e = Field(description='Function/parameter being adjusted (see `adjustmentFunction_e`).')
+    adjustmentFunction: uint8 = Field(description='Function/parameter being adjusted (see `adjustmentFunction_e`).')
     auxSwitchChannelIndex: uint8 = Field(description='0-based index of the AUX channel acting as an enable switch (or 0 if always enabled)')
 
 
@@ -648,7 +648,7 @@ class MSP_SET_ADJUSTMENT_RANGE_request_t(BaseModel):
     auxChannelIndex: uint8 = Field(description='0-based index of the control AUX channel')
     rangeStartStep: uint8 = Field(description='Start step (0-48). Each step is 25 PWM units; 0 is <=900 and 48 is >=2100. [step]')
     rangeEndStep: uint8 = Field(description='End step (0-48). Uses the same 25-PWM step mapping as rangeStartStep. [step]')
-    adjustmentFunction: adjustmentFunction_e = Field(description='Function/parameter being adjusted.')
+    adjustmentFunction: uint8 = Field(description='Function/parameter being adjusted.')
     auxSwitchChannelIndex: uint8 = Field(description='0-based index of the enable switch AUX channel (or 0)')
 
 
@@ -781,14 +781,14 @@ class MSP_FAILSAFE_CONFIG_reply_t(BaseModel):
     failsafeThrottle: uint16 = Field(description='Throttle level during failsafe stage 2 (`currentBatteryProfile->failsafe_throttle`) [PWM]')
     legacyKillSwitch: uint8 = Field(description='Legacy flag, always 0')
     failsafeThrottleLowDelay: uint16 = Field(description='Delay for throttle-based failsafe detection (`failsafeConfig()->failsafe_throttle_low_delay`). Units of 0.1 seconds. [0.1s]')
-    failsafeProcedure: failsafeProcedure_e = Field(description="Enum `failsafeProcedure_e` Failsafe procedure (Drop, RTH, Land, etc.) ('failsafeConfig()->failsafe_procedure') [Enum]")
+    failsafeProcedure: uint8 = Field(description="Enum `failsafeProcedure_e` Failsafe procedure (Drop, RTH, Land, etc.) ('failsafeConfig()->failsafe_procedure')")
     failsafeRecoveryDelay: uint8 = Field(description='Delay after RTH finishes before attempting recovery (`failsafeConfig()->failsafe_recovery_delay`) [0.1s]')
     failsafeFWRollAngle: int16 = Field(description='Fixed-wing failsafe roll angle (`failsafeConfig()->failsafe_fw_roll_angle`). Signed deci-degrees. [deci-degrees]')
     failsafeFWPitchAngle: int16 = Field(description='Fixed-wing failsafe pitch angle (`failsafeConfig()->failsafe_fw_pitch_angle`). Signed deci-degrees. [deci-degrees]')
     failsafeFWYawRate: int16 = Field(description='Fixed-wing failsafe yaw rate (`failsafeConfig()->failsafe_fw_yaw_rate`). Signed degrees per second. [deg/s]')
     failsafeStickThreshold: uint16 = Field(description='Stick movement threshold to exit failsafe (`failsafeConfig()->failsafe_stick_motion_threshold`) [PWM units]')
     failsafeMinDistance: uint16 = Field(description='Minimum distance from home for RTH failsafe (`failsafeConfig()->failsafe_min_distance`). Units of centimeters. [cm]')
-    failsafeMinDistanceProc: failsafeProcedure_e = Field(description="Enum `failsafeProcedure_e` Failsafe procedure if below min distance ('failsafeConfig()->failsafe_min_distance_procedure') [Enum]")
+    failsafeMinDistanceProc: uint8 = Field(description="Enum `failsafeProcedure_e` Failsafe procedure if below min distance ('failsafeConfig()->failsafe_min_distance_procedure')")
 
 
 MSP_SET_FAILSAFE_CONFIG: Final[int] = 76
@@ -803,14 +803,14 @@ class MSP_SET_FAILSAFE_CONFIG_request_t(BaseModel):
     failsafeThrottle: uint16 = Field(description='Sets `currentBatteryProfileMutable->failsafe_throttle`. [PWM]')
     legacyKillSwitch: uint8 = Field(description='Ignored')
     failsafeThrottleLowDelay: uint16 = Field(description='Sets `failsafeConfigMutable()->failsafe_throttle_low_delay`. Units of 0.1 seconds. [0.1s]')
-    failsafeProcedure: failsafeProcedure_e = Field(description='Enum `failsafeProcedure_e`. Sets `failsafeConfigMutable()->failsafe_procedure`. [Enum]')
+    failsafeProcedure: uint8 = Field(description='Enum `failsafeProcedure_e`. Sets `failsafeConfigMutable()->failsafe_procedure`.')
     failsafeRecoveryDelay: uint8 = Field(description='Sets `failsafeConfigMutable()->failsafe_recovery_delay`. [0.1s]')
     failsafeFWRollAngle: int16 = Field(description='Sets `failsafeConfigMutable()->failsafe_fw_roll_angle`. Signed deci-degrees. [deci-degrees]')
     failsafeFWPitchAngle: int16 = Field(description='Sets `failsafeConfigMutable()->failsafe_fw_pitch_angle`. Signed deci-degrees. [deci-degrees]')
     failsafeFWYawRate: int16 = Field(description='Sets `failsafeConfigMutable()->failsafe_fw_yaw_rate`. Signed degrees per second. [deg/s]')
     failsafeStickThreshold: uint16 = Field(description='Sets `failsafeConfigMutable()->failsafe_stick_motion_threshold`. [PWM units]')
     failsafeMinDistance: uint16 = Field(description='Sets `failsafeConfigMutable()->failsafe_min_distance`. Units of centimeters. [cm]')
-    failsafeMinDistanceProc: failsafeProcedure_e = Field(description='Enum `failsafeProcedure_e`. Sets `failsafeConfigMutable()->failsafe_min_distance_procedure`. [Enum]')
+    failsafeMinDistanceProc: uint8 = Field(description='Enum `failsafeProcedure_e`. Sets `failsafeConfigMutable()->failsafe_min_distance_procedure`.')
 
 
 MSP_SDCARD_SUMMARY: Final[int] = 79
@@ -820,8 +820,8 @@ class MSP_SDCARD_SUMMARY_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    sdCardSupported: uint8 = Field(description='Bitmask: Bit 0 = 1 if SD card support compiled in (`USE_SDCARD`) [Bitmask]')
-    sdCardState: mspSDCardState_e = Field(description='Enum (`mspSDCardState_e`): Current state (Not Present, Fatal, Card Init, FS Init, Ready). 0 if `USE_SDCARD` disabled')
+    sdCardSupported: uint8 = Field(description='Bitmask: Bit 0 = 1 if SD card support compiled in (`USE_SDCARD`)')
+    sdCardState: uint8 = Field(description='Enum (`mspSDCardState_e`): Current state (Not Present, Fatal, Card Init, FS Init, Ready). 0 if `USE_SDCARD` disabled')
     fsError: uint8 = Field(description='Last filesystem error code (`afatfs_getLastError()`). 0 if `USE_SDCARD` disabled')
     freeSpaceKB: uint32 = Field(description='Free space in KiB (`afatfs_getContiguousFreeSpace() / 1024`). 0 if `USE_SDCARD` disabled')
     totalSpaceKB: uint32 = Field(description='Total space in KiB (`sdcard_getMetadata()->numBlocks / 2`). 0 if `USE_SDCARD` disabled')
@@ -853,9 +853,9 @@ class MSP_OSD_CONFIG_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    osdDriverType: osdDriver_e = Field(description='Enum `osdDriver_e`: `OSD_DRIVER_MAX7456` if `USE_OSD`, else `OSD_DRIVER_NONE`. [Enum]')
-    videoSystem: videoSystem_e = Field(description='Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Sent even if OSD disabled [Enum]')
-    units: osd_unit_e = Field(description='Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Sent even if OSD disabled [Enum]')
+    osdDriverType: uint8 = Field(description='Enum `osdDriver_e`: `OSD_DRIVER_MAX7456` if `USE_OSD`, else `OSD_DRIVER_NONE`.')
+    videoSystem: uint8 = Field(description='Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Sent even if OSD disabled')
+    units: uint8 = Field(description='Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Sent even if OSD disabled')
     rssiAlarm: uint8 = Field(description='RSSI alarm threshold (`osdConfig()->rssi_alarm`). Sent even if OSD disabled [%]')
     capAlarm: uint16 = Field(description='Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Sent even if OSD disabled. [mAh/mWh]')
     timerAlarm: uint16 = Field(description='Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Sent even if OSD disabled. [minutes]')
@@ -878,13 +878,13 @@ class MSP_VTX_CONFIG_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    vtxDeviceType: vtxDevType_e = Field(description='Enum (`vtxDevType_e`): Type of VTX device detected/configured. `VTXDEV_UNKNOWN` if none')
+    vtxDeviceType: uint8 = Field(description='Enum (`vtxDevType_e`): Type of VTX device detected/configured. `VTXDEV_UNKNOWN` if none')
     band: uint8 | None = Field(default=None, description='VTX band number (from `vtxSettingsConfig`)')
     channel: uint8 | None = Field(default=None, description='VTX channel number (from `vtxSettingsConfig`)')
     power: uint8 | None = Field(default=None, description='VTX power level index (from `vtxSettingsConfig()`).')
     pitMode: uint8 | None = Field(default=None, description='Boolean: 1 if VTX is currently in pit mode, 0 otherwise.')
     vtxReady: uint8 | None = Field(default=None, description='Boolean: 1 if VTX device reported ready, 0 otherwise')
-    lowPowerDisarm: vtxLowerPowerDisarm_e | None = Field(default=None, description='Enum `vtxLowerPowerDisarm_e`: Low-power behaviour while disarmed (`vtxSettingsConfig()->lowPowerDisarm`). [Enum]')
+    lowPowerDisarm: uint8 | None = Field(default=None, description='Enum `vtxLowerPowerDisarm_e`: Low-power behaviour while disarmed (`vtxSettingsConfig()->lowPowerDisarm`).')
     vtxTableAvailable: uint8 | None = Field(default=None, description='Boolean: 1 if VTX tables (band/power) are available for query')
     bandCount: uint8 | None = Field(default=None, description='Number of bands supported by the VTX device')
     channelCount: uint8 | None = Field(default=None, description='Number of channels per band supported by the VTX device')
@@ -904,7 +904,7 @@ class MSP_ADVANCED_CONFIG_reply_t(BaseModel):
     gyroSyncDenom: uint8 = Field(description='Always 1 (BF compatibility)')
     pidProcessDenom: uint8 = Field(description='Always 1 (BF compatibility)')
     useUnsyncedPwm: uint8 = Field(description='Always 1 (BF compatibility, INAV uses async PWM based on protocol)')
-    motorPwmProtocol: motorPwmProtocolTypes_e = Field(description='Motor PWM protocol type (`motorConfig()->motorPwmProtocol`). [Enum]')
+    motorPwmProtocol: uint8 = Field(description='Motor PWM protocol type (`motorConfig()->motorPwmProtocol`).')
     motorPwmRate: uint16 = Field(description='Motor PWM rate (if applicable) (`motorConfig()->motorPwmRate`). [Hz]')
     servoPwmRate: uint16 = Field(description='Servo PWM rate (`servoConfig()->servoPwmRate`). [Hz]')
     legacyGyroSync: uint8 = Field(description='Always 0 (BF compatibility)')
@@ -920,7 +920,7 @@ class MSP_SET_ADVANCED_CONFIG_request_t(BaseModel):
     gyroSyncDenom: uint8 = Field(description='Ignored (legacy Betaflight field).')
     pidProcessDenom: uint8 = Field(description='Ignored (legacy Betaflight field).')
     useUnsyncedPwm: uint8 = Field(description='Ignored (legacy Betaflight field).')
-    motorPwmProtocol: motorPwmProtocolTypes_e = Field(description='Sets `motorConfigMutable()->motorPwmProtocol`. [Enum]')
+    motorPwmProtocol: uint8 = Field(description='Sets `motorConfigMutable()->motorPwmProtocol`.')
     motorPwmRate: uint16 = Field(description='Sets `motorConfigMutable()->motorPwmRate`. [Hz]')
     servoPwmRate: uint16 = Field(description='Sets `servoConfigMutable()->servoPwmRate`. [Hz]')
     legacyGyroSync: uint8 = Field(description='Ignored (legacy Betaflight field).')
@@ -1015,12 +1015,12 @@ class MSP_SENSOR_CONFIG_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    accHardware: accelerationSensor_e = Field(description='Enum (`accelerationSensor_e`): Accelerometer hardware type (`accelerometerConfig()->acc_hardware`)')
-    baroHardware: baroSensor_e = Field(description='Enum (`baroSensor_e`): Barometer hardware type (`barometerConfig()->baro_hardware`). 0 if `USE_BARO` disabled')
-    magHardware: magSensor_e = Field(description='Enum (`magSensor_e`): Magnetometer hardware type (`compassConfig()->mag_hardware`). 0 if `USE_MAG` disabled')
-    pitotHardware: pitotSensor_e = Field(description='Enum (`pitotSensor_e`): Pitot tube hardware type (`pitotmeterConfig()->pitot_hardware`). 0 if `USE_PITOT` disabled')
-    rangefinderHardware: rangefinderType_e = Field(description='Enum (`rangefinderType_e`): Rangefinder hardware type (`rangefinderConfig()->rangefinder_hardware`). 0 if `USE_RANGEFINDER` disabled')
-    opflowHardware: opticalFlowSensor_e = Field(description='Enum (`opticalFlowSensor_e`): Optical flow hardware type (`opticalFlowConfig()->opflow_hardware`). 0 if `USE_OPFLOW` disabled')
+    accHardware: uint8 = Field(description='Enum (`accelerationSensor_e`): Accelerometer hardware type (`accelerometerConfig()->acc_hardware`)')
+    baroHardware: uint8 = Field(description='Enum (`baroSensor_e`): Barometer hardware type (`barometerConfig()->baro_hardware`). 0 if `USE_BARO` disabled')
+    magHardware: uint8 = Field(description='Enum (`magSensor_e`): Magnetometer hardware type (`compassConfig()->mag_hardware`). 0 if `USE_MAG` disabled')
+    pitotHardware: uint8 = Field(description='Enum (`pitotSensor_e`): Pitot tube hardware type (`pitotmeterConfig()->pitot_hardware`). 0 if `USE_PITOT` disabled')
+    rangefinderHardware: uint8 = Field(description='Enum (`rangefinderType_e`): Rangefinder hardware type (`rangefinderConfig()->rangefinder_hardware`). 0 if `USE_RANGEFINDER` disabled')
+    opflowHardware: uint8 = Field(description='Enum (`opticalFlowSensor_e`): Optical flow hardware type (`opticalFlowConfig()->opflow_hardware`). 0 if `USE_OPFLOW` disabled')
 
 
 MSP_SET_SENSOR_CONFIG: Final[int] = 97
@@ -1030,12 +1030,12 @@ class MSP_SET_SENSOR_CONFIG_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    accHardware: accelerationSensor_e = Field(description='Sets `accelerometerConfigMutable()->acc_hardware`')
-    baroHardware: baroSensor_e = Field(description='Sets `barometerConfigMutable()->baro_hardware` (if `USE_BARO`)')
-    magHardware: magSensor_e = Field(description='Sets `compassConfigMutable()->mag_hardware` (if `USE_MAG`)')
-    pitotHardware: pitotSensor_e = Field(description='Sets `pitotmeterConfigMutable()->pitot_hardware` (if `USE_PITOT`)')
-    rangefinderHardware: rangefinderType_e = Field(description='Sets `rangefinderConfigMutable()->rangefinder_hardware` (if `USE_RANGEFINDER`)')
-    opflowHardware: opticalFlowSensor_e = Field(description='Sets `opticalFlowConfigMutable()->opflow_hardware` (if `USE_OPFLOW`)')
+    accHardware: uint8 = Field(description='Sets `accelerometerConfigMutable()->acc_hardware`')
+    baroHardware: uint8 = Field(description='Sets `barometerConfigMutable()->baro_hardware` (if `USE_BARO`)')
+    magHardware: uint8 = Field(description='Sets `compassConfigMutable()->mag_hardware` (if `USE_MAG`)')
+    pitotHardware: uint8 = Field(description='Sets `pitotmeterConfigMutable()->pitot_hardware` (if `USE_PITOT`)')
+    rangefinderHardware: uint8 = Field(description='Sets `rangefinderConfigMutable()->rangefinder_hardware` (if `USE_RANGEFINDER`)')
+    opflowHardware: uint8 = Field(description='Sets `opticalFlowConfigMutable()->opflow_hardware` (if `USE_OPFLOW`)')
 
 
 MSP_SPECIAL_PARAMETERS: Final[int] = 98
@@ -1051,8 +1051,8 @@ class MSP_STATUS_reply_t(BaseModel):
 
     cycleTime: uint16 = Field(description='Main loop cycle time (`cycleTime`) [µs]')
     i2cErrors: uint16 = Field(description='Number of I2C errors encountered (`i2cGetErrorCounter()`). 0 if `USE_I2C` not defined [Count]')
-    sensorStatus: uint16 = Field(description='Bitmask: available/active sensors (`packSensorStatus()`). See notes [Bitmask]')
-    activeModesLow: uint32 = Field(description='Bitmask: First 32 bits of the active flight modes bitmask (`packBoxModeFlags()`) [Bitmask]')
+    sensorStatus: uint16 = Field(description='Bitmask: available/active sensors (`packSensorStatus()`). See notes')
+    activeModesLow: uint32 = Field(description='Bitmask: First 32 bits of the active flight modes bitmask (`packBoxModeFlags()`)')
     profile: uint8 = Field(description='Current configuration profile index (0-based) (`getConfigProfile()`) [Index]')
 
 
@@ -1111,7 +1111,7 @@ class MSP_RAW_GPS_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    fixType: gpsFixType_e = Field(description='Enum `gpsFixType_e` GPS fix type (`gpsSol.fixType`) [Enum]')
+    fixType: uint8 = Field(description='Enum `gpsFixType_e` GPS fix type (`gpsSol.fixType`)')
     numSat: uint8 = Field(description='Number of satellites used in solution (`gpsSol.numSat`) [Count]')
     latitude: int32 = Field(description='Latitude (`gpsSol.llh.lat`) [deg * 1e7]')
     longitude: int32 = Field(description='Longitude (`gpsSol.llh.lon`) [deg * 1e7]')
@@ -1196,7 +1196,7 @@ class MSP_ACTIVEBOXES_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    activeModes: boxBitmask_t = Field(description='Bitmask: all active modes (`packBoxModeFlags()`). Size depends on `boxBitmask_t` definition [Bitmask]')
+    activeModes: boxBitmask_t = Field(description='Bitmask: all active modes (`packBoxModeFlags()`). Size depends on `boxBitmask_t` definition')
 
 
 MSP_MISC: Final[int] = 114
@@ -1211,9 +1211,9 @@ class MSP_MISC_reply_t(BaseModel):
     maxThrottle: uint16 = Field(description='Maximum throttle command (`getMaxThrottle()`) [PWM]')
     minCommand: uint16 = Field(description='Minimum motor command when disarmed (`motorConfig()->mincommand`) [PWM]')
     failsafeThrottle: uint16 = Field(description='Failsafe throttle level (`currentBatteryProfile->failsafe_throttle`) [PWM]')
-    gpsType: gpsProvider_e = Field(description='Enum `gpsProvider_e` GPS provider type (`gpsConfig()->provider`). 0 if `USE_GPS` disabled [Enum]')
+    gpsType: uint8 = Field(description='Enum `gpsProvider_e` GPS provider type (`gpsConfig()->provider`). 0 if `USE_GPS` disabled')
     legacyGpsBaud: uint8 = Field(description='Always 0 (Legacy)')
-    gpsSbasMode: sbasMode_e = Field(description='Enum `sbasMode_e` GPS SBAS mode (`gpsConfig()->sbasMode`). 0 if `USE_GPS` disabled [Enum]')
+    gpsSbasMode: uint8 = Field(description='Enum `sbasMode_e` GPS SBAS mode (`gpsConfig()->sbasMode`). 0 if `USE_GPS` disabled')
     legacyMwCurrentOut: uint8 = Field(description='Always 0 (Legacy)')
     rssiChannel: uint8 = Field(description='RSSI channel index (1-based) (`rxConfig()->rssi_channel`) [Index]')
     reserved1: uint8 = Field(description='Always 0')
@@ -1260,14 +1260,14 @@ class MSP_WP_reply_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     waypointIndex: uint8 = Field(description='Index of the returned waypoint [Index]')
-    action: navWaypointActions_e = Field(description='Enum `navWaypointActions_e` Waypoint action type [Enum]')
+    action: uint8 = Field(description='Enum `navWaypointActions_e` Waypoint action type')
     latitude: int32 = Field(description='Latitude coordinate [deg * 1e7]')
     longitude: int32 = Field(description='Longitude coordinate [deg * 1e7]')
     altitude: int32 = Field(description='Altitude coordinate (relative to home or sea level, see flag) [cm]')
     param1: int16 = Field(description='Parameter 1 (meaning depends on action) [Varies]')
     param2: int16 = Field(description='Parameter 2 (meaning depends on action) [Varies]')
     param3: int16 = Field(description='Parameter 3 (meaning depends on action) [Varies]')
-    flag: uint8 = Field(description='Bitmask: Waypoint flags (`NAV_WP_FLAG_*`) [Bitmask]')
+    flag: uint8 = Field(description='Bitmask: Waypoint flags (`NAV_WP_FLAG_*`)')
 
 
 MSP_BOXIDS: Final[int] = 119
@@ -1309,11 +1309,11 @@ class MSP_NAV_STATUS_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    navMode: navSystemStatus_Mode_e = Field(description='Enum (`navSystemStatus_Mode_e`): Current navigation mode (None, RTH, NAV, Hold, etc.) (`NAV_Status.mode`)')
-    navState: navSystemStatus_State_e = Field(description='Enum (`navSystemStatus_State_e`): Current navigation state (`NAV_Status.state`)')
-    activeWpAction: navWaypointActions_e = Field(description='Enum (`navWaypointActions_e`): Action of the currently executing waypoint (`NAV_Status.activeWpAction`)')
+    navMode: uint8 = Field(description='Enum (`navSystemStatus_Mode_e`): Current navigation mode (None, RTH, NAV, Hold, etc.) (`NAV_Status.mode`)')
+    navState: uint8 = Field(description='Enum (`navSystemStatus_State_e`): Current navigation state (`NAV_Status.state`)')
+    activeWpAction: uint8 = Field(description='Enum (`navWaypointActions_e`): Action of the currently executing waypoint (`NAV_Status.activeWpAction`)')
     activeWpNumber: uint8 = Field(description='Index: Index of the currently executing waypoint (`NAV_Status.activeWpNumber`)')
-    navError: navSystemStatus_Error_e = Field(description='Enum (`navSystemStatus_Error_e`): Current navigation error code (`NAV_Status.error`)')
+    navError: uint8 = Field(description='Enum (`navSystemStatus_Error_e`): Current navigation error code (`NAV_Status.error`)')
     targetHeading: int16 = Field(description='Target heading for heading controller (`getHeadingHoldTarget()`) [degrees]')
 
 
@@ -1362,7 +1362,7 @@ MSP_LED_STRIP_MODECOLOR: Final[int] = 127
 class MSP_LED_STRIP_MODECOLOR_reply_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    modeIndex: ledModeIndex_e = Field(description='Index of the LED mode Enum (`ledModeIndex_e`). `LED_MODE_COUNT` for special colors')
+    modeIndex: uint8 = Field(description='Index of the LED mode Enum (`ledModeIndex_e`). `LED_MODE_COUNT` for special colors')
     directionOrSpecialIndex: uint8 = Field(description='Index of the direction (`ledDirectionId_e`) or special color (`ledSpecialColorIds_e`)')
     colorIndex: uint8 = Field(description='Index of the color assigned from `ledStripConfig()->colors`')
 
@@ -1386,7 +1386,7 @@ class MSP_BATTERY_STATE_reply_t(BaseModel):
     vbatScaled: uint8 = Field(description='Battery voltage / 10 (`getBatteryVoltage() / 10`) [0.1V]')
     mAhDrawn: uint16 = Field(description='Consumed capacity (`getMAhDrawn()`) [mAh]')
     amperage: int16 = Field(description='Current draw (`getAmperage()`) [0.01A]')
-    batteryState: batteryState_e = Field(description='Enum `batteryState_e` Current battery state (`getBatteryState()`, see `BATTERY_STATE_*`) [Enum]')
+    batteryState: uint8 = Field(description='Enum `batteryState_e` Current battery state (`getBatteryState()`, see `BATTERY_STATE_*`)')
     vbatActual: uint16 = Field(description='Actual battery voltage (`getBatteryVoltage()`) [0.01V]')
 
 
@@ -1422,12 +1422,12 @@ class MSP_STATUS_EX_reply_t(BaseModel):
 
     cycleTime: uint16 = Field(description='Main loop cycle time [µs]')
     i2cErrors: uint16 = Field(description='I2C errors [Count]')
-    sensorStatus: uint16 = Field(description='Bitmask: Sensor status [Bitmask]')
-    activeModesLow: uint32 = Field(description='Bitmask: First 32 active modes [Bitmask]')
+    sensorStatus: uint16 = Field(description='Bitmask: Sensor status')
+    activeModesLow: uint32 = Field(description='Bitmask: First 32 active modes')
     profile: uint8 = Field(description='Current config profile index [Index]')
     cpuLoad: uint16 = Field(description='Average system load percentage (`averageSystemLoadPercent`) [%]')
-    armingFlags: uint16 = Field(description='Bitmask: Flight controller arming flags (`armingFlags`). Note: Truncated to 16 bits [Bitmask]')
-    accCalibAxisFlags: uint8 = Field(description='Bitmask: Accelerometer calibrated axes flags (`accGetCalibrationAxisFlags()`) [Bitmask]')
+    armingFlags: uint16 = Field(description='Bitmask: Flight controller arming flags (`armingFlags`). Note: Truncated to 16 bits')
+    accCalibAxisFlags: uint8 = Field(description='Bitmask: Accelerometer calibrated axes flags (`accGetCalibrationAxisFlags()`)')
 
 
 MSP_SENSOR_STATUS: Final[int] = 151
@@ -1438,14 +1438,14 @@ class MSP_SENSOR_STATUS_reply_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     overallHealth: uint8 = Field(description='1 if all essential hardware is healthy, 0 otherwise (`isHardwareHealthy()`) [Boolean]')
-    gyroStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` Gyro hardware status (`getHwGyroStatus()`) [Enum]')
-    accStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` Accelerometer hardware status (`getHwAccelerometerStatus()`) [Enum]')
-    magStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` Compass hardware status (`getHwCompassStatus()`) [Enum]')
-    baroStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` Barometer hardware status (`getHwBarometerStatus()`) [Enum]')
-    gpsStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` GPS hardware status (`getHwGPSStatus()`) [Enum]')
-    rangefinderStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` Rangefinder hardware status (`getHwRangefinderStatus()`) [Enum]')
-    pitotStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` Pitot hardware status (`getHwPitotmeterStatus()`) [Enum]')
-    opflowStatus: hardwareSensorStatus_e = Field(description='Enum `hardwareSensorStatus_e` Optical Flow hardware status (`getHwOpticalFlowStatus()`) [Enum]')
+    gyroStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` Gyro hardware status (`getHwGyroStatus()`)')
+    accStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` Accelerometer hardware status (`getHwAccelerometerStatus()`)')
+    magStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` Compass hardware status (`getHwCompassStatus()`)')
+    baroStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` Barometer hardware status (`getHwBarometerStatus()`)')
+    gpsStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` GPS hardware status (`getHwGPSStatus()`)')
+    rangefinderStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` Rangefinder hardware status (`getHwRangefinderStatus()`)')
+    pitotStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` Pitot hardware status (`getHwPitotmeterStatus()`)')
+    opflowStatus: uint8 = Field(description='Enum `hardwareSensorStatus_e` Optical Flow hardware status (`getHwOpticalFlowStatus()`)')
 
 
 MSP_UID: Final[int] = 160
@@ -1502,7 +1502,7 @@ class MSP_DISPLAYPORT_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    subCommand: displayportMspCommand_e = Field(description='DisplayPort sub-command (`displayportMspCommand_e` in `io/displayport_msp.h`)')
+    subCommand: uint8 = Field(description='DisplayPort sub-command (`displayportMspCommand_e` in `io/displayport_msp.h`)')
     subCommandData: list[uint8] = Field(description='Sub-command payload. Empty for `MSP_DP_HEARTBEAT`, `MSP_DP_RELEASE`, `MSP_DP_CLEAR_SCREEN` and `MSP_DP_DRAW_SCREEN`. For `MSP_DP_WRITE_STRING`: row, column, attributes (font page in bits 0-1, blink in bit 3), then the character bytes.')
 
 
@@ -1523,7 +1523,7 @@ class MSP_TX_INFO_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    rssiSource: rssiSource_e = Field(description='Enum: Source of the RSSI value (`getRSSISource()`, see `rssiSource_e`)')
+    rssiSource: uint8 = Field(description='Enum: Source of the RSSI value (`getRSSISource()`, see `rssiSource_e`)')
     rtcDateTimeIsSet: uint8 = Field(description='Boolean: 1 if the RTC has been set, 0 otherwise')
 
 
@@ -1544,7 +1544,7 @@ class MSP_SET_RAW_GPS_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    fixType: gpsFixType_e = Field(description='Enum `gpsFixType_e` GPS fix type [Enum]')
+    fixType: uint8 = Field(description='Enum `gpsFixType_e` GPS fix type')
     numSat: uint8 = Field(description='Number of satellites [Count]')
     latitude: int32 = Field(description='Latitude [deg * 1e7]')
     longitude: int32 = Field(description='Longitude [deg * 1e7]')
@@ -1589,9 +1589,9 @@ class MSP_SET_MISC_request_t(BaseModel):
     legacyMaxThrottle: uint16 = Field(description='Ignored')
     minCommand: uint16 = Field(description='Sets `motorConfigMutable()->mincommand` (constrained 0-PWM_RANGE_MAX) [PWM]')
     failsafeThrottle: uint16 = Field(description='Sets `currentBatteryProfileMutable->failsafe_throttle` (constrained PWM_RANGE_MIN/MAX) [PWM]')
-    gpsType: gpsProvider_e = Field(description='Enum `gpsProvider_e` (Sets `gpsConfigMutable()->provider`) [Enum]')
+    gpsType: uint8 = Field(description='Enum `gpsProvider_e` (Sets `gpsConfigMutable()->provider`)')
     legacyGpsBaud: uint8 = Field(description='Ignored')
-    gpsSbasMode: sbasMode_e = Field(description='Enum `sbasMode_e` (Sets `gpsConfigMutable()->sbasMode`) [Enum]')
+    gpsSbasMode: uint8 = Field(description='Enum `sbasMode_e` (Sets `gpsConfigMutable()->sbasMode`)')
     legacyMwCurrentOut: uint8 = Field(description='Ignored')
     rssiChannel: uint8 = Field(description='Sets `rxConfigMutable()->rssi_channel` (constrained 0-MAX_SUPPORTED_RC_CHANNEL_COUNT). Updates source [Index]')
     reserved1: uint8 = Field(description='Ignored')
@@ -1612,14 +1612,14 @@ class MSP_SET_WP_request_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     waypointIndex: uint8 = Field(description='Index of the waypoint to set (0 to `NAV_MAX_WAYPOINTS - 1`) [Index]')
-    action: navWaypointActions_e = Field(description='Enum `navWaypointActions_e` Waypoint action type [Enum]')
+    action: uint8 = Field(description='Enum `navWaypointActions_e` Waypoint action type')
     latitude: int32 = Field(description='Latitude coordinate [deg * 1e7]')
     longitude: int32 = Field(description='Longitude coordinate [deg * 1e7]')
     altitude: int32 = Field(description='Altitude coordinate [cm]')
     param1: uint16 = Field(description='Parameter 1 [Varies]')
     param2: uint16 = Field(description='Parameter 2 [Varies]')
     param3: uint16 = Field(description='Parameter 3 [Varies]')
-    flag: navWaypointFlags_e = Field(description='Bitmask: Waypoint flags (`navWaypointFlags_e`) [Bitmask]')
+    flag: uint8 = Field(description='Bitmask: Waypoint flags (`navWaypointFlags_e`)')
 
 
 MSP_SELECT_SETTING: Final[int] = 210
@@ -1734,7 +1734,7 @@ class MSP_SERVO_MIX_RULES_reply_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     targetChannel: uint8 = Field(description='Servo output channel index (0-based) [Index]')
-    inputSource: inputSource_e = Field(description='Enum `inputSource_e` Input source for the mix (RC chan, Roll, Pitch...) [Enum]')
+    inputSource: uint8 = Field(description='Enum `inputSource_e` Input source for the mix (RC chan, Roll, Pitch...)')
     rate: int16 = Field(description='Mixing rate/weight (`-1000` to `+1000`, percent with sign) [%]')
     speed: uint8 = Field(description='Speed/Slew rate limit (`0`=instant, higher slows response) [0-255]')
     reserved1: uint8 = Field(description='Always 0')
@@ -1758,7 +1758,7 @@ class MSP_SET_SERVO_MIX_RULE_request_t(BaseModel):
 
     ruleIndex: uint8 = Field(description='Index of the rule to set (0 to `MAX_SERVO_RULES - 1`) [Index]')
     targetChannel: uint8 = Field(description='Servo output channel index [Index]')
-    inputSource: inputSource_e = Field(description='Enum `inputSource_e` Input source for the mix [Enum]')
+    inputSource: uint8 = Field(description='Enum `inputSource_e` Input source for the mix')
     rate: int16 = Field(description='Mixing rate/weight (`-1000` to `+1000`, percent with sign) [%]')
     speed: uint8 = Field(description='Speed/Slew rate limit (`0`=instant, higher slows response) [0-255]')
     legacyMinMax: uint16 = Field(description='Ignored')
@@ -1947,8 +1947,8 @@ MSP2_COMMON_SERIAL_CONFIG: Final[int] = 4105
 class MSP2_COMMON_SERIAL_CONFIG_reply_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    identifier: serialPortIdentifier_e = Field(description='Port identifier Enum (`serialPortIdentifier_e`)')
-    functionMask: uint32 = Field(description='Bitmask: enabled functions (`FUNCTION_*`) [Bitmask]')
+    identifier: int8 = Field(description='Port identifier Enum (`serialPortIdentifier_e`)')
+    functionMask: uint32 = Field(description='Bitmask: enabled functions (`FUNCTION_*`)')
     mspBaudIndex: uint8 = Field(description='Baud rate index for MSP function')
     gpsBaudIndex: uint8 = Field(description='Baud rate index for GPS function')
     telemetryBaudIndex: uint8 = Field(description='Baud rate index for Telemetry function')
@@ -1967,8 +1967,8 @@ MSP2_COMMON_SET_SERIAL_CONFIG: Final[int] = 4106
 class MSP2_COMMON_SET_SERIAL_CONFIG_request_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    identifier: serialPortIdentifier_e = Field(description='Port identifier Enum (`serialPortIdentifier_e`)')
-    functionMask: uint32 = Field(description='Bitmask: functions to enable [Bitmask]')
+    identifier: int8 = Field(description='Port identifier Enum (`serialPortIdentifier_e`)')
+    functionMask: uint32 = Field(description='Bitmask: functions to enable')
     mspBaudIndex: uint8 = Field(description='Baud rate index for MSP')
     gpsBaudIndex: uint8 = Field(description='Baud rate index for GPS')
     telemetryBaudIndex: uint8 = Field(description='Baud rate index for Telemetry')
@@ -2081,7 +2081,7 @@ class MSP2_SENSOR_GPS_request_t(BaseModel):
     instance: uint8 = Field(description='Sensor instance number (for multi-GPS)')
     gpsWeek: uint16 = Field(description='GPS week number (0xFFFF if unavailable)')
     msTOW: uint32 = Field(description='Milliseconds Time of Week [ms]')
-    fixType: gpsFixType_e = Field(description='Enum `gpsFixType_e` Type of GPS fix [Enum]')
+    fixType: uint8 = Field(description='Enum `gpsFixType_e` Type of GPS fix')
     satellitesInView: uint8 = Field(description='Number of satellites used in solution [Count]')
     hPosAccuracy: uint16 = Field(description='Horizontal position accuracy estimate in milimeters [mm]')
     vPosAccuracy: uint16 = Field(description='Vertical position accuracy estimate in milimeters [mm]')
@@ -2166,11 +2166,11 @@ class MSP2_INAV_STATUS_reply_t(BaseModel):
 
     cycleTime: uint16 = Field(description='Main loop cycle time [µs]')
     i2cErrors: uint16 = Field(description='I2C errors [Count]')
-    sensorStatus: uint16 = Field(description='Bitmask: Sensor status [Bitmask]')
+    sensorStatus: uint16 = Field(description='Bitmask: Sensor status')
     cpuLoad: uint16 = Field(description='Average system load percentage [%]')
     profileAndBattProfile: uint8 = Field(description='Bits 0-3: Config profile index (`getConfigProfile()`), Bits 4-7: Battery profile index (`getConfigBatteryProfile()`) [Packed]')
-    armingFlags: uint32 = Field(description='Bitmask: Full 32-bit flight controller arming flags (`armingFlags`) [Bitmask]')
-    activeModes: boxBitmask_t = Field(description='Bitmask words for active flight modes (`packBoxModeFlags()`) [Bitmask]')
+    armingFlags: uint32 = Field(description='Bitmask: Full 32-bit flight controller arming flags (`armingFlags`)')
+    activeModes: boxBitmask_t = Field(description='Bitmask words for active flight modes (`packBoxModeFlags()`)')
     mixerProfile: uint8 = Field(description='Current mixer profile index (`getConfigMixerProfile()`) [Index]')
 
 
@@ -2195,7 +2195,7 @@ class MSP2_INAV_ANALOG_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    batteryFlags: uint8 = Field(description='Bitmask: Bit0=Full on plug-in, Bit1=Use capacity thresholds, Bits2-3=`batteryState_e` (`getBatteryState()`), Bits4-7=Cell count (`getBatteryCellCount()`) [Bitmask]')
+    batteryFlags: uint8 = Field(description='Bitmask: Bit0=Full on plug-in, Bit1=Use capacity thresholds, Bits2-3=`batteryState_e` (`getBatteryState()`), Bits4-7=Cell count (`getBatteryCellCount()`)')
     vbat: uint16 = Field(description='Battery voltage (`getBatteryVoltage()`) [0.01V]')
     amperage: int16 = Field(description='Current draw (`getAmperage()`) [0.01A]')
     powerDraw: uint32 = Field(description='Power draw (`getPower()`) [0.01W]')
@@ -2218,13 +2218,13 @@ class MSP2_INAV_MISC_reply_t(BaseModel):
     maxThrottle: uint16 = Field(description='Maximum throttle command (`getMaxThrottle()`) [PWM]')
     minCommand: uint16 = Field(description='Minimum motor command (`motorConfig()->mincommand`) [PWM]')
     failsafeThrottle: uint16 = Field(description='Failsafe throttle level (`currentBatteryProfile->failsafe_throttle`) [PWM]')
-    gpsType: gpsProvider_e = Field(description='Enum `gpsProvider_e` GPS provider type (`gpsConfig()->provider`). 0 if `USE_GPS` disabled [Enum]')
+    gpsType: uint8 = Field(description='Enum `gpsProvider_e` GPS provider type (`gpsConfig()->provider`). 0 if `USE_GPS` disabled')
     legacyGpsBaud: uint8 = Field(description='Always 0 (Legacy)')
-    gpsSbasMode: sbasMode_e = Field(description='Enum `sbasMode_e` GPS SBAS mode (`gpsConfig()->sbasMode`). 0 if `USE_GPS` disabled [Enum]')
+    gpsSbasMode: uint8 = Field(description='Enum `sbasMode_e` GPS SBAS mode (`gpsConfig()->sbasMode`). 0 if `USE_GPS` disabled')
     rssiChannel: uint8 = Field(description='RSSI channel index (1-based, 0 disables) (`rxConfig()->rssi_channel`) [Index]')
     magDeclination: int16 = Field(description='Magnetic declination / 10 (`compassConfig()->mag_declination / 10`). 0 if `USE_MAG` disabled [0.1 degrees]')
     vbatScale: uint16 = Field(description='Voltage scale (`batteryMetersConfig()->voltage.scale`). 0 if `USE_ADC` disabled [Scale]')
-    vbatSource: batVoltageSource_e = Field(description='Enum `batVoltageSource_e` Voltage source (`batteryMetersConfig()->voltageSource`). 0 if `USE_ADC` disabled [Enum]')
+    vbatSource: uint8 = Field(description='Enum `batVoltageSource_e` Voltage source (`batteryMetersConfig()->voltageSource`). 0 if `USE_ADC` disabled')
     cellCount: uint8 = Field(description='Configured cell count (`currentBatteryProfile->cells`). 0 if `USE_ADC` disabled [Count]')
     vbatCellDetect: uint16 = Field(description='Cell detection voltage (`currentBatteryProfile->voltage.cellDetect`). 0 if `USE_ADC` disabled [0.01V]')
     vbatMinCell: uint16 = Field(description='Min cell voltage (`currentBatteryProfile->voltage.cellMin`). 0 if `USE_ADC` disabled [0.01V]')
@@ -2233,7 +2233,7 @@ class MSP2_INAV_MISC_reply_t(BaseModel):
     capacityValue: uint32 = Field(description='Battery capacity (`currentBatteryProfile->capacity.value`) [mAh/mWh]')
     capacityWarning: uint32 = Field(description='Capacity warning threshold (`currentBatteryProfile->capacity.warning`) [mAh/mWh]')
     capacityCritical: uint32 = Field(description='Capacity critical threshold (`currentBatteryProfile->capacity.critical`) [mAh/mWh]')
-    capacityUnit: batCapacityUnit_e = Field(description='Enum `batCapacityUnit_e` Capacity unit (`batteryMetersConfig()->capacity_unit`) [Enum]')
+    capacityUnit: uint8 = Field(description='Enum `batCapacityUnit_e` Capacity unit (`batteryMetersConfig()->capacity_unit`)')
 
 
 MSP2_INAV_SET_MISC: Final[int] = 8196
@@ -2248,13 +2248,13 @@ class MSP2_INAV_SET_MISC_request_t(BaseModel):
     legacyMaxThrottle: uint16 = Field(description='Ignored')
     minCommand: uint16 = Field(description='Sets `motorConfigMutable()->mincommand` (constrained) [PWM]')
     failsafeThrottle: uint16 = Field(description='Sets `currentBatteryProfileMutable->failsafe_throttle` (constrained) [PWM]')
-    gpsType: gpsProvider_e = Field(description='Enum `gpsProvider_e` Sets `gpsConfigMutable()->provider` (if `USE_GPS`) [Enum]')
+    gpsType: uint8 = Field(description='Enum `gpsProvider_e` Sets `gpsConfigMutable()->provider` (if `USE_GPS`)')
     legacyGpsBaud: uint8 = Field(description='Ignored')
-    gpsSbasMode: sbasMode_e = Field(description='Enum `sbasMode_e` Sets `gpsConfigMutable()->sbasMode` (if `USE_GPS`) [Enum]')
+    gpsSbasMode: uint8 = Field(description='Enum `sbasMode_e` Sets `gpsConfigMutable()->sbasMode` (if `USE_GPS`)')
     rssiChannel: uint8 = Field(description='Sets `rxConfigMutable()->rssi_channel` (1-based, 0 disables) when <= `MAX_SUPPORTED_RC_CHANNEL_COUNT` [Index]')
     magDeclination: int16 = Field(description='Sets `compassConfigMutable()->mag_declination = value * 10` (if `USE_MAG`) [0.1 degrees]')
     vbatScale: uint16 = Field(description='Sets `batteryMetersConfigMutable()->voltage.scale` (if `USE_ADC`) [Scale]')
-    vbatSource: batVoltageSource_e = Field(description='Enum `batVoltageSource_e` Sets `batteryMetersConfigMutable()->voltageSource` (if `USE_ADC`, validated) [Enum]')
+    vbatSource: uint8 = Field(description='Enum `batVoltageSource_e` Sets `batteryMetersConfigMutable()->voltageSource` (if `USE_ADC`, validated)')
     cellCount: uint8 = Field(description='Sets `currentBatteryProfileMutable->cells` (if `USE_ADC`) [Count]')
     vbatCellDetect: uint16 = Field(description='Sets `currentBatteryProfileMutable->voltage.cellDetect` (if `USE_ADC`) [0.01V]')
     vbatMinCell: uint16 = Field(description='Sets `currentBatteryProfileMutable->voltage.cellMin` (if `USE_ADC`) [0.01V]')
@@ -2263,7 +2263,7 @@ class MSP2_INAV_SET_MISC_request_t(BaseModel):
     capacityValue: uint32 = Field(description='Sets `currentBatteryProfileMutable->capacity.value` [mAh/mWh]')
     capacityWarning: uint32 = Field(description='Sets `currentBatteryProfileMutable->capacity.warning` [mAh/mWh]')
     capacityCritical: uint32 = Field(description='Sets `currentBatteryProfileMutable->capacity.critical` [mAh/mWh]')
-    capacityUnit: batCapacityUnit_e = Field(description='Enum `batCapacityUnit_e` Sets `batteryMetersConfigMutable()->capacity_unit` (validated, updates OSD energy unit if changed) [Enum]')
+    capacityUnit: uint8 = Field(description='Enum `batCapacityUnit_e` Sets `batteryMetersConfigMutable()->capacity_unit` (validated, updates OSD energy unit if changed)')
 
 
 MSP2_INAV_BATTERY_CONFIG: Final[int] = 8197
@@ -2274,7 +2274,7 @@ class MSP2_INAV_BATTERY_CONFIG_reply_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     vbatScale: uint16 = Field(description='Voltage scale (`batteryMetersConfig()->voltage.scale`) [Scale]')
-    vbatSource: batVoltageSource_e = Field(description='Enum `batVoltageSource_e` Voltage source (`batteryMetersConfig()->voltageSource`) [Enum]')
+    vbatSource: uint8 = Field(description='Enum `batVoltageSource_e` Voltage source (`batteryMetersConfig()->voltageSource`)')
     cellCount: uint8 = Field(description='Configured cell count (`currentBatteryProfile->cells`) [Count]')
     vbatCellDetect: uint16 = Field(description='Cell detection voltage (`currentBatteryProfile->voltage.cellDetect`) [0.01V]')
     vbatMinCell: uint16 = Field(description='Min cell voltage (`currentBatteryProfile->voltage.cellMin`) [0.01V]')
@@ -2285,7 +2285,7 @@ class MSP2_INAV_BATTERY_CONFIG_reply_t(BaseModel):
     capacityValue: uint32 = Field(description='Battery capacity (`currentBatteryProfile->capacity.value`) [mAh/mWh]')
     capacityWarning: uint32 = Field(description='Capacity warning threshold (`currentBatteryProfile->capacity.warning`) [mAh/mWh]')
     capacityCritical: uint32 = Field(description='Capacity critical threshold (`currentBatteryProfile->capacity.critical`) [mAh/mWh]')
-    capacityUnit: batCapacityUnit_e = Field(description='Enum `batCapacityUnit_e` Capacity unit (`batteryMetersConfig()->capacity_unit`) [Enum]')
+    capacityUnit: uint8 = Field(description='Enum `batCapacityUnit_e` Capacity unit (`batteryMetersConfig()->capacity_unit`)')
 
 
 MSP2_INAV_SET_BATTERY_CONFIG: Final[int] = 8198
@@ -2296,7 +2296,7 @@ class MSP2_INAV_SET_BATTERY_CONFIG_request_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     vbatScale: uint16 = Field(description='Sets `batteryMetersConfigMutable()->voltage.scale` (if `USE_ADC`) [Scale]')
-    vbatSource: batVoltageSource_e = Field(description='Enum `batVoltageSource_e` Sets `batteryMetersConfigMutable()->voltageSource` (if `USE_ADC`, validated) [Enum]')
+    vbatSource: uint8 = Field(description='Enum `batVoltageSource_e` Sets `batteryMetersConfigMutable()->voltageSource` (if `USE_ADC`, validated)')
     cellCount: uint8 = Field(description='Sets `currentBatteryProfileMutable->cells` (if `USE_ADC`) [Count]')
     vbatCellDetect: uint16 = Field(description='Sets `currentBatteryProfileMutable->voltage.cellDetect` (if `USE_ADC`) [0.01V]')
     vbatMinCell: uint16 = Field(description='Sets `currentBatteryProfileMutable->voltage.cellMin` (if `USE_ADC`) [0.01V]')
@@ -2307,7 +2307,7 @@ class MSP2_INAV_SET_BATTERY_CONFIG_request_t(BaseModel):
     capacityValue: uint32 = Field(description='Sets `currentBatteryProfileMutable->capacity.value` [mAh/mWh]')
     capacityWarning: uint32 = Field(description='Sets `currentBatteryProfileMutable->capacity.warning` [mAh/mWh]')
     capacityCritical: uint32 = Field(description='Sets `currentBatteryProfileMutable->capacity.critical` [mAh/mWh]')
-    capacityUnit: batCapacityUnit_e = Field(description='Enum `batCapacityUnit_e` Sets `batteryMetersConfigMutable()->capacity_unit` (validated, updates OSD energy unit if changed) [Enum]')
+    capacityUnit: uint8 = Field(description='Enum `batCapacityUnit_e` Sets `batteryMetersConfigMutable()->capacity_unit` (validated, updates OSD energy unit if changed)')
 
 
 MSP2_INAV_RATE_PROFILE: Final[int] = 8199
@@ -2441,7 +2441,7 @@ class MSP2_INAV_SET_TIMER_OUTPUT_MODE_request_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     timerIndex: uint8 = Field(description='Index of the hardware timer definition')
-    outputMode: outputMode_e = Field(description='Output mode override (`outputMode_e` enum) to set')
+    outputMode: uint8 = Field(description='Output mode override (`outputMode_e` enum) to set')
 
 
 MSP2_INAV_MIXER: Final[int] = 8208
@@ -2454,7 +2454,7 @@ class MSP2_INAV_MIXER_reply_t(BaseModel):
     motorDirectionInverted: uint8 = Field(description='Boolean: 1 if motor direction is reversed globally (`mixerConfig()->motorDirectionInverted`)')
     reserved1: uint8 = Field(description='Always 0 (Was yaw jump prevention limit)')
     motorStopOnLow: uint8 = Field(description='Boolean: 1 if motors stop at minimum throttle (`mixerConfig()->motorstopOnLow`)')
-    platformType: flyingPlatformType_e = Field(description='Enum (`mixerConfig()->platformType`)')
+    platformType: uint8 = Field(description='Enum (`mixerConfig()->platformType`)')
     hasFlaps: uint8 = Field(description='Boolean: 1 if the current mixer configuration includes flaps (`mixerConfig()->hasFlaps`)')
     appliedMixerPreset: int16 = Field(description='Mixer preset currently applied (`mixerConfig()->appliedMixerPreset`). Plain integer, not an enum: the firmware never interprets it and only stores whatever the configurator wrote, defaulting to `SETTING_MODEL_PREVIEW_TYPE_DEFAULT`.')
     maxMotors: uint8 = Field(description='Constant: Maximum motors supported (`MAX_SUPPORTED_MOTORS`)')
@@ -2471,7 +2471,7 @@ class MSP2_INAV_SET_MIXER_request_t(BaseModel):
     motorDirectionInverted: uint8 = Field(description='Sets `mixerConfigMutable()->motorDirectionInverted`')
     reserved1: uint8 = Field(description='Ignored')
     motorStopOnLow: uint8 = Field(description='Sets `mixerConfigMutable()->motorstopOnLow`')
-    platformType: flyingPlatformType_e = Field(description='Sets `mixerConfigMutable()->platformType`')
+    platformType: uint8 = Field(description='Sets `mixerConfigMutable()->platformType`')
     hasFlaps: uint8 = Field(description='Sets `mixerConfigMutable()->hasFlaps`')
     appliedMixerPreset: int16 = Field(description='Sets `mixerConfigMutable()->appliedMixerPreset`')
     maxMotors: uint8 = Field(description='Ignored')
@@ -2545,15 +2545,15 @@ class MSP2_INAV_OSD_PREFERENCES_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    videoSystem: videoSystem_e = Field(description='Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`)')
+    videoSystem: uint8 = Field(description='Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`)')
     mainVoltageDecimals: uint8 = Field(description='Count: Decimal places for main voltage display (`osdConfig()->main_voltage_decimals`)')
     ahiReverseRoll: uint8 = Field(description='Boolean: Reverse roll direction on Artificial Horizon (`osdConfig()->ahi_reverse_roll`)')
-    crosshairsStyle: osd_crosshairs_style_e = Field(description='Enum `osd_crosshairs_style_e`: Style of the center crosshairs (`osdConfig()->crosshairs_style`)')
-    leftSidebarScroll: osd_sidebar_scroll_e = Field(description='Enum `osd_sidebar_scroll_e`: Left sidebar scroll behavior (`osdConfig()->left_sidebar_scroll`)')
-    rightSidebarScroll: osd_sidebar_scroll_e = Field(description='Enum `osd_sidebar_scroll_e`: Right sidebar scroll behavior (`osdConfig()->right_sidebar_scroll`)')
+    crosshairsStyle: uint8 = Field(description='Enum `osd_crosshairs_style_e`: Style of the center crosshairs (`osdConfig()->crosshairs_style`)')
+    leftSidebarScroll: uint8 = Field(description='Enum `osd_sidebar_scroll_e`: Left sidebar scroll behavior (`osdConfig()->left_sidebar_scroll`)')
+    rightSidebarScroll: uint8 = Field(description='Enum `osd_sidebar_scroll_e`: Right sidebar scroll behavior (`osdConfig()->right_sidebar_scroll`)')
     sidebarScrollArrows: uint8 = Field(description='Boolean: Show arrows for scrollable sidebars (`osdConfig()->sidebar_scroll_arrows`)')
-    units: osd_unit_e = Field(description='Enum: `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`)')
-    statsEnergyUnit: osd_stats_energy_unit_e = Field(description='Enum `osd_stats_energy_unit_e`: Unit for energy display in post-flight stats (`osdConfig()->stats_energy_unit`)')
+    units: uint8 = Field(description='Enum: `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`)')
+    statsEnergyUnit: uint8 = Field(description='Enum `osd_stats_energy_unit_e`: Unit for energy display in post-flight stats (`osdConfig()->stats_energy_unit`)')
 
 
 MSP2_INAV_OSD_SET_PREFERENCES: Final[int] = 8215
@@ -2563,15 +2563,15 @@ class MSP2_INAV_OSD_SET_PREFERENCES_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    videoSystem: videoSystem_e = Field(description='Sets `osdConfigMutable()->video_system`')
+    videoSystem: uint8 = Field(description='Sets `osdConfigMutable()->video_system`')
     mainVoltageDecimals: uint8 = Field(description='Sets `osdConfigMutable()->main_voltage_decimals`')
     ahiReverseRoll: uint8 = Field(description='Sets `osdConfigMutable()->ahi_reverse_roll`')
-    crosshairsStyle: osd_crosshairs_style_e = Field(description='Sets `osdConfigMutable()->crosshairs_style`')
-    leftSidebarScroll: osd_sidebar_scroll_e = Field(description='Sets `osdConfigMutable()->left_sidebar_scroll`')
-    rightSidebarScroll: osd_sidebar_scroll_e = Field(description='Sets `osdConfigMutable()->right_sidebar_scroll`')
+    crosshairsStyle: uint8 = Field(description='Sets `osdConfigMutable()->crosshairs_style`')
+    leftSidebarScroll: uint8 = Field(description='Sets `osdConfigMutable()->left_sidebar_scroll`')
+    rightSidebarScroll: uint8 = Field(description='Sets `osdConfigMutable()->right_sidebar_scroll`')
     sidebarScrollArrows: uint8 = Field(description='Sets `osdConfigMutable()->sidebar_scroll_arrows`')
-    units: osd_unit_e = Field(description='Sets `osdConfigMutable()->units` (enum `osd_unit_e`)')
-    statsEnergyUnit: osd_stats_energy_unit_e = Field(description='Sets `osdConfigMutable()->stats_energy_unit`')
+    units: uint8 = Field(description='Sets `osdConfigMutable()->units` (enum `osd_unit_e`)')
+    statsEnergyUnit: uint8 = Field(description='Sets `osdConfigMutable()->stats_energy_unit`')
 
 
 MSP2_INAV_SELECT_BATTERY_PROFILE: Final[int] = 8216
@@ -2602,7 +2602,7 @@ class MSP2_BLACKBOX_CONFIG_reply_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     blackboxSupported: uint8 = Field(description='Boolean: 1 if Blackbox is supported (`USE_BLACKBOX`), 0 otherwise')
-    blackboxDevice: BlackboxDevice = Field(description='Enum `BlackboxDevice`: Target device for logging (`blackboxConfig()->device`). 0 if not supported')
+    blackboxDevice: uint8 = Field(description='Enum `BlackboxDevice`: Target device for logging (`blackboxConfig()->device`). 0 if not supported')
     blackboxRateNum: uint16 = Field(description='Numerator for logging rate divider (`blackboxConfig()->rate_num`). 0 if not supported')
     blackboxRateDenom: uint16 = Field(description='Denominator for logging rate divider (`blackboxConfig()->rate_denom`). 0 if not supported')
     blackboxIncludeFlags: uint32 = Field(description='Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`)')
@@ -2615,7 +2615,7 @@ class MSP2_SET_BLACKBOX_CONFIG_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    blackboxDevice: BlackboxDevice = Field(description='Sets `blackboxConfigMutable()->device`')
+    blackboxDevice: uint8 = Field(description='Sets `blackboxConfigMutable()->device`')
     blackboxRateNum: uint16 = Field(description='Sets `blackboxConfigMutable()->rate_num`')
     blackboxRateDenom: uint16 = Field(description='Sets `blackboxConfigMutable()->rate_denom`')
     blackboxIncludeFlags: uint32 = Field(description='Sets `blackboxConfigMutable()->includeFlags`')
@@ -2626,7 +2626,7 @@ MSP2_INAV_TEMP_SENSOR_CONFIG: Final[int] = 8220
 class MSP2_INAV_TEMP_SENSOR_CONFIG_reply_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    type: tempSensorType_e = Field(description='Enum (`tempSensorType_e`): Type of the temperature sensor')
+    type: uint8 = Field(description='Enum (`tempSensorType_e`): Type of the temperature sensor')
     address: uint64 = Field(description='Sensor address/ID (e.g., for 1-Wire sensors)')
     alarmMin: int16 = Field(description='Min temperature alarm threshold (`sensorConfig->alarm_min`) [0.1°C]')
     alarmMax: int16 = Field(description='Max temperature alarm threshold (`sensorConfig->alarm_max`) [0.1°C]')
@@ -2646,7 +2646,7 @@ MSP2_INAV_SET_TEMP_SENSOR_CONFIG: Final[int] = 8221
 class MSP2_INAV_SET_TEMP_SENSOR_CONFIG_request_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    type: tempSensorType_e = Field(description='Sets sensor type (`tempSensorType_e`)')
+    type: uint8 = Field(description='Sets sensor type (`tempSensorType_e`)')
     address: uint64 = Field(description='Sets sensor address/ID')
     alarmMin: int16 = Field(description='Sets min alarm threshold (`tempSensorConfigMutable(index)->alarm_min`) [0.1°C]')
     alarmMax: int16 = Field(description='Sets max alarm threshold (`tempSensorConfigMutable(index)->alarm_max`) [0.1°C]')
@@ -2684,8 +2684,8 @@ class MSP_SIMULATOR_request_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     simulatorVersion: uint8 = Field(description='Version of the simulator protocol (`SIMULATOR_MSP_VERSION`)')
-    simulatorFlags_t: uint8 = Field(description='Bitmask: Options for HITL (`HITL_*` flags) [Bitmask]')
-    gpsFixType: gpsFixType_e = Field(description='Enum `gpsFixType_e` Type of GPS fix (If `HITL_HAS_NEW_GPS_DATA`) [Enum]')
+    simulatorFlags_t: uint8 = Field(description='Bitmask: Options for HITL (`HITL_*` flags)')
+    gpsFixType: uint8 = Field(description='Enum `gpsFixType_e` Type of GPS fix (If `HITL_HAS_NEW_GPS_DATA`)')
     gpsNumSat: uint8 = Field(description='(If `HITL_HAS_NEW_GPS_DATA`) Simulated satellite count')
     gpsLat: int32 = Field(description='(If `HITL_HAS_NEW_GPS_DATA`) Simulated latitude (1e7 deg)')
     gpsLon: int32 = Field(description='(If `HITL_HAS_NEW_GPS_DATA`) Simulated longitude (1e7 deg)')
@@ -2741,12 +2741,12 @@ class MSP2_INAV_SERVO_MIXER_reply_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     targetChannel: uint8 = Field(description='Servo output channel index (0-based)')
-    inputSource: inputSource_e = Field(description='Enum `inputSource_e` Input source')
+    inputSource: uint8 = Field(description='Enum `inputSource_e` Input source')
     rate: int16 = Field(description='Mixing rate/weight')
     speed: uint8 = Field(description='Speed/Slew rate limit (0-100)')
     conditionId: int8 = Field(description='Logic Condition ID (0 to `MAX_LOGIC_CONDITIONS - 1`, or 255/-1 if none/disabled)')
     p2TargetChannel: uint8 | None = Field(default=None, description='(Optional) Profile 2 Target channel')
-    p2InputSource: inputSource_e | None = Field(default=None, description='(Optional) Profile 2 Enum `inputSource_e` Input source')
+    p2InputSource: uint8 | None = Field(default=None, description='(Optional) Profile 2 Enum `inputSource_e` Input source')
     p2Rate: int16 | None = Field(default=None, description='(Optional) Profile 2 Rate')
     p2Speed: uint8 | None = Field(default=None, description='(Optional) Profile 2 Speed')
     p2ConditionId: int8 | None = Field(default=None, description='(Optional) Profile 2 Logic Condition ID')
@@ -2768,7 +2768,7 @@ class MSP2_INAV_SET_SERVO_MIXER_request_t(BaseModel):
 
     ruleIndex: uint8 = Field(description='Index of the rule to set (0 to `MAX_SERVO_RULES - 1`)')
     targetChannel: uint8 = Field(description='Servo output channel index')
-    inputSource: inputSource_e = Field(description='Enum `inputSource_e` Input source')
+    inputSource: uint8 = Field(description='Enum `inputSource_e` Input source')
     rate: int16 = Field(description='Mixing rate/weight')
     speed: uint8 = Field(description='Speed/Slew rate limit (0-100)')
     conditionId: int8 = Field(description='Logic Condition ID (255/-1 if none). Ignored if `USE_PROGRAMMING_FRAMEWORK` is disabled')
@@ -2786,12 +2786,12 @@ class MSP2_INAV_SET_LOGIC_CONDITIONS_request_t(BaseModel):
     conditionIndex: uint8 = Field(description='Index of the condition to set (0 to `MAX_LOGIC_CONDITIONS - 1`)')
     enabled: uint8 = Field(description='Boolean: 1 to enable the condition')
     activatorId: int8 = Field(description='Activator condition ID (-1/255 if none)')
-    operation: logicOperation_e = Field(description='Enum `logicOperation_e` Logical operation')
-    operandAType: logicOperandType_e = Field(description='Enum `logicOperandType_e` Type of operand A')
+    operation: uint8 = Field(description='Enum `logicOperation_e` Logical operation')
+    operandAType: uint8 = Field(description='Enum `logicOperandType_e` Type of operand A')
     operandAValue: int32 = Field(description='Value/ID of operand A')
-    operandBType: logicOperandType_e = Field(description='Enum `logicOperandType_e` Type of operand B')
+    operandBType: uint8 = Field(description='Enum `logicOperandType_e` Type of operand B')
     operandBValue: int32 = Field(description='Value/ID of operand B')
-    flags: uint8 = Field(description='Bitmask: Condition flags (`logicConditionFlags_e`) [Bitmask]')
+    flags: uint8 = Field(description='Bitmask: Condition flags (`logicConditionFlags_e`)')
 
 
 MSP2_INAV_GLOBAL_FUNCTIONS: Final[int] = 8228
@@ -2824,9 +2824,9 @@ class MSP2_INAV_PROGRAMMING_PID_reply_tItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     enabled: uint8 = Field(description='Boolean: 1 if the PID is enabled')
-    setpointType: logicOperandType_e = Field(description='Enum (`logicOperandType_e`) Type of the setpoint source')
+    setpointType: uint8 = Field(description='Enum (`logicOperandType_e`) Type of the setpoint source')
     setpointValue: int32 = Field(description='Value/ID of the setpoint source')
-    measurementType: logicOperandType_e = Field(description='Enum (`logicOperandType_e`) Type of the measurement source')
+    measurementType: uint8 = Field(description='Enum (`logicOperandType_e`) Type of the measurement source')
     measurementValue: int32 = Field(description='Value/ID of the measurement source')
     gainP: uint16 = Field(description='Proportional gain')
     gainI: uint16 = Field(description='Integral gain')
@@ -2850,9 +2850,9 @@ class MSP2_INAV_SET_PROGRAMMING_PID_request_t(BaseModel):
 
     pidIndex: uint8 = Field(description='Index of the Programming PID to set (0 to `MAX_PROGRAMMING_PID_COUNT - 1`)')
     enabled: uint8 = Field(description='Boolean: 1 to enable the PID')
-    setpointType: logicOperandType_e = Field(description='Enum (`logicOperandType_e`) Type of the setpoint source')
+    setpointType: uint8 = Field(description='Enum (`logicOperandType_e`) Type of the setpoint source')
     setpointValue: int32 = Field(description='Value/ID of the setpoint source')
-    measurementType: logicOperandType_e = Field(description='Enum (`logicOperandType_e`) Type of the measurement source')
+    measurementType: uint8 = Field(description='Enum (`logicOperandType_e`) Type of the measurement source')
     measurementValue: int32 = Field(description='Value/ID of the measurement source')
     gainP: uint16 = Field(description='Proportional gain')
     gainI: uint16 = Field(description='Integral gain')
@@ -3006,12 +3006,12 @@ class MSP2_INAV_LOGIC_CONDITIONS_SINGLE_reply_t(BaseModel):
 
     enabled: uint8 = Field(description='Boolean: 1 if enabled')
     activatorId: int8 = Field(description='Activator ID (-1/255 if none)')
-    operation: logicOperation_e = Field(description='Enum `logicOperation_e` Logical operation')
-    operandAType: logicOperandType_e = Field(description='Enum `logicOperandType_e` Type of operand A')
+    operation: uint8 = Field(description='Enum `logicOperation_e` Logical operation')
+    operandAType: uint8 = Field(description='Enum `logicOperandType_e` Type of operand A')
     operandAValue: int32 = Field(description='Value/ID of operand A')
-    operandBType: logicOperandType_e = Field(description='Enum `logicOperandType_e` Type of operand B')
+    operandBType: uint8 = Field(description='Enum `logicOperandType_e` Type of operand B')
     operandBValue: int32 = Field(description='Value/ID of operand B')
-    flags: uint8 = Field(description='Bitmask: Condition flags (`logicConditionFlags_e`) [Bitmask]')
+    flags: uint8 = Field(description='Bitmask: Condition flags (`logicConditionFlags_e`)')
 
 
 MSP2_INAV_LOGIC_CONDITIONS_CONFIGURED: Final[int] = 8252
@@ -3021,8 +3021,8 @@ class MSP2_INAV_LOGIC_CONDITIONS_CONFIGURED_reply_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    configuredMaskLow: uint32 = Field(description='Bits 0-31 of the bitmask. Bit N is set when logic condition N differs from its default values. [Bitmask]')
-    configuredMaskHigh: uint32 = Field(description='Bits 32-63 of the bitmask. Always 0 on targets where `MAX_LOGIC_CONDITIONS` is 32 or fewer. [Bitmask]')
+    configuredMaskLow: uint32 = Field(description='Bits 0-31 of the bitmask. Bit N is set when logic condition N differs from its default values.')
+    configuredMaskHigh: uint32 = Field(description='Bits 32-63 of the bitmask. Always 0 on targets where `MAX_LOGIC_CONDITIONS` is 32 or fewer.')
 
 
 MSP2_INAV_ESC_RPM: Final[int] = 8256
@@ -3150,7 +3150,7 @@ class MSP2_INAV_FW_APPROACH_reply_t(BaseModel):
     approachIndex: uint8 = Field(description='Index requested [Index]')
     approachAlt: int32 = Field(description='Signed altitude for the approach phase (`navFwAutolandApproach_t.approachAlt`) [cm]')
     landAlt: int32 = Field(description='Signed altitude for the final landing phase (`navFwAutolandApproach_t.landAlt`) [cm]')
-    approachDirection: fwAutolandApproachDirection_e = Field(description='Enum `fwAutolandApproachDirection_e`: Direction of approach (From WP, Specific Heading) [Enum]')
+    approachDirection: uint8 = Field(description='Enum `fwAutolandApproachDirection_e`: Direction of approach (From WP, Specific Heading)')
     landHeading1: int16 = Field(description='Primary landing heading (if approachDirection requires it) [degrees]')
     landHeading2: int16 = Field(description='Secondary landing heading (if approachDirection requires it) [degrees]')
     isSeaLevelRef: uint8 = Field(description='1 if altitudes are relative to sea level, 0 if relative to home [Boolean]')
@@ -3166,7 +3166,7 @@ class MSP2_INAV_SET_FW_APPROACH_request_t(BaseModel):
     approachIndex: uint8 = Field(description='Index of the approach setting (0 to `MAX_FW_LAND_APPOACH_SETTINGS - 1`) [Index]')
     approachAlt: int32 = Field(description='Signed approach altitude (`navFwAutolandApproach_t.approachAlt`) [cm]')
     landAlt: int32 = Field(description='Signed landing altitude (`navFwAutolandApproach_t.landAlt`) [cm]')
-    approachDirection: fwAutolandApproachDirection_e = Field(description='Enum `fwAutolandApproachDirection_e` Sets approach direction [Enum]')
+    approachDirection: uint8 = Field(description='Enum `fwAutolandApproachDirection_e` Sets approach direction')
     landHeading1: int16 = Field(description='Sets primary landing heading [degrees]')
     landHeading2: int16 = Field(description='Sets secondary landing heading [degrees]')
     isSeaLevelRef: uint8 = Field(description='Sets altitude reference [Boolean]')
@@ -3373,7 +3373,7 @@ class MSP2_INAV_CUSTOM_OSD_ELEMENT_request_t(BaseModel):
 class MSP2_INAV_CUSTOM_OSD_ELEMENT_reply_titemsItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    partType: osdCustomElementType_e = Field(description='Type of this part')
+    partType: uint8 = Field(description='Type of this part')
     partValue: uint16 = Field(description='Value/ID associated with this part')
 
 
@@ -3383,7 +3383,7 @@ class MSP2_INAV_CUSTOM_OSD_ELEMENT_reply_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     items: list[MSP2_INAV_CUSTOM_OSD_ELEMENT_reply_titemsItem]
-    visibilityType: osdCustomElementTypeVisibility_e = Field(description='Visibility condition source')
+    visibilityType: uint8 = Field(description='Visibility condition source')
     visibilityValue: uint16 = Field(description='Value/ID of the visibility condition source')
     elementText: str = Field(max_length=15, description='Static text bytes')
 
@@ -3393,7 +3393,7 @@ MSP2_INAV_SET_CUSTOM_OSD_ELEMENTS: Final[int] = 8450
 class MSP2_INAV_SET_CUSTOM_OSD_ELEMENTS_request_titemsItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    partType: osdCustomElementType_e = Field(description='Type of this part')
+    partType: uint8 = Field(description='Type of this part')
     partValue: uint16 = Field(description='Value/ID associated with this part')
 
 
@@ -3404,7 +3404,7 @@ class MSP2_INAV_SET_CUSTOM_OSD_ELEMENTS_request_t(BaseModel):
 
     elementIndex: uint8 = Field(description='Index of the custom element (0 to `MAX_CUSTOM_ELEMENTS - 1`)')
     items: list[MSP2_INAV_SET_CUSTOM_OSD_ELEMENTS_request_titemsItem]
-    visibilityType: osdCustomElementTypeVisibility_e = Field(description='Visibility condition source')
+    visibilityType: uint8 = Field(description='Visibility condition source')
     visibilityValue: uint16 = Field(description='Value/ID of the visibility condition source')
     elementText: str = Field(max_length=15, description='Raw bytes')
 
@@ -3428,7 +3428,7 @@ class MSP2_INAV_OUTPUT_MAPPING_EXT2_reply_tItem(BaseModel):
 
     timerId: uint8 = Field(description='Hardware timer identifier (e.g., `TIM1`, `TIM2`). SITL uses index')
     usageFlags: uint32 = Field(description='Full 32-bit timer usage flags (`TIM_USE_*`)')
-    pinLabel: pinLabel_e = Field(description='Label for special pin usage (`PIN_LABEL_*` enum, e.g., `PIN_LABEL_LED`). 0 (`PIN_LABEL_NONE`) otherwise')
+    pinLabel: uint8 = Field(description='Label for special pin usage (`PIN_LABEL_*` enum, e.g., `PIN_LABEL_LED`). 0 (`PIN_LABEL_NONE`) otherwise')
 
 
 class MSP2_INAV_OUTPUT_MAPPING_EXT2_reply_t(BaseModel):
@@ -3522,7 +3522,7 @@ class MSP2_INAV_GEOZONE_reply_t(BaseModel):
     minAltitude: int32 = Field(description='Minimum allowed altitude within the zone (`geoZonesConfig(idx)->minAltitude`) [cm]')
     maxAltitude: int32 = Field(description='Maximum allowed altitude within the zone (`geoZonesConfig(idx)->maxAltitude`) [cm]')
     isSeaLevelRef: uint8 = Field(description='Boolean: 1 if altitudes are relative to sea level, 0 if relative to home')
-    fenceAction: fenceAction_e = Field(description='Enum (`fenceAction_e`): Action to take upon boundary violation')
+    fenceAction: uint8 = Field(description='Enum (`fenceAction_e`): Action to take upon boundary violation')
     vertexCount: uint8 = Field(description='Number of vertices defined for this zone')
 
 
@@ -3539,7 +3539,7 @@ class MSP2_INAV_SET_GEOZONE_request_t(BaseModel):
     minAltitude: int32 = Field(description='Minimum allowed altitude (`geoZonesConfigMutable()->minAltitude`) [cm]')
     maxAltitude: int32 = Field(description='Maximum allowed altitude (`geoZonesConfigMutable()->maxAltitude`) [cm]')
     isSeaLevelRef: uint8 = Field(description='Boolean: Altitude reference')
-    fenceAction: fenceAction_e = Field(description='Enum (`fenceAction_e`): Action to take upon boundary violation')
+    fenceAction: uint8 = Field(description='Enum (`fenceAction_e`): Action to take upon boundary violation')
     vertexCount: uint8 = Field(description='Number of vertices to be defined (used for validation later)')
 
 
@@ -3586,7 +3586,7 @@ class MSP2_INAV_SET_ALT_TARGET_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    altitudeDatum: geoAltitudeDatumFlag_e = Field(description='Altitude reference datum flag (`geoAltitudeDatumFlag_e`): `NAV_WP_TAKEOFF_DATUM` (default), `NAV_WP_MSL_DATUM`, `NAV_WP_TERRAIN_DATUM` and `NAV_WP_RELATIVE_DATUM` (not implemented yet)')
+    altitudeDatum: uint8 = Field(description='Altitude reference datum flag (`geoAltitudeDatumFlag_e`): `NAV_WP_TAKEOFF_DATUM` (default), `NAV_WP_MSL_DATUM`, `NAV_WP_TERRAIN_DATUM` and `NAV_WP_RELATIVE_DATUM` (not implemented yet)')
     altitudeTarget: int32 = Field(description='Desired altitude target according to reference datum [cm]')
 
 
@@ -3597,7 +3597,7 @@ class MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    overrideMask: uint8 = Field(description='Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis. [Bitmask]')
+    overrideMask: uint8 = Field(description='Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis.')
     angleTargetRoll: int16 = Field(description='Angle target in deci-degrees. Roll/Pitch clamped to configured angle limits [deci-degrees]')
     angleTargetPitch: int16 = Field(description='Angle target in deci-degrees. Roll/Pitch clamped to configured angle limits [deci-degrees]')
     angleTargetYaw: int16 = Field(description='Angle target in deci-degrees. Yaw clamped to 0–3600. [deci-degrees]')
@@ -3610,7 +3610,7 @@ class MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    overrideMask: uint8 = Field(description='Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis. [Bitmask]')
+    overrideMask: uint8 = Field(description='Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis.')
     rateTargetRoll: int16 = Field(description='Rate target, clamped to ±2000 [deg/s]')
     rateTargetPitch: int16 = Field(description='Rate target, clamped to ±2000 [deg/s]')
     rateTargetYaw: int16 = Field(description='Rate target, clamped to ±2000 [deg/s]')
@@ -3655,7 +3655,7 @@ class MSP2_INAV_SET_GLOBAL_TARGET_request_t(BaseModel):
     latitude: int32 = Field(description='Latitude coordinate [deg * 1e7]')
     longitude: int32 = Field(description='Longitude coordinate [deg * 1e7]')
     altitudeTarget: int32 = Field(description='Desired altitude target according to reference datum (0 keeps current altitude) [cm]')
-    altitudeDatum: geoAltitudeDatumFlag_e = Field(description='Altitude reference datum flag (`geoAltitudeDatumFlag_e`): `NAV_WP_TAKEOFF_DATUM`, `NAV_WP_MSL_DATUM`, `NAV_WP_TERRAIN_DATUM` (not implemented yet)')
+    altitudeDatum: uint8 = Field(description='Altitude reference datum flag (`geoAltitudeDatumFlag_e`): `NAV_WP_TAKEOFF_DATUM`, `NAV_WP_MSL_DATUM`, `NAV_WP_TERRAIN_DATUM` (not implemented yet)')
     loiterRadius: int32 | None = Field(default=None, description='Optional temporary fixed-wing PosHold loiter radius override. Appended field; omit to leave unchanged. `0` clears the override and uses `navConfig()->fw.loiter_radius`. [cm]')
 
 

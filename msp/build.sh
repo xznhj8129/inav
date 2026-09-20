@@ -33,6 +33,12 @@ GENERATED_C=(msp_consts.h msp_enums.h msp_msgs.h
 VENDORED_SUPPORT=(msp_wire_types.h bitarray.h bitarray.c)
 
 cmd_generate() {
+    echo "- Harvesting enums from INAV source -> schema/enums.yaml"
+    python3 "${GEN}/harvest_enums.py"
+
+    echo "- Harvesting constants from INAV source -> schema/constants.yaml"
+    python3 "${GEN}/harvest_consts.py"
+
     echo "- Generating the C library (schema -> c/)"
     python3 "${GEN}/gen_c.py"
 
@@ -43,6 +49,9 @@ cmd_generate() {
     python3 "${GEN}/gen_pydantic.py" \
         "${SCHEMA}/msp_v2.yaml" "${SCHEMA}/enums.yaml" "${SCHEMA}/constants.yaml" \
         --output-dir "${PYDIR}/src/mspapi2/models"
+
+    echo "- Generating the MSP reference docs (schema -> docs/development/msp/)"
+    python3 "${GEN}/gen_docs.py"
 
     echo "- Staging the generated C library into arduino/src/generated/"
     mkdir -p "${ARDUINO}/src/generated"

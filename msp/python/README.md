@@ -15,7 +15,7 @@ you never hand-craft binary payloads.
   `activate_landing`), guided/offboard control (flight-axis overrides,
   altitude/local/global targets), logic conditions, DroneCAN node
   inspection, and SITL simulator state injection.
-* **`MSPCodec`** — packs/unpacks payloads from `msp_messages.json`; usable
+* **`MSPCodec`** — packs/unpacks payloads from the generated schema tables; usable
   standalone when you only need binary ↔ Python conversion.
 * **`MSPSerial`** — MSP v1/v2 framing over serial, TCP, or UDP, with a
   background reader thread, per-message queues, retries, reconnect, and

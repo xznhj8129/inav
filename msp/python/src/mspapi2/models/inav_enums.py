@@ -8,6 +8,443 @@ from typing import Annotated, Final
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class ADCDevice(IntEnum):
+    """From inav/src/main/drivers/adc_impl.h"""
+
+    ADCINVALID = -1
+    ADCDEV_1 = 0
+    ADCDEV_2 = 1
+    ADCDEV_3 = 2
+    ADCDEV_MAX = 0
+    ADCDEV_COUNT = 1
+
+
+class BlackboxDevice(IntEnum):
+    """From inav/src/main/blackbox/blackbox_io.h"""
+
+    BLACKBOX_DEVICE_SERIAL = 0
+    BLACKBOX_DEVICE_FLASH = 1
+    BLACKBOX_DEVICE_SDCARD = 2
+    BLACKBOX_DEVICE_FILE = 3
+    BLACKBOX_DEVICE_END = 4
+
+
+class BlackboxState(IntEnum):
+    """From inav/src/main/blackbox/blackbox.h"""
+
+    BLACKBOX_STATE_DISABLED = 0
+    BLACKBOX_STATE_STOPPED = 1
+    BLACKBOX_STATE_PREPARE_LOG_FILE = 2
+    BLACKBOX_STATE_SEND_HEADER = 3
+    BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER = 4
+    BLACKBOX_STATE_SEND_GPS_H_HEADER = 5
+    BLACKBOX_STATE_SEND_GPS_G_HEADER = 6
+    BLACKBOX_STATE_SEND_SLOW_HEADER = 7
+    BLACKBOX_STATE_SEND_SYSINFO = 8
+    BLACKBOX_STATE_PAUSED = 9
+    BLACKBOX_STATE_RUNNING = 10
+    BLACKBOX_STATE_SHUTTING_DOWN = 11
+
+
+class CanardRequestResponse(IntEnum):
+    """From inav/src/main/drivers/dronecan/libcanard/canard.h"""
+
+    CanardResponse = 0
+    CanardRequest = 1
+
+
+class CanardTransferType(IntEnum):
+    """From inav/src/main/drivers/dronecan/libcanard/canard.h"""
+
+    CanardTransferTypeResponse = 0
+    CanardTransferTypeRequest = 1
+    CanardTransferTypeBroadcast = 2
+
+
+class DjiCraftNameElements_t(IntEnum):
+    """From inav/src/main/io/osd_dji_hd.c"""
+
+    DJI_OSD_CN_MESSAGES = 0
+    DJI_OSD_CN_THROTTLE = 1
+    DJI_OSD_CN_THROTTLE_AUTO_THR = 2
+    DJI_OSD_CN_AIR_SPEED = 3
+    DJI_OSD_CN_EFFICIENCY = 4
+    DJI_OSD_CN_DISTANCE = 5
+    DJI_OSD_CN_ADJUSTEMNTS = 6
+    DJI_OSD_CN_MAX_ELEMENTS = 7
+
+
+class FlightLogEvent(IntEnum):
+    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
+
+    FLIGHT_LOG_EVENT_SYNC_BEEP = 0
+    FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13
+    FLIGHT_LOG_EVENT_LOGGING_RESUME = 14
+    FLIGHT_LOG_EVENT_FLIGHTMODE = 30
+    FLIGHT_LOG_EVENT_IMU_FAILURE = 40
+    FLIGHT_LOG_EVENT_LOG_END = 255
+
+
+class FlightLogFieldCondition(IntEnum):
+    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
+
+    FLIGHT_LOG_FIELD_CONDITION_ALWAYS = 0
+    FLIGHT_LOG_FIELD_CONDITION_MOTORS = 1
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 = 2
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2 = 3
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3 = 4
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4 = 5
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5 = 6
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6 = 7
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7 = 8
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8 = 9
+    FLIGHT_LOG_FIELD_CONDITION_SERVOS = 10
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_1 = 11
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_2 = 12
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_3 = 13
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_4 = 14
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_5 = 15
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_6 = 16
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_7 = 17
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_8 = 18
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_9 = 19
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_10 = 20
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_11 = 21
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_12 = 22
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_13 = 23
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_14 = 24
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_15 = 25
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_16 = 26
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_17 = 27
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_18 = 28
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_19 = 29
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_20 = 30
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_21 = 31
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_22 = 32
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_23 = 33
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_24 = 34
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_25 = 35
+    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_26 = 36
+    FLIGHT_LOG_FIELD_CONDITION_MAG = 37
+    FLIGHT_LOG_FIELD_CONDITION_BARO = 38
+    FLIGHT_LOG_FIELD_CONDITION_PITOT = 39
+    FLIGHT_LOG_FIELD_CONDITION_VBAT = 40
+    FLIGHT_LOG_FIELD_CONDITION_AMPERAGE = 41
+    FLIGHT_LOG_FIELD_CONDITION_SURFACE = 42
+    FLIGHT_LOG_FIELD_CONDITION_FIXED_WING_NAV = 43
+    FLIGHT_LOG_FIELD_CONDITION_MC_NAV = 44
+    FLIGHT_LOG_FIELD_CONDITION_RSSI = 45
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 = 46
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1 = 47
+    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2 = 48
+    FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME = 49
+    FLIGHT_LOG_FIELD_CONDITION_DEBUG = 50
+    FLIGHT_LOG_FIELD_CONDITION_NAV_ACC = 51
+    FLIGHT_LOG_FIELD_CONDITION_NAV_POS = 52
+    FLIGHT_LOG_FIELD_CONDITION_NAV_PID = 53
+    FLIGHT_LOG_FIELD_CONDITION_ACC = 54
+    FLIGHT_LOG_FIELD_CONDITION_ATTITUDE = 55
+    FLIGHT_LOG_FIELD_CONDITION_RC_DATA = 56
+    FLIGHT_LOG_FIELD_CONDITION_RC_COMMAND = 57
+    FLIGHT_LOG_FIELD_CONDITION_GYRO_RAW = 58
+    FLIGHT_LOG_FIELD_CONDITION_GYRO_PEAKS_ROLL = 59
+    FLIGHT_LOG_FIELD_CONDITION_GYRO_PEAKS_PITCH = 60
+    FLIGHT_LOG_FIELD_CONDITION_GYRO_PEAKS_YAW = 61
+    FLIGHT_LOG_FIELD_CONDITION_NEVER = 62
+    FLIGHT_LOG_FIELD_CONDITION_FIRST = 0
+    FLIGHT_LOG_FIELD_CONDITION_LAST = 62
+
+
+class FlightLogFieldEncoding(IntEnum):
+    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
+
+    FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB = 0
+    FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB = 1
+    FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT = 3
+    FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB = 6
+    FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32 = 7
+    FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16 = 8
+    FLIGHT_LOG_FIELD_ENCODING_NULL = 9
+
+
+class FlightLogFieldPredictor(IntEnum):
+    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
+
+    FLIGHT_LOG_FIELD_PREDICTOR_0 = 0
+    FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS = 1
+    FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE = 2
+    FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2 = 3
+    FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE = 4
+    FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0 = 5
+    FLIGHT_LOG_FIELD_PREDICTOR_INC = 6
+    FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD = 7
+    FLIGHT_LOG_FIELD_PREDICTOR_1500 = 8
+    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF = 9
+    FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10
+
+
+class FlightLogFieldSign(IntEnum):
+    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
+
+    FLIGHT_LOG_FIELD_UNSIGNED = 0
+    FLIGHT_LOG_FIELD_SIGNED = 1
+
+
+class HardwareMotorTypes_e(IntEnum):
+    """From inav/src/main/drivers/pwm_esc_detect.h"""
+
+    MOTOR_UNKNOWN = 0
+    MOTOR_BRUSHED = 1
+    MOTOR_BRUSHLESS = 2
+
+
+class I2CDevice(IntEnum):
+    """From inav/src/main/drivers/bus_i2c.h"""
+
+    I2CINVALID = -1
+    I2CDEV_EMULATED = -1
+    I2CDEV_1 = 0
+    I2CDEV_2 = 1
+    I2CDEV_3 = 2
+    I2CDEV_4 = 3
+    I2CDEV_COUNT = 4
+
+
+class I2CSpeed(IntEnum):
+    """From inav/src/main/drivers/bus_i2c.h"""
+
+    I2C_SPEED_100KHZ = 2
+    I2C_SPEED_200KHZ = 3
+    I2C_SPEED_400KHZ = 0
+    I2C_SPEED_800KHZ = 1
+
+
+class QUADSPIClockDivider_e(IntEnum):
+    """From inav/src/main/drivers/bus_quadspi.h"""
+
+    QUADSPI_CLOCK_INITIALISATION = 255
+    QUADSPI_CLOCK_SLOW = 19
+    QUADSPI_CLOCK_STANDARD = 9
+    QUADSPI_CLOCK_FAST = 3
+    QUADSPI_CLOCK_ULTRAFAST = 1
+
+
+class QUADSPIDevice(IntEnum):
+    """From inav/src/main/drivers/bus_quadspi.h"""
+
+    QUADSPIINVALID = -1
+    QUADSPIDEV_1 = 0
+
+
+class RCDEVICE_5key_connection_event_e(IntEnum):
+    """From inav/src/main/io/rcdevice.h"""
+
+    RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN = 1
+    RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE = 2
+
+
+class SDIODevice(IntEnum):
+    """From inav/src/main/drivers/sdio.h"""
+
+    SDIOINVALID = -1
+    SDIODEV_1 = 0
+    SDIODEV_2 = 1
+
+
+class SD_CardType_t(IntEnum):
+    """From inav/src/main/drivers/sdcard/sdmmc_sdio.h"""
+
+    SD_STD_CAPACITY_V1_1 = 0
+    SD_STD_CAPACITY_V2_0 = 1
+    SD_HIGH_CAPACITY = 2
+    SD_MULTIMEDIA = 3
+    SD_SECURE_DIGITAL_IO = 4
+    SD_HIGH_SPEED_MULTIMEDIA = 5
+    SD_SECURE_DIGITAL_IO_COMBO = 6
+    SD_HIGH_CAPACITY_MMC = 7
+
+
+class SD_Error_t(IntEnum):
+    """From inav/src/main/drivers/sdcard/sdmmc_sdio.h"""
+
+    SD_CMD_CRC_FAIL = 1
+    SD_DATA_CRC_FAIL = 2
+    SD_CMD_RSP_TIMEOUT = 3
+    SD_DATA_TIMEOUT = 4
+    SD_TX_UNDERRUN = 5
+    SD_RX_OVERRUN = 6
+    SD_START_BIT_ERR = 7
+    SD_CMD_OUT_OF_RANGE = 8
+    SD_ADDR_MISALIGNED = 9
+    SD_BLOCK_LEN_ERR = 10
+    SD_ERASE_SEQ_ERR = 11
+    SD_BAD_ERASE_PARAM = 12
+    SD_WRITE_PROT_VIOLATION = 13
+    SD_LOCK_UNLOCK_FAILED = 14
+    SD_COM_CRC_FAILED = 15
+    SD_ILLEGAL_CMD = 16
+    SD_CARD_ECC_FAILED = 17
+    SD_CC_ERROR = 18
+    SD_GENERAL_UNKNOWN_ERROR = 19
+    SD_STREAM_READ_UNDERRUN = 20
+    SD_STREAM_WRITE_OVERRUN = 21
+    SD_CID_CSD_OVERWRITE = 22
+    SD_WP_ERASE_SKIP = 23
+    SD_CARD_ECC_DISABLED = 24
+    SD_ERASE_RESET = 25
+    SD_AKE_SEQ_ERROR = 26
+    SD_INVALID_VOLTRANGE = 27
+    SD_ADDR_OUT_OF_RANGE = 28
+    SD_SWITCH_ERROR = 29
+    SD_SDMMC_DISABLED = 30
+    SD_SDMMC_FUNCTION_BUSY = 31
+    SD_SDMMC_FUNCTION_FAILED = 32
+    SD_SDMMC_UNKNOWN_FUNCTION = 33
+    SD_OUT_OF_BOUND = 34
+    SD_INTERNAL_ERROR = 35
+    SD_NOT_CONFIGURED = 36
+    SD_REQUEST_PENDING = 37
+    SD_REQUEST_NOT_APPLICABLE = 38
+    SD_INVALID_PARAMETER = 39
+    SD_UNSUPPORTED_FEATURE = 40
+    SD_UNSUPPORTED_HW = 41
+    SD_ERROR = 42
+    SD_BUSY = 43
+    SD_OK = 0
+
+
+class SD_Operation_t(IntEnum):
+    """From inav/src/main/drivers/sdcard/sdmmc_sdio_f4xx.c"""
+
+    SD_SINGLE_BLOCK = 0
+    SD_MULTIPLE_BLOCK = 1
+
+
+class SPIClockSpeed_e(IntEnum):
+    """From inav/src/main/drivers/bus_spi.h"""
+
+    SPI_CLOCK_INITIALIZATON = 0
+    SPI_CLOCK_SLOW = 1
+    SPI_CLOCK_STANDARD = 2
+    SPI_CLOCK_FAST = 3
+    SPI_CLOCK_ULTRAFAST = 4
+
+
+class SPIDevice(IntEnum):
+    """From inav/src/main/drivers/bus_spi.h"""
+
+    SPIINVALID = -1
+    SPIDEV_1 = 0
+    SPIDEV_2 = 1
+    SPIDEV_3 = 2
+    SPIDEV_4 = 3
+
+
+class Srxl2BindRequest(IntEnum):
+    """From inav/src/main/rx/srxl2_types.h"""
+
+    EnterBindMode = 235
+    RequestBindStatus = 181
+    BoundDataReport = 219
+    SetBindInfo = 91
+
+
+class Srxl2BindType(IntEnum):
+    """From inav/src/main/rx/srxl2_types.h"""
+
+    NotBound = 0
+    DSM2_1024_22ms = 1
+    DSM2_1024_MC24 = 2
+    DMS2_2048_11ms = 18
+    DMSX_22ms = 162
+    DMSX_11ms = 178
+    Surface_DSM2_16_5ms = 99
+    DSMR_11ms_22ms = 226
+    DSMR_5_5ms = 228
+
+
+class Srxl2ControlDataCommand(IntEnum):
+    """From inav/src/main/rx/srxl2_types.h"""
+
+    ChannelData = 0
+    FailsafeChannelData = 1
+    VTXData = 2
+
+
+class Srxl2DeviceId(IntEnum):
+    """From inav/src/main/rx/srxl2_types.h"""
+
+    FlightControllerDefault = 48
+    FlightControllerMax = 63
+    Broadcast = 255
+
+
+class Srxl2DeviceType(IntEnum):
+    """From inav/src/main/rx/srxl2_types.h"""
+
+    NoDevice = 0
+    RemoteReceiver = 1
+    Receiver = 2
+    FlightController = 3
+    ESC = 4
+    Reserved = 5
+    SRXLServo = 6
+    SRXLServo_2 = 7
+    VTX = 8
+
+
+class Srxl2PacketType(IntEnum):
+    """From inav/src/main/rx/srxl2_types.h"""
+
+    Handshake = 33
+    BindInfo = 65
+    ParameterConfiguration = 80
+    SignalQuality = 85
+    TelemetrySensorData = 128
+    ControlData = 205
+
+
+class Srxl2State(IntEnum):
+    """From inav/src/main/rx/srxl2_types.h"""
+
+    Disabled = 0
+    ListenForActivity = 1
+    SendHandshake = 2
+    ListenForHandshake = 3
+    Running = 4
+
+
+class UARTDevice_e(IntEnum):
+    """From inav/src/main/drivers/serial_uart.h"""
+
+    UARTDEV_1 = 0
+    UARTDEV_2 = 1
+    UARTDEV_3 = 2
+    UARTDEV_4 = 3
+    UARTDEV_5 = 4
+    UARTDEV_6 = 5
+    UARTDEV_7 = 6
+    UARTDEV_8 = 7
+    UARTDEV_MAX = 8
+
+
+class VIDEO_TYPES(IntEnum):
+    """From inav/src/main/drivers/max7456.h"""
+
+    AUTO = 0
+    PAL = 1
+    NTSC = 2
+
+
+class accEvent_t(IntEnum):
+    """From inav/src/main/telemetry/sim.c"""
+
+    ACC_EVENT_NONE = 0
+    ACC_EVENT_HIGH = 1
+    ACC_EVENT_LOW = 2
+    ACC_EVENT_NEG_X = 3
+
+
 class accel_fsr_e(IntEnum):
     """From inav/src/main/drivers/accgyro/accgyro_mpu.h"""
 
@@ -38,15 +475,6 @@ class accelerationSensor_e(IntEnum):
     ACC_MAX = 13
 
 
-class accEvent_t(IntEnum):
-    """From inav/src/main/telemetry/sim.c"""
-
-    ACC_EVENT_NONE = 0
-    ACC_EVENT_HIGH = 1
-    ACC_EVENT_LOW = 2
-    ACC_EVENT_NEG_X = 3
-
-
 class adcChannel_e(IntEnum):
     """From inav/src/main/drivers/adc.h"""
 
@@ -59,17 +487,6 @@ class adcChannel_e(IntEnum):
     ADC_CHN_6 = 6
     ADC_CHN_MAX = 6
     ADC_CHN_COUNT = 7
-
-
-class ADCDevice(IntEnum):
-    """From inav/src/main/drivers/adc_impl.h"""
-
-    ADCINVALID = -1
-    ADCDEV_1 = 0
-    ADCDEV_2 = 1
-    ADCDEV_3 = 2
-    ADCDEV_MAX = 0
-    ADCDEV_COUNT = 1
 
 
 class adcFunction_e(IntEnum):
@@ -244,15 +661,6 @@ class afatfsFileOperation_e(IntEnum):
     AFATFS_FILE_OPERATION_EXTEND_SUBDIRECTORY = 9
 
 
-class afatfsFilesystemState_e(IntEnum):
-    """From inav/src/main/io/asyncfatfs/asyncfatfs.h"""
-
-    AFATFS_FILESYSTEM_STATE_UNKNOWN = 0
-    AFATFS_FILESYSTEM_STATE_FATAL = 1
-    AFATFS_FILESYSTEM_STATE_INITIALIZATION = 2
-    AFATFS_FILESYSTEM_STATE_READY = 3
-
-
 class afatfsFileType_e(IntEnum):
     """From inav/src/main/io/asyncfatfs/asyncfatfs.c"""
 
@@ -260,6 +668,15 @@ class afatfsFileType_e(IntEnum):
     AFATFS_FILE_TYPE_NORMAL = 1
     AFATFS_FILE_TYPE_FAT16_ROOT_DIRECTORY = 2
     AFATFS_FILE_TYPE_DIRECTORY = 3
+
+
+class afatfsFilesystemState_e(IntEnum):
+    """From inav/src/main/io/asyncfatfs/asyncfatfs.h"""
+
+    AFATFS_FILESYSTEM_STATE_UNKNOWN = 0
+    AFATFS_FILESYSTEM_STATE_FATAL = 1
+    AFATFS_FILESYSTEM_STATE_INITIALIZATION = 2
+    AFATFS_FILESYSTEM_STATE_READY = 3
 
 
 class afatfsFindClusterStatus_e(IntEnum):
@@ -384,13 +801,6 @@ class axis_e(IntEnum):
     Z = 2
 
 
-class barometerState_e(IntEnum):
-    """From inav/src/main/sensors/barometer.c"""
-
-    BAROMETER_NEEDS_SAMPLES = 0
-    BAROMETER_NEEDS_CALCULATION = 1
-
-
 class baroSensor_e(IntEnum):
     """From inav/src/main/sensors/barometer.h"""
 
@@ -411,11 +821,25 @@ class baroSensor_e(IntEnum):
     BARO_MAX = 13
 
 
+class barometerState_e(IntEnum):
+    """From inav/src/main/sensors/barometer.c"""
+
+    BAROMETER_NEEDS_SAMPLES = 0
+    BAROMETER_NEEDS_CALCULATION = 1
+
+
 class batCapacityUnit_e(IntEnum):
     """From inav/src/main/sensors/battery_config_structs.h"""
 
     BAT_CAPACITY_UNIT_MAH = 0
     BAT_CAPACITY_UNIT_MWH = 1
+
+
+class batVoltageSource_e(IntEnum):
+    """From inav/src/main/sensors/battery_config_structs.h"""
+
+    BAT_VOLTAGE_RAW = 0
+    BAT_VOLTAGE_SAG_COMP = 1
 
 
 class batteryState_e(IntEnum):
@@ -425,13 +849,6 @@ class batteryState_e(IntEnum):
     BATTERY_WARNING = 1
     BATTERY_CRITICAL = 2
     BATTERY_NOT_PRESENT = 3
-
-
-class batVoltageSource_e(IntEnum):
-    """From inav/src/main/sensors/battery_config_structs.h"""
-
-    BAT_VOLTAGE_RAW = 0
-    BAT_VOLTAGE_SAG_COMP = 1
 
 
 class baudRate_e(IntEnum):
@@ -505,31 +922,23 @@ class blackboxBufferReserveStatus_e(IntEnum):
     BLACKBOX_RESERVE_PERMANENT_FAILURE = 2
 
 
-class BlackboxDevice(IntEnum):
-    """From inav/src/main/blackbox/blackbox_io.h"""
-
-    BLACKBOX_DEVICE_SERIAL = 0
-    BLACKBOX_DEVICE_FLASH = 1
-    BLACKBOX_DEVICE_SDCARD = 2
-    BLACKBOX_DEVICE_FILE = 3
-    BLACKBOX_DEVICE_END = 4
-
-
-class BlackboxState(IntEnum):
+class blackboxFeatureMask_e(IntEnum):
     """From inav/src/main/blackbox/blackbox.h"""
 
-    BLACKBOX_STATE_DISABLED = 0
-    BLACKBOX_STATE_STOPPED = 1
-    BLACKBOX_STATE_PREPARE_LOG_FILE = 2
-    BLACKBOX_STATE_SEND_HEADER = 3
-    BLACKBOX_STATE_SEND_MAIN_FIELD_HEADER = 4
-    BLACKBOX_STATE_SEND_GPS_H_HEADER = 5
-    BLACKBOX_STATE_SEND_GPS_G_HEADER = 6
-    BLACKBOX_STATE_SEND_SLOW_HEADER = 7
-    BLACKBOX_STATE_SEND_SYSINFO = 8
-    BLACKBOX_STATE_PAUSED = 9
-    BLACKBOX_STATE_RUNNING = 10
-    BLACKBOX_STATE_SHUTTING_DOWN = 11
+    BLACKBOX_FEATURE_NAV_ACC = 1
+    BLACKBOX_FEATURE_NAV_POS = 2
+    BLACKBOX_FEATURE_NAV_PID = 4
+    BLACKBOX_FEATURE_MAG = 8
+    BLACKBOX_FEATURE_ACC = 16
+    BLACKBOX_FEATURE_ATTITUDE = 32
+    BLACKBOX_FEATURE_RC_DATA = 64
+    BLACKBOX_FEATURE_RC_COMMAND = 128
+    BLACKBOX_FEATURE_MOTORS = 256
+    BLACKBOX_FEATURE_GYRO_RAW = 512
+    BLACKBOX_FEATURE_GYRO_PEAKS_ROLL = 1024
+    BLACKBOX_FEATURE_GYRO_PEAKS_PITCH = 2048
+    BLACKBOX_FEATURE_GYRO_PEAKS_YAW = 4096
+    BLACKBOX_FEATURE_SERVOS = 8192
 
 
 class bmi270Register_e(IntEnum):
@@ -607,6 +1016,16 @@ class bootLogEventCode_e(IntEnum):
     BOOT_EVENT_HARDWARE_IO_CONFLICT = 23
     BOOT_EVENT_OPFLOW_DETECTION = 24
     BOOT_EVENT_CODE_COUNT = 25
+
+
+class bootLogFlags_e(IntEnum):
+    """From inav/src/main/drivers/logging_codes.h"""
+
+    BOOT_EVENT_FLAGS_NONE = 0
+    BOOT_EVENT_FLAGS_WARNING = 1
+    BOOT_EVENT_FLAGS_ERROR = 2
+    BOOT_EVENT_FLAGS_PARAM16 = 16384
+    BOOT_EVENT_FLAGS_PARAM32 = 32768
 
 
 class boxId_e(IntEnum):
@@ -794,6 +1213,21 @@ class crsfAddress_e(IntEnum):
     CRSF_ADDRESS_CRSF_TRANSMITTER = 238
 
 
+class crsfFrameTypeIndex_e(IntEnum):
+    """From inav/src/main/telemetry/crsf.c"""
+
+    CRSF_FRAME_START_INDEX = 0
+    CRSF_FRAME_ATTITUDE_INDEX = 0
+    CRSF_FRAME_BATTERY_SENSOR_INDEX = 1
+    CRSF_FRAME_FLIGHT_MODE_INDEX = 2
+    CRSF_FRAME_GPS_INDEX = 3
+    CRSF_FRAME_VARIO_OR_ALT_VARIO_SENSOR_INDEX = 4
+    CRSF_FRAME_TEMP_INDEX = 5
+    CRSF_FRAME_RPM_INDEX = 6
+    CRSF_FRAME_AIRSPEED_INDEX = 7
+    CRSF_SCHEDULE_COUNT_MAX = 8
+
+
 class crsfFrameType_e(IntEnum):
     """From inav/src/main/rx/crsf.h"""
 
@@ -818,21 +1252,6 @@ class crsfFrameType_e(IntEnum):
     CRSF_FRAMETYPE_MSP_RESP = 123
     CRSF_FRAMETYPE_MSP_WRITE = 124
     CRSF_FRAMETYPE_DISPLAYPORT_CMD = 125
-
-
-class crsfFrameTypeIndex_e(IntEnum):
-    """From inav/src/main/telemetry/crsf.c"""
-
-    CRSF_FRAME_START_INDEX = 0
-    CRSF_FRAME_ATTITUDE_INDEX = 0
-    CRSF_FRAME_BATTERY_SENSOR_INDEX = 1
-    CRSF_FRAME_FLIGHT_MODE_INDEX = 2
-    CRSF_FRAME_GPS_INDEX = 3
-    CRSF_FRAME_VARIO_OR_ALT_VARIO_SENSOR_INDEX = 4
-    CRSF_FRAME_TEMP_INDEX = 5
-    CRSF_FRAME_RPM_INDEX = 6
-    CRSF_FRAME_AIRSPEED_INDEX = 7
-    CRSF_SCHEDULE_COUNT_MAX = 8
 
 
 class crsrRfMode_e(IntEnum):
@@ -938,7 +1357,16 @@ class devHardwareType_e(IntEnum):
     DEVHW_INA226 = 61
 
 
-class disarmReason_t(IntEnum):
+class deviceFlags_e(IntEnum):
+    """From inav/src/main/drivers/bus.h"""
+
+    DEVFLAGS_NONE = 0
+    DEVFLAGS_USE_RAW_REGISTERS = 1
+    DEVFLAGS_USE_MANUAL_DEVICE_SELECT = 2
+    DEVFLAGS_SPI_MODE_0 = 4
+
+
+class disarmReason_e(IntEnum):
     """From inav/src/main/fc/fc_core.h"""
 
     DISARM_NONE = 0
@@ -952,6 +1380,14 @@ class disarmReason_t(IntEnum):
     DISARM_REASON_COUNT = 9
 
 
+class displayCanvasBitmapOption_t(IntEnum):
+    """From inav/src/main/drivers/display_canvas.h"""
+
+    DISPLAY_CANVAS_BITMAP_OPT_INVERT_COLORS = 1
+    DISPLAY_CANVAS_BITMAP_OPT_SOLID_BACKGROUND = 2
+    DISPLAY_CANVAS_BITMAP_OPT_ERASE_TRANSPARENT = 4
+
+
 class displayCanvasColor_e(IntEnum):
     """From inav/src/main/drivers/display_canvas.h"""
 
@@ -959,6 +1395,31 @@ class displayCanvasColor_e(IntEnum):
     DISPLAY_CANVAS_COLOR_TRANSPARENT = 1
     DISPLAY_CANVAS_COLOR_WHITE = 2
     DISPLAY_CANVAS_COLOR_GRAY = 3
+
+
+class displayCanvasOutlineType_e(IntEnum):
+    """From inav/src/main/drivers/display_canvas.h"""
+
+    DISPLAY_CANVAS_OUTLINE_TYPE_NONE = 0
+    DISPLAY_CANVAS_OUTLINE_TYPE_TOP = 1
+    DISPLAY_CANVAS_OUTLINE_TYPE_RIGHT = 2
+    DISPLAY_CANVAS_OUTLINE_TYPE_BOTTOM = 4
+    DISPLAY_CANVAS_OUTLINE_TYPE_LEFT = 8
+
+
+class displayTransactionOption_e(IntEnum):
+    """From inav/src/main/drivers/display.h"""
+
+    DISPLAY_TRANSACTION_OPT_NONE = 0
+    DISPLAY_TRANSACTION_OPT_PROFILED = 1
+    DISPLAY_TRANSACTION_OPT_RESET_DRAWING = 2
+
+
+class displayWidgetType_e(IntEnum):
+    """From inav/src/main/drivers/display_widgets.h"""
+
+    DISPLAY_WIDGET_TYPE_AHI = 0
+    DISPLAY_WIDGET_TYPE_SIDEBAR = 1
 
 
 class displayportMspCommand_e(IntEnum):
@@ -974,24 +1435,10 @@ class displayportMspCommand_e(IntEnum):
     MSP_DP_COUNT = 7
 
 
-class displayWidgetType_e(IntEnum):
-    """From inav/src/main/drivers/display_widgets.h"""
+class djiOsdProtoWorkarounds_e(IntEnum):
+    """From inav/src/main/io/osd_dji_hd.h"""
 
-    DISPLAY_WIDGET_TYPE_AHI = 0
-    DISPLAY_WIDGET_TYPE_SIDEBAR = 1
-
-
-class DjiCraftNameElements_t(IntEnum):
-    """From inav/src/main/io/osd_dji_hd.c"""
-
-    DJI_OSD_CN_MESSAGES = 0
-    DJI_OSD_CN_THROTTLE = 1
-    DJI_OSD_CN_THROTTLE_AUTO_THR = 2
-    DJI_OSD_CN_AIR_SPEED = 3
-    DJI_OSD_CN_EFFICIENCY = 4
-    DJI_OSD_CN_DISTANCE = 5
-    DJI_OSD_CN_ADJUSTEMNTS = 6
-    DJI_OSD_CN_MAX_ELEMENTS = 7
+    DJI_OSD_USE_NON_STANDARD_MSP_ESC_SENSOR_DATA = 1
 
 
 class djiOsdTempSource_e(IntEnum):
@@ -1043,6 +1490,19 @@ class dshotCommands_e(IntEnum):
 
     DSHOT_CMD_SPIN_DIRECTION_NORMAL = 20
     DSHOT_CMD_SPIN_DIRECTION_REVERSED = 21
+
+
+class dumpFlags_e(IntEnum):
+    """From inav/src/main/fc/cli.c"""
+
+    DUMP_MASTER = 1
+    DUMP_CONTROL_PROFILE = 2
+    DUMP_BATTERY_PROFILE = 4
+    DUMP_MIXER_PROFILE = 8
+    DUMP_ALL = 16
+    DO_DIFF = 32
+    SHOW_DEFAULTS = 64
+    HIDE_UNUSED = 128
 
 
 class dynamicGyroNotchMode_e(IntEnum):
@@ -1215,6 +1675,43 @@ class fchoice_b(IntEnum):
     FCB_3600_32 = 2
 
 
+class features_e(IntEnum):
+    """From inav/src/main/fc/config.h"""
+
+    FEATURE_THR_VBAT_COMP = 1
+    FEATURE_VBAT = 2
+    FEATURE_TX_PROF_SEL = 4
+    FEATURE_BAT_PROFILE_AUTOSWITCH = 8
+    FEATURE_GEOZONE = 16
+    FEATURE_UNUSED_1 = 32
+    FEATURE_SOFTSERIAL = 64
+    FEATURE_GPS = 128
+    FEATURE_UNUSED_3 = 256
+    FEATURE_UNUSED_4 = 512
+    FEATURE_TELEMETRY = 1024
+    FEATURE_CURRENT_METER = 2048
+    FEATURE_REVERSIBLE_MOTORS = 4096
+    FEATURE_UNUSED_5 = 8192
+    FEATURE_UNUSED_6 = 16384
+    FEATURE_RSSI_ADC = 32768
+    FEATURE_LED_STRIP = 65536
+    FEATURE_DASHBOARD = 131072
+    FEATURE_UNUSED_7 = 262144
+    FEATURE_BLACKBOX = 524288
+    FEATURE_UNUSED_10 = 1048576
+    FEATURE_TRANSPONDER = 2097152
+    FEATURE_AIRMODE = 4194304
+    FEATURE_SUPEREXPO_RATES = 8388608
+    FEATURE_VTX = 16777216
+    FEATURE_UNUSED_8 = 33554432
+    FEATURE_UNUSED_9 = 67108864
+    FEATURE_UNUSED_11 = 134217728
+    FEATURE_PWM_OUTPUT_ENABLE = 268435456
+    FEATURE_OSD = 536870912
+    FEATURE_FW_LAUNCH = 1073741824
+    FEATURE_FW_AUTOTRIM = 2147483648
+
+
 class fenceAction_e(IntEnum):
     """From inav/src/main/navigation/navigation.h"""
 
@@ -1296,128 +1793,29 @@ class flashType_e(IntEnum):
     FLASH_TYPE_NAND = 1
 
 
-class flight_dynamics_index_t(IntEnum):
-    """From inav/src/main/common/axis.h"""
+class flightModeFlags_e(IntEnum):
+    """From inav/src/main/fc/runtime_config.h"""
 
-    FD_ROLL = 0
-    FD_PITCH = 1
-    FD_YAW = 2
-
-
-class FlightLogEvent(IntEnum):
-    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
-
-    FLIGHT_LOG_EVENT_SYNC_BEEP = 0
-    FLIGHT_LOG_EVENT_INFLIGHT_ADJUSTMENT = 13
-    FLIGHT_LOG_EVENT_LOGGING_RESUME = 14
-    FLIGHT_LOG_EVENT_FLIGHTMODE = 30
-    FLIGHT_LOG_EVENT_IMU_FAILURE = 40
-    FLIGHT_LOG_EVENT_LOG_END = 255
-
-
-class FlightLogFieldCondition(IntEnum):
-    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
-
-    FLIGHT_LOG_FIELD_CONDITION_ALWAYS = 0
-    FLIGHT_LOG_FIELD_CONDITION_MOTORS = 1
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 = 2
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2 = 3
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3 = 4
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4 = 5
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5 = 6
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6 = 7
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7 = 8
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8 = 9
-    FLIGHT_LOG_FIELD_CONDITION_SERVOS = 10
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_1 = 11
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_2 = 12
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_3 = 13
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_4 = 14
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_5 = 15
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_6 = 16
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_7 = 17
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_8 = 18
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_9 = 19
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_10 = 20
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_11 = 21
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_12 = 22
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_13 = 23
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_14 = 24
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_15 = 25
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_16 = 26
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_17 = 27
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_18 = 28
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_19 = 29
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_20 = 30
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_21 = 31
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_22 = 32
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_23 = 33
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_24 = 34
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_25 = 35
-    FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_SERVOS_26 = 36
-    FLIGHT_LOG_FIELD_CONDITION_MAG = 37
-    FLIGHT_LOG_FIELD_CONDITION_BARO = 38
-    FLIGHT_LOG_FIELD_CONDITION_PITOT = 39
-    FLIGHT_LOG_FIELD_CONDITION_VBAT = 40
-    FLIGHT_LOG_FIELD_CONDITION_AMPERAGE = 41
-    FLIGHT_LOG_FIELD_CONDITION_SURFACE = 42
-    FLIGHT_LOG_FIELD_CONDITION_FIXED_WING_NAV = 43
-    FLIGHT_LOG_FIELD_CONDITION_MC_NAV = 44
-    FLIGHT_LOG_FIELD_CONDITION_RSSI = 45
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 = 46
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1 = 47
-    FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2 = 48
-    FLIGHT_LOG_FIELD_CONDITION_NOT_LOGGING_EVERY_FRAME = 49
-    FLIGHT_LOG_FIELD_CONDITION_DEBUG = 50
-    FLIGHT_LOG_FIELD_CONDITION_NAV_ACC = 51
-    FLIGHT_LOG_FIELD_CONDITION_NAV_POS = 52
-    FLIGHT_LOG_FIELD_CONDITION_NAV_PID = 53
-    FLIGHT_LOG_FIELD_CONDITION_ACC = 54
-    FLIGHT_LOG_FIELD_CONDITION_ATTITUDE = 55
-    FLIGHT_LOG_FIELD_CONDITION_RC_DATA = 56
-    FLIGHT_LOG_FIELD_CONDITION_RC_COMMAND = 57
-    FLIGHT_LOG_FIELD_CONDITION_GYRO_RAW = 58
-    FLIGHT_LOG_FIELD_CONDITION_GYRO_PEAKS_ROLL = 59
-    FLIGHT_LOG_FIELD_CONDITION_GYRO_PEAKS_PITCH = 60
-    FLIGHT_LOG_FIELD_CONDITION_GYRO_PEAKS_YAW = 61
-    FLIGHT_LOG_FIELD_CONDITION_NEVER = 62
-    FLIGHT_LOG_FIELD_CONDITION_FIRST = 0
-    FLIGHT_LOG_FIELD_CONDITION_LAST = 62
-
-
-class FlightLogFieldEncoding(IntEnum):
-    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
-
-    FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB = 0
-    FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB = 1
-    FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT = 3
-    FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB = 6
-    FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32 = 7
-    FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16 = 8
-    FLIGHT_LOG_FIELD_ENCODING_NULL = 9
-
-
-class FlightLogFieldPredictor(IntEnum):
-    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
-
-    FLIGHT_LOG_FIELD_PREDICTOR_0 = 0
-    FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS = 1
-    FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE = 2
-    FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2 = 3
-    FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE = 4
-    FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0 = 5
-    FLIGHT_LOG_FIELD_PREDICTOR_INC = 6
-    FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD = 7
-    FLIGHT_LOG_FIELD_PREDICTOR_1500 = 8
-    FLIGHT_LOG_FIELD_PREDICTOR_VBATREF = 9
-    FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10
-
-
-class FlightLogFieldSign(IntEnum):
-    """From inav/src/main/blackbox/blackbox_fielddefs.h"""
-
-    FLIGHT_LOG_FIELD_UNSIGNED = 0
-    FLIGHT_LOG_FIELD_SIGNED = 1
+    ANGLE_MODE = 1
+    HORIZON_MODE = 2
+    HEADING_MODE = 4
+    NAV_ALTHOLD_MODE = 8
+    NAV_RTH_MODE = 16
+    NAV_POSHOLD_MODE = 32
+    HEADFREE_MODE = 64
+    NAV_LAUNCH_MODE = 128
+    MANUAL_MODE = 256
+    FAILSAFE_MODE = 512
+    AUTO_TUNE = 1024
+    NAV_WP_MODE = 2048
+    NAV_COURSE_HOLD_MODE = 4096
+    FLAPERON = 8192
+    TURN_ASSISTANT = 16384
+    TURTLE_MODE = 32768
+    SOARING_MODE = 65536
+    ANGLEHOLD_MODE = 131072
+    NAV_FW_AUTOLAND = 262144
+    NAV_SEND_TO = 524288
 
 
 class flightModeForTelemetry_e(IntEnum):
@@ -1438,6 +1836,14 @@ class flightModeForTelemetry_e(IntEnum):
     FLM_FAILSAFE = 12
     FLM_ANGLEHOLD = 13
     FLM_COUNT = 14
+
+
+class flight_dynamics_index_t(IntEnum):
+    """From inav/src/main/common/axis.h"""
+
+    FD_ROLL = 0
+    FD_PITCH = 1
+    FD_YAW = 2
 
 
 class flyingPlatformType_e(IntEnum):
@@ -1486,6 +1892,16 @@ class frskyOSDColor_e(IntEnum):
     FRSKY_OSD_COLOR_GRAY = 3
 
 
+class frskyOSDLineOutlineType_e(IntEnum):
+    """From inav/src/main/io/frsky_osd.h"""
+
+    FRSKY_OSD_OUTLINE_TYPE_NONE = 0
+    FRSKY_OSD_OUTLINE_TYPE_TOP = 1
+    FRSKY_OSD_OUTLINE_TYPE_RIGHT = 2
+    FRSKY_OSD_OUTLINE_TYPE_BOTTOM = 4
+    FRSKY_OSD_OUTLINE_TYPE_LEFT = 8
+
+
 class frskyOSDRecvState_e(IntEnum):
     """From inav/src/main/io/frsky_osd.c"""
 
@@ -1497,12 +1913,41 @@ class frskyOSDRecvState_e(IntEnum):
     RECV_STATE_DONE = 5
 
 
-class fw_autotune_rate_adjustment_e(IntEnum):
-    """From inav/src/main/flight/pid.h"""
+class frskyOSDTransactionOptions_e(IntEnum):
+    """From inav/src/main/io/frsky_osd.h"""
 
-    FIXED = 0
-    LIMIT = 1
-    AUTO = 2
+    FRSKY_OSD_TRANSACTION_OPT_PROFILED = 1
+    FRSKY_OSD_TRANSACTION_OPT_RESET_DRAWING = 2
+
+
+class frskyOSDWidgetID_e(IntEnum):
+    """From inav/src/main/io/frsky_osd.h"""
+
+    FRSKY_OSD_WIDGET_ID_AHI = 0
+    FRSKY_OSD_WIDGET_ID_SIDEBAR_0 = 1
+    FRSKY_OSD_WIDGET_ID_SIDEBAR_1 = 2
+    FRSKY_OSD_WIDGET_ID_GRAPH_0 = 3
+    FRSKY_OSD_WIDGET_ID_GRAPH_1 = 4
+    FRSKY_OSD_WIDGET_ID_GRAPH_2 = 5
+    FRSKY_OSD_WIDGET_ID_GRAPH_3 = 6
+    FRSKY_OSD_WIDGET_ID_CHARGAUGE_0 = 7
+    FRSKY_OSD_WIDGET_ID_CHARGAUGE_1 = 8
+    FRSKY_OSD_WIDGET_ID_CHARGAUGE_2 = 9
+    FRSKY_OSD_WIDGET_ID_CHARGAUGE_3 = 10
+    FRSKY_OSD_WIDGET_ID_SIDEBAR_FIRST = 1
+    FRSKY_OSD_WIDGET_ID_SIDEBAR_LAST = 2
+    FRSKY_OSD_WIDGET_ID_GRAPH_FIRST = 3
+    FRSKY_OSD_WIDGET_ID_GRAPH_LAST = 6
+    FRSKY_OSD_WIDGET_ID_CHARGAUGE_FIRST = 7
+    FRSKY_OSD_WIDGET_ID_CHARGAUGE_LAST = 10
+
+
+class fwAutoSpeedSpdSource_e(IntEnum):
+    """From inav/src/main/navigation/navigation_private.h"""
+
+    FW_AUTO_SPD_GROUND = 0
+    FW_AUTO_SPD_AIR = 1
+    FW_AUTO_SPD_GROUND_OVERRIDE = 2
 
 
 class fwAutolandApproachDirection_e(IntEnum):
@@ -1533,12 +1978,12 @@ class fwAutolandWaypoint_t(IntEnum):
     FW_AUTOLAND_WP_COUNT = 3
 
 
-class fwAutoSpeedSpdSource_e(IntEnum):
-    """From inav/src/main/navigation/navigation_private.h"""
+class fw_autotune_rate_adjustment_e(IntEnum):
+    """From inav/src/main/flight/pid.h"""
 
-    FW_AUTO_SPD_GROUND = 0
-    FW_AUTO_SPD_AIR = 1
-    FW_AUTO_SPD_GROUND_OVERRIDE = 2
+    FIXED = 0
+    LIMIT = 1
+    AUTO = 2
 
 
 class geoAltitudeConversionMode_e(IntEnum):
@@ -1657,6 +2102,15 @@ class gimbalHeadtrackerState_e(IntEnum):
     WAITING_CRCL = 4
 
 
+class gimbal_htk_mode_e(IntEnum):
+    """From inav/src/main/drivers/gimbal_common.h"""
+
+    GIMBAL_MODE_FOLLOW = 0
+    GIMBAL_MODE_TILT_LOCK = 1
+    GIMBAL_MODE_ROLL_LOCK = 2
+    GIMBAL_MODE_PAN_LOCK = 4
+
+
 class gpsAutoBaud_e(IntEnum):
     """From inav/src/main/io/gps.h"""
 
@@ -1734,16 +2188,6 @@ class gpsState_e(IntEnum):
     GPS_LOST_COMMUNICATION = 3
 
 
-class gyro_fsr_e(IntEnum):
-    """From inav/src/main/drivers/accgyro/accgyro_mpu.h"""
-
-    INV_FSR_250DPS = 0
-    INV_FSR_500DPS = 1
-    INV_FSR_1000DPS = 2
-    INV_FSR_2000DPS = 3
-    NUM_GYRO_FSR = 4
-
-
 class gyroFilterMode_e(IntEnum):
     """From inav/src/main/sensors/gyro.h"""
 
@@ -1782,12 +2226,14 @@ class gyroSensor_e(IntEnum):
     GYRO_FAKE = 13
 
 
-class HardwareMotorTypes_e(IntEnum):
-    """From inav/src/main/drivers/pwm_esc_detect.h"""
+class gyro_fsr_e(IntEnum):
+    """From inav/src/main/drivers/accgyro/accgyro_mpu.h"""
 
-    MOTOR_UNKNOWN = 0
-    MOTOR_BRUSHED = 1
-    MOTOR_BRUSHLESS = 2
+    INV_FSR_250DPS = 0
+    INV_FSR_500DPS = 1
+    INV_FSR_1000DPS = 2
+    INV_FSR_2000DPS = 3
+    NUM_GYRO_FSR = 4
 
 
 class hardwareSensorStatus_e(IntEnum):
@@ -1808,6 +2254,34 @@ class headTrackerDevType_e(IntEnum):
     HEADTRACKER_UNKNOWN = 255
 
 
+class hottEamAlarm1Flag_e(IntEnum):
+    """From inav/src/main/telemetry/hott.h"""
+
+    HOTT_EAM_ALARM1_FLAG_NONE = 0
+    HOTT_EAM_ALARM1_FLAG_MAH = 1
+    HOTT_EAM_ALARM1_FLAG_BATTERY_1 = 2
+    HOTT_EAM_ALARM1_FLAG_BATTERY_2 = 4
+    HOTT_EAM_ALARM1_FLAG_TEMPERATURE_1 = 8
+    HOTT_EAM_ALARM1_FLAG_TEMPERATURE_2 = 16
+    HOTT_EAM_ALARM1_FLAG_ALTITUDE = 32
+    HOTT_EAM_ALARM1_FLAG_CURRENT = 64
+    HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE = 128
+
+
+class hottEamAlarm2Flag_e(IntEnum):
+    """From inav/src/main/telemetry/hott.h"""
+
+    HOTT_EAM_ALARM2_FLAG_NONE = 0
+    HOTT_EAM_ALARM2_FLAG_MS = 1
+    HOTT_EAM_ALARM2_FLAG_M3S = 2
+    HOTT_EAM_ALARM2_FLAG_ALTITUDE_DUPLICATE = 4
+    HOTT_EAM_ALARM2_FLAG_MS_DUPLICATE = 8
+    HOTT_EAM_ALARM2_FLAG_M3S_DUPLICATE = 16
+    HOTT_EAM_ALARM2_FLAG_UNKNOWN_1 = 32
+    HOTT_EAM_ALARM2_FLAG_UNKNOWN_2 = 64
+    HOTT_EAM_ALARM2_FLAG_ON_SIGN_OR_TEXT_ACTIVE = 128
+
+
 class hottState_e(IntEnum):
     """From inav/src/main/telemetry/hott.c"""
 
@@ -1824,27 +2298,6 @@ class hsvColorComponent_e(IntEnum):
     HSV_HUE = 0
     HSV_SATURATION = 1
     HSV_VALUE = 2
-
-
-class I2CDevice(IntEnum):
-    """From inav/src/main/drivers/bus_i2c.h"""
-
-    I2CINVALID = -1
-    I2CDEV_EMULATED = -1
-    I2CDEV_1 = 0
-    I2CDEV_2 = 1
-    I2CDEV_3 = 2
-    I2CDEV_4 = 3
-    I2CDEV_COUNT = 4
-
-
-class I2CSpeed(IntEnum):
-    """From inav/src/main/drivers/bus_i2c.h"""
-
-    I2C_SPEED_100KHZ = 2
-    I2C_SPEED_200KHZ = 3
-    I2C_SPEED_400KHZ = 0
-    I2C_SPEED_800KHZ = 1
 
 
 class i2cState_t(IntEnum):
@@ -1879,6 +2332,51 @@ class i2cTransferDirection_t(IntEnum):
 
     I2C_TXN_READ = 0
     I2C_TXN_WRITE = 1
+
+
+class i2c_mem_address_width_type(IntEnum):
+    """From inav/src/main/drivers/i2c_application.h"""
+
+    I2C_MEM_ADDR_WIDIH_8 = 1
+    I2C_MEM_ADDR_WIDIH_16 = 2
+
+
+class i2c_mode_type(IntEnum):
+    """From inav/src/main/drivers/i2c_application.h"""
+
+    I2C_INT_MA_TX = 0
+    I2C_INT_MA_RX = 1
+    I2C_INT_SLA_TX = 2
+    I2C_INT_SLA_RX = 3
+    I2C_DMA_MA_TX = 4
+    I2C_DMA_MA_RX = 5
+    I2C_DMA_SLA_TX = 6
+    I2C_DMA_SLA_RX = 7
+
+
+class i2c_status_type(IntEnum):
+    """From inav/src/main/drivers/i2c_application.h"""
+
+    I2C_OK = 0
+    I2C_ERR_STEP_1 = 1
+    I2C_ERR_STEP_2 = 2
+    I2C_ERR_STEP_3 = 3
+    I2C_ERR_STEP_4 = 4
+    I2C_ERR_STEP_5 = 5
+    I2C_ERR_STEP_6 = 6
+    I2C_ERR_STEP_7 = 7
+    I2C_ERR_STEP_8 = 8
+    I2C_ERR_STEP_9 = 9
+    I2C_ERR_STEP_10 = 10
+    I2C_ERR_STEP_11 = 11
+    I2C_ERR_STEP_12 = 12
+    I2C_ERR_TCRLD = 13
+    I2C_ERR_TDC = 14
+    I2C_ERR_ADDR = 15
+    I2C_ERR_STOP = 16
+    I2C_ERR_ACKFAIL = 17
+    I2C_ERR_TIMEOUT = 18
+    I2C_ERR_INTERRUPT = 19
 
 
 class ibusCommand_e(IntEnum):
@@ -2013,6 +2511,14 @@ class icm42605Variant_e(IntEnum):
     ICM42605_VARIANT_42605 = 0
     ICM42605_VARIANT_42686P = 1
     ICM42605_VARIANT_42688P = 2
+
+
+class imu_inertia_comp_method_e(IntEnum):
+    """From inav/src/main/flight/imu.h"""
+
+    COMPMETHOD_VELNED = 0
+    COMPMETHOD_TURNRATE = 1
+    COMPMETHOD_ADAPTIVE = 2
 
 
 class inputSource_e(IntEnum):
@@ -2160,6 +2666,51 @@ class ledSpecialColorIds_e(IntEnum):
     LED_SCOLOR_GPSNOLOCK = 6
     LED_SCOLOR_GPSLOCKED = 7
     LED_SCOLOR_STROBE = 8
+
+
+class logTopic_e(IntEnum):
+    """From inav/src/main/common/log.h"""
+
+    LOG_TOPIC_SYSTEM = 0
+    LOG_TOPIC_GYRO = 1
+    LOG_TOPIC_BARO = 2
+    LOG_TOPIC_PITOT = 3
+    LOG_TOPIC_PWM = 4
+    LOG_TOPIC_TIMER = 5
+    LOG_TOPIC_IMU = 6
+    LOG_TOPIC_TEMPERATURE = 7
+    LOG_TOPIC_POS_ESTIMATOR = 8
+    LOG_TOPIC_VTX = 9
+    LOG_TOPIC_OSD = 10
+    LOG_TOPIC_CAN = 11
+    LOG_TOPIC_TERRAIN = 12
+    LOG_TOPIC_COUNT = 13
+
+
+class logicConditionFlags_e(IntEnum):
+    """From inav/src/main/programming/logic_condition.h"""
+
+    LOGIC_CONDITION_FLAG_LATCH = 1
+    LOGIC_CONDITION_FLAG_TIMEOUT_SATISFIED = 2
+
+
+class logicConditionsGlobalFlags_t(IntEnum):
+    """From inav/src/main/programming/logic_condition.h"""
+
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_ARMING_SAFETY = 1
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_THROTTLE_SCALE = 2
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_SWAP_ROLL_YAW = 4
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_INVERT_ROLL = 8
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_INVERT_PITCH = 16
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_INVERT_YAW = 32
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_THROTTLE = 64
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_OSD_LAYOUT = 128
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_RC_CHANNEL = 256
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_LOITER_RADIUS = 512
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_FLIGHT_AXIS = 1024
+    LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_GPS_FIX = 2048
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_MIN_GROUND_SPEED = 4096
+    LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_AUTOSPEED_AIRSPEED = 8192
 
 
 class logicFlightModeOperands_e(IntEnum):
@@ -2345,89 +2896,6 @@ class logicWaypointOperands_e(IntEnum):
     LOGIC_CONDITION_OPERAND_WAYPOINTS_USER4_ACTION_NEXT_WP = 13
 
 
-class logTopic_e(IntEnum):
-    """From inav/src/main/common/log.h"""
-
-    LOG_TOPIC_SYSTEM = 0
-    LOG_TOPIC_GYRO = 1
-    LOG_TOPIC_BARO = 2
-    LOG_TOPIC_PITOT = 3
-    LOG_TOPIC_PWM = 4
-    LOG_TOPIC_TIMER = 5
-    LOG_TOPIC_IMU = 6
-    LOG_TOPIC_TEMPERATURE = 7
-    LOG_TOPIC_POS_ESTIMATOR = 8
-    LOG_TOPIC_VTX = 9
-    LOG_TOPIC_OSD = 10
-    LOG_TOPIC_CAN = 11
-    LOG_TOPIC_TERRAIN = 12
-    LOG_TOPIC_COUNT = 13
-
-
-class lsm6dxxConfigMasks_e(IntEnum):
-    """From inav/src/main/drivers/accgyro/accgyro_lsm6dxx.h"""
-
-    LSM6DXX_MASK_COUNTER_BDR1 = 128
-    LSM6DXX_MASK_CTRL3_C = 60
-    LSM6DXX_MASK_CTRL3_C_RESET = 1
-    LSM6DXX_MASK_CTRL4_C = 14
-    LSM6DXX_MASK_CTRL6_C = 23
-    LSM6DXX_MASK_CTRL7_G = 112
-    LSM6DXX_MASK_CTRL9_XL = 2
-    LSM6DSL_MASK_CTRL6_C = 19
-
-
-class lsm6dxxConfigValues_e(IntEnum):
-    """From inav/src/main/drivers/accgyro/accgyro_lsm6dxx.h"""
-
-    LSM6DXX_VAL_COUNTER_BDR1_DDRY_PM = 128
-    LSM6DXX_VAL_INT1_CTRL = 2
-    LSM6DXX_VAL_INT2_CTRL = 0
-    LSM6DXX_VAL_CTRL1_XL_ODR833 = 7
-    LSM6DXX_VAL_CTRL1_XL_ODR1667 = 8
-    LSM6DXX_VAL_CTRL1_XL_ODR3332 = 9
-    LSM6DXX_VAL_CTRL1_XL_ODR3333 = 10
-    LSM6DXX_VAL_CTRL1_XL_8G = 3
-    LSM6DXX_VAL_CTRL1_XL_16G = 1
-    LSM6DXX_VAL_CTRL1_XL_LPF1 = 0
-    LSM6DXX_VAL_CTRL1_XL_LPF2 = 1
-    LSM6DXX_VAL_CTRL2_G_ODR6664 = 10
-    LSM6DXX_VAL_CTRL2_G_2000DPS = 3
-    LSM6DXX_VAL_CTRL3_C_BDU = 64
-    LSM6DXX_VAL_CTRL3_C_H_LACTIVE = 0
-    LSM6DXX_VAL_CTRL3_C_PP_OD = 0
-    LSM6DXX_VAL_CTRL3_C_SIM = 0
-    LSM6DXX_VAL_CTRL3_C_IF_INC = 4
-    LSM6DXX_VAL_CTRL4_C_DRDY_MASK = 8
-    LSM6DXX_VAL_CTRL4_C_I2C_DISABLE = 4
-    LSM6DXX_VAL_CTRL4_C_LPF1_SEL_G = 2
-    LSM6DXX_VAL_CTRL6_C_XL_HM_MODE = 0
-    LSM6DXX_VAL_CTRL6_C_FTYPE_300HZ = 0
-    LSM6DXX_VAL_CTRL6_C_FTYPE_201HZ = 1
-    LSM6DXX_VAL_CTRL6_C_FTYPE_102HZ = 2
-    LSM6DXX_VAL_CTRL6_C_FTYPE_603HZ = 3
-    LSM6DXX_VAL_CTRL7_G_HP_EN_G = 64
-    LSM6DXX_VAL_CTRL7_G_HPM_G_16 = 0
-    LSM6DXX_VAL_CTRL7_G_HPM_G_65 = 1
-    LSM6DXX_VAL_CTRL7_G_HPM_G_260 = 2
-    LSM6DXX_VAL_CTRL7_G_HPM_G_1040 = 3
-    LSM6DXX_VAL_CTRL9_XL_I3C_DISABLE = 2
-    LSM6DXX_VAL_CTRL1_XL_V_OPMODE_HIGH_ACCURACY = 1
-    LSM6DXX_VAL_CTRL1_XL_V_ODR_1000HZ_HAODR1 = 9
-    LSM6DXX_VAL_CTRL2_G_V_OPMODE_HIGH_ACCURACY = 1
-    LSM6DXX_VAL_CTRL2_G_V_ODR_8000HZ_HAODR1 = 12
-    LSM6DXX_VAL_HAODR_CFG_MODE1 = 1
-    LSM6DXX_VAL_CTRL6_C_V_FS_G_2000DPS = 4
-    LSM6DXX_VAL_CTRL6_C_V_DSK320X_RESERVED_BIT3 = 8
-    LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_288HZ = 0
-    LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_215HZ = 1
-    LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_157HZ = 2
-    LSM6DXX_VAL_CTRL6_C_V_LPF1_BW_455HZ = 3
-    LSM6DXX_VAL_CTRL7_G_V_LPF1_EN = 1
-    LSM6DXX_VAL_CTRL8_XL_V_FS_16G = 3
-    LSM6DXX_VAL_CTRL4_C_V_DRDY_PULSED = 2
-
-
 class lsm6dxxRegister_e(IntEnum):
     """From inav/src/main/drivers/accgyro/accgyro_lsm6dxx.h"""
 
@@ -2461,6 +2929,14 @@ class lsm6dxxRegister_e(IntEnum):
     LSM6DXX_REG_OUTZ_L_A = 44
     LSM6DXX_REG_OUTZ_H_A = 45
     LSM6DXX_REG_HAODR_CFG = 98
+
+
+class ltmUpdateRate_e(IntEnum):
+    """From inav/src/main/telemetry/telemetry.h"""
+
+    LTM_RATE_NORMAL = 0
+    LTM_RATE_MEDIUM = 1
+    LTM_RATE_SLOW = 2
 
 
 class ltm_frame_e(IntEnum):
@@ -2503,14 +2979,6 @@ class ltm_modes_e(IntEnum):
     LTM_MODE_AUTOTUNE = 21
 
 
-class ltmUpdateRate_e(IntEnum):
-    """From inav/src/main/telemetry/telemetry.h"""
-
-    LTM_RATE_NORMAL = 0
-    LTM_RATE_MEDIUM = 1
-    LTM_RATE_SLOW = 2
-
-
 class magSensor_e(IntEnum):
     """From inav/src/main/sensors/compass.h"""
 
@@ -2518,7 +2986,7 @@ class magSensor_e(IntEnum):
     MAG_AUTODETECT = 1
     MAG_HMC5883 = 2
     MAG_AK8975 = 3
-    MAG3110 = 4
+    MAG_MAG3110 = 4
     MAG_AK8963 = 5
     MAG_IST8310 = 6
     MAG_QMC5883 = 7
@@ -2696,6 +3164,14 @@ class mspSDCardState_e(IntEnum):
     MSP_SDCARD_STATE_READY = 4
 
 
+class multiFunctionFlags_e(IntEnum):
+    """From inav/src/main/fc/multifunction.h"""
+
+    MF_SUSPEND_SAFEHOMES = 1
+    MF_SUSPEND_TRACKBACK = 2
+    MF_TURTLE_MODE = 4
+
+
 class multi_function_e(IntEnum):
     """From inav/src/main/fc/multifunction.h"""
 
@@ -2707,6 +3183,295 @@ class multi_function_e(IntEnum):
     MULTI_FUNC_5 = 5
     MULTI_FUNC_6 = 6
     MULTI_FUNC_END = 7
+
+
+class navAGLEstimateQuality_e(IntEnum):
+    """From inav/src/main/navigation/navigation_pos_estimator_private.h"""
+
+    SURFACE_QUAL_LOW = 0
+    SURFACE_QUAL_MID = 1
+    SURFACE_QUAL_HIGH = 2
+
+
+class navArmingBlocker_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_ARMING_BLOCKER_NONE = 0
+    NAV_ARMING_BLOCKER_MISSING_GPS_FIX = 1
+    NAV_ARMING_BLOCKER_NAV_IS_ALREADY_ACTIVE = 2
+    NAV_ARMING_BLOCKER_FIRST_WAYPOINT_TOO_FAR = 3
+    NAV_ARMING_BLOCKER_JUMP_WAYPOINT_ERROR = 4
+
+
+class navDefaultAltitudeSensor_e(IntEnum):
+    """From inav/src/main/navigation/navigation_pos_estimator_private.h"""
+
+    ALTITUDE_SOURCE_GPS = 0
+    ALTITUDE_SOURCE_BARO = 1
+    ALTITUDE_SOURCE_GPS_ONLY = 2
+    ALTITUDE_SOURCE_BARO_ONLY = 3
+
+
+class navExtraArmingSafety_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_EXTRA_ARMING_SAFETY_ON = 0
+    NAV_EXTRA_ARMING_SAFETY_ALLOW_BYPASS = 1
+
+
+class navFwLaunchStatus_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    FW_LAUNCH_DETECTED = 5
+    FW_LAUNCH_ABORTED = 10
+    FW_LAUNCH_FLYING = 11
+
+
+class navMcAltHoldThrottle_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    MC_ALT_HOLD_STICK = 0
+    MC_ALT_HOLD_MID = 1
+    MC_ALT_HOLD_HOVER = 2
+
+
+class navMissionRestart_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    WP_MISSION_START = 0
+    WP_MISSION_RESUME = 1
+    WP_MISSION_SWITCH = 2
+
+
+class navMissionUserAction_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_MISSION_USER_ACTION_OFF = 0
+    NAV_MISSION_USER_ACTION_1 = 1
+    NAV_MISSION_USER_ACTION_2 = 2
+    NAV_MISSION_USER_ACTION_3 = 3
+    NAV_MISSION_USER_ACTION_4 = 4
+
+
+class navMissionVtolTransitionDisposition_e(IntEnum):
+    """From inav/src/main/navigation/navigation.c"""
+
+    NAV_MISSION_VTOL_TRANSITION_NONE = 0
+    NAV_MISSION_VTOL_TRANSITION_CONTINUE = 1
+    NAV_MISSION_VTOL_TRANSITION_WAIT = 2
+    NAV_MISSION_VTOL_TRANSITION_START = 3
+    NAV_MISSION_VTOL_TRANSITION_FAIL_ACTION = 4
+    NAV_MISSION_VTOL_TRANSITION_REJECT = 5
+
+
+class navMissionVtolTransitionPrecondition_e(IntEnum):
+    """From inav/src/main/navigation/navigation_vtol_mission_logic.h"""
+
+    NAV_MISSION_VTOL_PRECONDITION_READY = 0
+    NAV_MISSION_VTOL_PRECONDITION_WAIT = 1
+    NAV_MISSION_VTOL_PRECONDITION_REJECT = 2
+
+
+class navMissionVtolTransitionStartValidation_e(IntEnum):
+    """From inav/src/main/navigation/navigation_vtol_mission_logic.h"""
+
+    NAV_MISSION_VTOL_START_VALIDATION_READY = 0
+    NAV_MISSION_VTOL_START_VALIDATION_FAIL_ACTION = 1
+    NAV_MISSION_VTOL_START_VALIDATION_REJECT = 2
+
+
+class navMixerATRetryScanResult_e(IntEnum):
+    """From inav/src/main/navigation/navigation.c"""
+
+    NAV_MIXERAT_RETRY_SCAN_IN_PROGRESS = 0
+    NAV_MIXERAT_RETRY_SCAN_READY_TO_RETRY = 1
+    NAV_MIXERAT_RETRY_SCAN_FAILED = 2
+
+
+class navMixerATRetryStage_e(IntEnum):
+    """From inav/src/main/navigation/navigation.c"""
+
+    NAV_MIXERAT_RETRY_STAGE_IDLE = 0
+    NAV_MIXERAT_RETRY_STAGE_SCAN = 1
+    NAV_MIXERAT_RETRY_STAGE_ALIGN = 2
+
+
+class navOverridesMotorStop_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NOMS_OFF_ALWAYS = 0
+    NOMS_OFF = 1
+    NOMS_AUTO_ONLY = 2
+    NOMS_ALL_NAV = 3
+
+
+class navPositionEstimationFlags_e(IntEnum):
+    """From inav/src/main/navigation/navigation_pos_estimator_private.h"""
+
+    EST_GPS_XY_VALID = 1
+    EST_GPS_Z_VALID = 2
+    EST_BARO_VALID = 4
+    EST_SURFACE_VALID = 8
+    EST_FLOW_VALID = 16
+    EST_XY_VALID = 32
+    EST_Z_VALID = 64
+
+
+class navRTHAllowLanding_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_RTH_ALLOW_LANDING_NEVER = 0
+    NAV_RTH_ALLOW_LANDING_ALWAYS = 1
+    NAV_RTH_ALLOW_LANDING_FS_ONLY = 2
+
+
+class navRTHClimbFirst_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    RTH_CLIMB_OFF = 0
+    RTH_CLIMB_ON = 1
+    RTH_CLIMB_ON_FW_SPIRAL = 2
+
+
+class navSetWaypointFlags_t(IntEnum):
+    """From inav/src/main/navigation/navigation_private.h"""
+
+    NAV_POS_UPDATE_NONE = 0
+    NAV_POS_UPDATE_Z = 2
+    NAV_POS_UPDATE_XY = 1
+    NAV_POS_UPDATE_HEADING = 4
+    NAV_POS_UPDATE_BEARING = 8
+    NAV_POS_UPDATE_BEARING_TAIL_FIRST = 16
+
+
+class navSystemStatus_Error_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    MW_NAV_ERROR_NONE = 0
+    MW_NAV_ERROR_TOOFAR = 1
+    MW_NAV_ERROR_SPOILED_GPS = 2
+    MW_NAV_ERROR_WP_CRC = 3
+    MW_NAV_ERROR_FINISH = 4
+    MW_NAV_ERROR_TIMEWAIT = 5
+    MW_NAV_ERROR_INVALID_JUMP = 6
+    MW_NAV_ERROR_INVALID_DATA = 7
+    MW_NAV_ERROR_WAIT_FOR_RTH_ALT = 8
+    MW_NAV_ERROR_GPS_FIX_LOST = 9
+    MW_NAV_ERROR_DISARMED = 10
+    MW_NAV_ERROR_LANDING = 11
+
+
+class navSystemStatus_Flags_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    MW_NAV_FLAG_ADJUSTING_POSITION = 1
+    MW_NAV_FLAG_ADJUSTING_ALTITUDE = 2
+
+
+class navSystemStatus_Mode_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    MW_GPS_MODE_NONE = 0
+    MW_GPS_MODE_HOLD = 1
+    MW_GPS_MODE_RTH = 2
+    MW_GPS_MODE_NAV = 3
+    MW_GPS_MODE_EMERG = 15
+
+
+class navSystemStatus_State_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    MW_NAV_STATE_NONE = 0
+    MW_NAV_STATE_RTH_START = 1
+    MW_NAV_STATE_RTH_ENROUTE = 2
+    MW_NAV_STATE_HOLD_INFINIT = 3
+    MW_NAV_STATE_HOLD_TIMED = 4
+    MW_NAV_STATE_WP_ENROUTE = 5
+    MW_NAV_STATE_PROCESS_NEXT = 6
+    MW_NAV_STATE_DO_JUMP = 7
+    MW_NAV_STATE_LAND_START = 8
+    MW_NAV_STATE_LAND_IN_PROGRESS = 9
+    MW_NAV_STATE_LANDED = 10
+    MW_NAV_STATE_LAND_SETTLE = 11
+    MW_NAV_STATE_LAND_START_DESCENT = 12
+    MW_NAV_STATE_HOVER_ABOVE_HOME = 13
+    MW_NAV_STATE_EMERGENCY_LANDING = 14
+    MW_NAV_STATE_RTH_CLIMB = 15
+
+
+class navVtolMixerATMode_e(IntEnum):
+    """From inav/src/main/navigation/navigation_vtol_mission_logic.h"""
+
+    NAV_VTOL_MIXERAT_MODE_NONE = 0
+    NAV_VTOL_MIXERAT_MODE_WAYPOINT = 1
+    NAV_VTOL_MIXERAT_MODE_RTH = 2
+    NAV_VTOL_MIXERAT_MODE_LAND = 3
+    NAV_VTOL_MIXERAT_MODE_POSHOLD = 4
+    NAV_VTOL_MIXERAT_MODE_EMERGENCY_LANDING = 5
+
+
+class navVtolTransitionFailActionFwToMc_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_IDLE = 0
+    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_LOITER = 1
+    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_RTH = 2
+    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_EMERGENCY_LANDING = 3
+    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_FORCE_SWITCH = 4
+
+
+class navVtolTransitionFailActionMcToFw_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_IDLE = 0
+    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_POSH = 1
+    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_RTH = 2
+    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_EMERGENCY_LANDING = 3
+
+
+class navVtolTransitionOsdState_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_VTOL_TRANSITION_OSD_NONE = 0
+    NAV_VTOL_TRANSITION_OSD_RETRY_SCAN = 1
+    NAV_VTOL_TRANSITION_OSD_RETRY_ALIGN = 2
+
+
+class navWaypointActions_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_WP_ACTION_WAYPOINT = 1
+    NAV_WP_ACTION_HOLD_TIME = 3
+    NAV_WP_ACTION_RTH = 4
+    NAV_WP_ACTION_SET_POI = 5
+    NAV_WP_ACTION_JUMP = 6
+    NAV_WP_ACTION_SET_HEAD = 7
+    NAV_WP_ACTION_LAND = 8
+
+
+class navWaypointFlags_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_WP_FLAG_HOME = 72
+    NAV_WP_FLAG_LAST = 165
+
+
+class navWaypointHeadings_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_WP_HEAD_MODE_NONE = 0
+    NAV_WP_HEAD_MODE_POI = 1
+    NAV_WP_HEAD_MODE_FIXED = 2
+
+
+class navWaypointP3Flags_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    NAV_WP_ALTMODE = 1
+    NAV_WP_USER1 = 2
+    NAV_WP_USER2 = 4
+    NAV_WP_USER3 = 8
+    NAV_WP_USER4 = 16
 
 
 class nav_control_type_e(IntEnum):
@@ -2758,48 +3523,6 @@ class nav_rth_climb_profile_e(IntEnum):
     NAV_RTH_CLIMB_STAGE_EXTRA = 1
 
 
-class navAGLEstimateQuality_e(IntEnum):
-    """From inav/src/main/navigation/navigation_pos_estimator_private.h"""
-
-    SURFACE_QUAL_LOW = 0
-    SURFACE_QUAL_MID = 1
-    SURFACE_QUAL_HIGH = 2
-
-
-class navArmingBlocker_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_ARMING_BLOCKER_NONE = 0
-    NAV_ARMING_BLOCKER_MISSING_GPS_FIX = 1
-    NAV_ARMING_BLOCKER_NAV_IS_ALREADY_ACTIVE = 2
-    NAV_ARMING_BLOCKER_FIRST_WAYPOINT_TOO_FAR = 3
-    NAV_ARMING_BLOCKER_JUMP_WAYPOINT_ERROR = 4
-
-
-class navDefaultAltitudeSensor_e(IntEnum):
-    """From inav/src/main/navigation/navigation_pos_estimator_private.h"""
-
-    ALTITUDE_SOURCE_GPS = 0
-    ALTITUDE_SOURCE_BARO = 1
-    ALTITUDE_SOURCE_GPS_ONLY = 2
-    ALTITUDE_SOURCE_BARO_ONLY = 3
-
-
-class navExtraArmingSafety_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_EXTRA_ARMING_SAFETY_ON = 0
-    NAV_EXTRA_ARMING_SAFETY_ALLOW_BYPASS = 1
-
-
-class navFwLaunchStatus_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    FW_LAUNCH_DETECTED = 5
-    FW_LAUNCH_ABORTED = 10
-    FW_LAUNCH_FLYING = 11
-
-
 class navigationEstimateStatus_e(IntEnum):
     """From inav/src/main/navigation/navigation_private.h"""
 
@@ -2849,6 +3572,30 @@ class navigationFSMEvent_t(IntEnum):
     NAV_FSM_EVENT_SWITCH_TO_RTH_LANDING = 22
     NAV_FSM_EVENT_MIXERAT_MISSION_RESUME = 23
     NAV_FSM_EVENT_COUNT = 24
+
+
+class navigationFSMStateFlags_t(IntEnum):
+    """From inav/src/main/navigation/navigation_private.h"""
+
+    NAV_CTL_ALT = 1
+    NAV_CTL_POS = 2
+    NAV_CTL_YAW = 4
+    NAV_CTL_EMERG = 8
+    NAV_CTL_LAUNCH = 16
+    NAV_REQUIRE_ANGLE = 32
+    NAV_REQUIRE_ANGLE_FW = 64
+    NAV_REQUIRE_MAGHOLD = 128
+    NAV_REQUIRE_THRTILT = 256
+    NAV_AUTO_RTH = 512
+    NAV_AUTO_WP = 1024
+    NAV_RC_ALT = 2048
+    NAV_RC_POS = 4096
+    NAV_RC_YAW = 8192
+    NAV_CTL_LAND = 16384
+    NAV_AUTO_WP_DONE = 32768
+    NAV_MIXERAT = 65536
+    NAV_CTL_HOLD = 131072
+    NAV_CTL_SPEED = 262144
 
 
 class navigationFSMState_t(IntEnum):
@@ -2974,213 +3721,6 @@ class navigationPersistentId_e(IntEnum):
     NAV_PERSISTENT_ID_MIXERAT_MISSION_CAPTURE = 52
 
 
-class navMcAltHoldThrottle_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    MC_ALT_HOLD_STICK = 0
-    MC_ALT_HOLD_MID = 1
-    MC_ALT_HOLD_HOVER = 2
-
-
-class navMissionRestart_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    WP_MISSION_START = 0
-    WP_MISSION_RESUME = 1
-    WP_MISSION_SWITCH = 2
-
-
-class navMissionUserAction_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_MISSION_USER_ACTION_OFF = 0
-    NAV_MISSION_USER_ACTION_1 = 1
-    NAV_MISSION_USER_ACTION_2 = 2
-    NAV_MISSION_USER_ACTION_3 = 3
-    NAV_MISSION_USER_ACTION_4 = 4
-
-
-class navMissionVtolTransitionDisposition_e(IntEnum):
-    """From inav/src/main/navigation/navigation.c"""
-
-    NAV_MISSION_VTOL_TRANSITION_NONE = 0
-    NAV_MISSION_VTOL_TRANSITION_CONTINUE = 1
-    NAV_MISSION_VTOL_TRANSITION_WAIT = 2
-    NAV_MISSION_VTOL_TRANSITION_START = 3
-    NAV_MISSION_VTOL_TRANSITION_FAIL_ACTION = 4
-    NAV_MISSION_VTOL_TRANSITION_REJECT = 5
-
-
-class navMissionVtolTransitionPrecondition_e(IntEnum):
-    """From inav/src/main/navigation/navigation_vtol_mission_logic.h"""
-
-    NAV_MISSION_VTOL_PRECONDITION_READY = 0
-    NAV_MISSION_VTOL_PRECONDITION_WAIT = 1
-    NAV_MISSION_VTOL_PRECONDITION_REJECT = 2
-
-
-class navMissionVtolTransitionStartValidation_e(IntEnum):
-    """From inav/src/main/navigation/navigation_vtol_mission_logic.h"""
-
-    NAV_MISSION_VTOL_START_VALIDATION_READY = 0
-    NAV_MISSION_VTOL_START_VALIDATION_FAIL_ACTION = 1
-    NAV_MISSION_VTOL_START_VALIDATION_REJECT = 2
-
-
-class navMixerATRetryScanResult_e(IntEnum):
-    """From inav/src/main/navigation/navigation.c"""
-
-    NAV_MIXERAT_RETRY_SCAN_IN_PROGRESS = 0
-    NAV_MIXERAT_RETRY_SCAN_READY_TO_RETRY = 1
-    NAV_MIXERAT_RETRY_SCAN_FAILED = 2
-
-
-class navMixerATRetryStage_e(IntEnum):
-    """From inav/src/main/navigation/navigation.c"""
-
-    NAV_MIXERAT_RETRY_STAGE_IDLE = 0
-    NAV_MIXERAT_RETRY_STAGE_SCAN = 1
-    NAV_MIXERAT_RETRY_STAGE_ALIGN = 2
-
-
-class navOverridesMotorStop_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NOMS_OFF_ALWAYS = 0
-    NOMS_OFF = 1
-    NOMS_AUTO_ONLY = 2
-    NOMS_ALL_NAV = 3
-
-
-class navRTHAllowLanding_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_RTH_ALLOW_LANDING_NEVER = 0
-    NAV_RTH_ALLOW_LANDING_ALWAYS = 1
-    NAV_RTH_ALLOW_LANDING_FS_ONLY = 2
-
-
-class navRTHClimbFirst_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    RTH_CLIMB_OFF = 0
-    RTH_CLIMB_ON = 1
-    RTH_CLIMB_ON_FW_SPIRAL = 2
-
-
-class navSystemStatus_Error_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    MW_NAV_ERROR_NONE = 0
-    MW_NAV_ERROR_TOOFAR = 1
-    MW_NAV_ERROR_SPOILED_GPS = 2
-    MW_NAV_ERROR_WP_CRC = 3
-    MW_NAV_ERROR_FINISH = 4
-    MW_NAV_ERROR_TIMEWAIT = 5
-    MW_NAV_ERROR_INVALID_JUMP = 6
-    MW_NAV_ERROR_INVALID_DATA = 7
-    MW_NAV_ERROR_WAIT_FOR_RTH_ALT = 8
-    MW_NAV_ERROR_GPS_FIX_LOST = 9
-    MW_NAV_ERROR_DISARMED = 10
-    MW_NAV_ERROR_LANDING = 11
-
-
-class navSystemStatus_Mode_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    MW_GPS_MODE_NONE = 0
-    MW_GPS_MODE_HOLD = 1
-    MW_GPS_MODE_RTH = 2
-    MW_GPS_MODE_NAV = 3
-    MW_GPS_MODE_EMERG = 15
-
-
-class navSystemStatus_State_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    MW_NAV_STATE_NONE = 0
-    MW_NAV_STATE_RTH_START = 1
-    MW_NAV_STATE_RTH_ENROUTE = 2
-    MW_NAV_STATE_HOLD_INFINIT = 3
-    MW_NAV_STATE_HOLD_TIMED = 4
-    MW_NAV_STATE_WP_ENROUTE = 5
-    MW_NAV_STATE_PROCESS_NEXT = 6
-    MW_NAV_STATE_DO_JUMP = 7
-    MW_NAV_STATE_LAND_START = 8
-    MW_NAV_STATE_LAND_IN_PROGRESS = 9
-    MW_NAV_STATE_LANDED = 10
-    MW_NAV_STATE_LAND_SETTLE = 11
-    MW_NAV_STATE_LAND_START_DESCENT = 12
-    MW_NAV_STATE_HOVER_ABOVE_HOME = 13
-    MW_NAV_STATE_EMERGENCY_LANDING = 14
-    MW_NAV_STATE_RTH_CLIMB = 15
-
-
-class navVtolMixerATMode_e(IntEnum):
-    """From inav/src/main/navigation/navigation_vtol_mission_logic.h"""
-
-    NAV_VTOL_MIXERAT_MODE_NONE = 0
-    NAV_VTOL_MIXERAT_MODE_WAYPOINT = 1
-    NAV_VTOL_MIXERAT_MODE_RTH = 2
-    NAV_VTOL_MIXERAT_MODE_LAND = 3
-    NAV_VTOL_MIXERAT_MODE_POSHOLD = 4
-    NAV_VTOL_MIXERAT_MODE_EMERGENCY_LANDING = 5
-
-
-class navVtolTransitionFailActionFwToMc_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_IDLE = 0
-    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_LOITER = 1
-    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_RTH = 2
-    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_EMERGENCY_LANDING = 3
-    NAV_VTOL_TRANSITION_FAIL_ACTION_FW_TO_MC_FORCE_SWITCH = 4
-
-
-class navVtolTransitionFailActionMcToFw_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_IDLE = 0
-    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_POSH = 1
-    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_RTH = 2
-    NAV_VTOL_TRANSITION_FAIL_ACTION_MC_TO_FW_EMERGENCY_LANDING = 3
-
-
-class navVtolTransitionOsdState_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_VTOL_TRANSITION_OSD_NONE = 0
-    NAV_VTOL_TRANSITION_OSD_RETRY_SCAN = 1
-    NAV_VTOL_TRANSITION_OSD_RETRY_ALIGN = 2
-
-
-class navWaypointActions_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_WP_ACTION_WAYPOINT = 1
-    NAV_WP_ACTION_HOLD_TIME = 3
-    NAV_WP_ACTION_RTH = 4
-    NAV_WP_ACTION_SET_POI = 5
-    NAV_WP_ACTION_JUMP = 6
-    NAV_WP_ACTION_SET_HEAD = 7
-    NAV_WP_ACTION_LAND = 8
-
-
-class navWaypointFlags_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_WP_FLAG_HOME = 72
-    NAV_WP_FLAG_LAST = 165
-
-
-class navWaypointHeadings_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_WP_HEAD_MODE_NONE = 0
-    NAV_WP_HEAD_MODE_POI = 1
-    NAV_WP_HEAD_MODE_FIXED = 2
-
-
 class noWayHomeAction(IntEnum):
     """From inav/src/main/navigation/navigation.h"""
 
@@ -3212,6 +3752,148 @@ class opticalFlowSensor_e(IntEnum):
     OPFLOW_CXOF = 1
     OPFLOW_MSP = 2
     OPFLOW_FAKE = 3
+
+
+class osdCommand_e(IntEnum):
+    """From inav/src/main/io/frsky_osd.c"""
+
+    OSD_CMD_RESPONSE_ERROR = 0
+    OSD_CMD_INFO = 1
+    OSD_CMD_READ_FONT = 2
+    OSD_CMD_WRITE_FONT = 3
+    OSD_CMD_GET_CAMERA = 4
+    OSD_CMD_SET_CAMERA = 5
+    OSD_CMD_GET_ACTIVE_CAMERA = 6
+    OSD_CMD_GET_OSD_ENABLED = 7
+    OSD_CMD_SET_OSD_ENABLED = 8
+    OSD_CMD_TRANSACTION_BEGIN = 16
+    OSD_CMD_TRANSACTION_COMMIT = 17
+    OSD_CMD_TRANSACTION_BEGIN_PROFILED = 18
+    OSD_CMD_TRANSACTION_BEGIN_RESET_DRAWING = 19
+    OSD_CMD_DRAWING_SET_STROKE_COLOR = 22
+    OSD_CMD_DRAWING_SET_FILL_COLOR = 23
+    OSD_CMD_DRAWING_SET_STROKE_AND_FILL_COLOR = 24
+    OSD_CMD_DRAWING_SET_COLOR_INVERSION = 25
+    OSD_CMD_DRAWING_SET_PIXEL = 26
+    OSD_CMD_DRAWING_SET_PIXEL_TO_STROKE_COLOR = 27
+    OSD_CMD_DRAWING_SET_PIXEL_TO_FILL_COLOR = 28
+    OSD_CMD_DRAWING_SET_STROKE_WIDTH = 29
+    OSD_CMD_DRAWING_SET_LINE_OUTLINE_TYPE = 30
+    OSD_CMD_DRAWING_SET_LINE_OUTLINE_COLOR = 31
+    OSD_CMD_DRAWING_CLIP_TO_RECT = 40
+    OSD_CMD_DRAWING_CLEAR_SCREEN = 41
+    OSD_CMD_DRAWING_CLEAR_RECT = 42
+    OSD_CMD_DRAWING_RESET = 43
+    OSD_CMD_DRAWING_DRAW_BITMAP = 44
+    OSD_CMD_DRAWING_DRAW_BITMAP_MASK = 45
+    OSD_CMD_DRAWING_DRAW_CHAR = 46
+    OSD_CMD_DRAWING_DRAW_CHAR_MASK = 47
+    OSD_CMD_DRAWING_DRAW_STRING = 48
+    OSD_CMD_DRAWING_DRAW_STRING_MASK = 49
+    OSD_CMD_DRAWING_MOVE_TO_POINT = 50
+    OSD_CMD_DRAWING_STROKE_LINE_TO_POINT = 51
+    OSD_CMD_DRAWING_STROKE_TRIANGLE = 52
+    OSD_CMD_DRAWING_FILL_TRIANGLE = 53
+    OSD_CMD_DRAWING_FILL_STROKE_TRIANGLE = 54
+    OSD_CMD_DRAWING_STROKE_RECT = 55
+    OSD_CMD_DRAWING_FILL_RECT = 56
+    OSD_CMD_DRAWING_FILL_STROKE_RECT = 57
+    OSD_CMD_DRAWING_STROKE_ELLIPSE_IN_RECT = 58
+    OSD_CMD_DRAWING_FILL_ELLIPSE_IN_RECT = 59
+    OSD_CMD_DRAWING_FILL_STROKE_ELLIPSE_IN_RECT = 60
+    OSD_CMD_CTM_RESET = 80
+    OSD_CMD_CTM_SET = 81
+    OSD_CMD_CTM_TRANSLATE = 82
+    OSD_CMD_CTM_SCALE = 83
+    OSD_CMD_CTM_ROTATE = 84
+    OSD_CMD_CTM_ROTATE_ABOUT = 85
+    OSD_CMD_CTM_SHEAR = 86
+    OSD_CMD_CTM_SHEAR_ABOUT = 87
+    OSD_CMD_CTM_MULTIPLY = 88
+    OSD_CMD_CONTEXT_PUSH = 100
+    OSD_CMD_CONTEXT_POP = 101
+    OSD_CMD_DRAW_GRID_CHR = 110
+    OSD_CMD_DRAW_GRID_STR = 111
+    OSD_CMD_DRAW_GRID_CHR_2 = 112
+    OSD_CMD_DRAW_GRID_STR_2 = 113
+    OSD_CMD_WIDGET_SET_CONFIG = 115
+    OSD_CMD_WIDGET_DRAW = 116
+    OSD_CMD_WIDGET_ERASE = 117
+    OSD_CMD_SET_DATA_RATE = 122
+
+
+class osdCustomElementTypeVisibility_e(IntEnum):
+    """From inav/src/main/io/osd/custom_elements.h"""
+
+    CUSTOM_ELEMENT_VISIBILITY_ALWAYS = 0
+    CUSTOM_ELEMENT_VISIBILITY_GV = 1
+    CUSTOM_ELEMENT_VISIBILITY_LOGIC_CON = 2
+
+
+class osdCustomElementType_e(IntEnum):
+    """From inav/src/main/io/osd/custom_elements.h"""
+
+    CUSTOM_ELEMENT_TYPE_NONE = 0
+    CUSTOM_ELEMENT_TYPE_TEXT = 1
+    CUSTOM_ELEMENT_TYPE_ICON_STATIC = 2
+    CUSTOM_ELEMENT_TYPE_ICON_GV = 3
+    CUSTOM_ELEMENT_TYPE_ICON_LC = 4
+    CUSTOM_ELEMENT_TYPE_GV_1 = 5
+    CUSTOM_ELEMENT_TYPE_GV_2 = 6
+    CUSTOM_ELEMENT_TYPE_GV_3 = 7
+    CUSTOM_ELEMENT_TYPE_GV_4 = 8
+    CUSTOM_ELEMENT_TYPE_GV_5 = 9
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_1_1 = 10
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_1_2 = 11
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_2_1 = 12
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_2_2 = 13
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_3_1 = 14
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_3_2 = 15
+    CUSTOM_ELEMENT_TYPE_GV_FLOAT_4_1 = 16
+    CUSTOM_ELEMENT_TYPE_LC_1 = 17
+    CUSTOM_ELEMENT_TYPE_LC_2 = 18
+    CUSTOM_ELEMENT_TYPE_LC_3 = 19
+    CUSTOM_ELEMENT_TYPE_LC_4 = 20
+    CUSTOM_ELEMENT_TYPE_LC_5 = 21
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_1_1 = 22
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_1_2 = 23
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_2_1 = 24
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_2_2 = 25
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_3_1 = 26
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_3_2 = 27
+    CUSTOM_ELEMENT_TYPE_LC_FLOAT_4_1 = 28
+    CUSTOM_ELEMENT_TYPE_END = 29
+
+
+class osdDrawPointType_e(IntEnum):
+    """From inav/src/main/io/osd_common.h"""
+
+    OSD_DRAW_POINT_TYPE_GRID = 0
+    OSD_DRAW_POINT_TYPE_PIXEL = 1
+
+
+class osdDriver_e(IntEnum):
+    """From inav/src/main/drivers/osd.h"""
+
+    OSD_DRIVER_NONE = 0
+    OSD_DRIVER_MAX7456 = 1
+
+
+class osdSpeedSource_e(IntEnum):
+    """From inav/src/main/io/osd_common.h"""
+
+    OSD_SPEED_SOURCE_GROUND = 0
+    OSD_SPEED_SOURCE_3D = 1
+    OSD_SPEED_SOURCE_AIR = 2
+
+
+class osd_SpeedTypes_e(IntEnum):
+    """From inav/src/main/io/osd.h"""
+
+    OSD_SPEED_TYPE_GROUND = 0
+    OSD_SPEED_TYPE_AIR = 1
+    OSD_SPEED_TYPE_3D = 2
+    OSD_SPEED_TYPE_MIN_GROUND = 3
 
 
 class osd_adsb_warning_style_e(IntEnum):
@@ -3451,15 +4133,6 @@ class osd_sidebar_scroll_e(IntEnum):
     OSD_SIDEBAR_SCROLL_MAX = 3
 
 
-class osd_SpeedTypes_e(IntEnum):
-    """From inav/src/main/io/osd.h"""
-
-    OSD_SPEED_TYPE_GROUND = 0
-    OSD_SPEED_TYPE_AIR = 1
-    OSD_SPEED_TYPE_3D = 2
-    OSD_SPEED_TYPE_MIN_GROUND = 3
-
-
 class osd_stats_energy_unit_e(IntEnum):
     """From inav/src/main/io/osd.h"""
 
@@ -3476,71 +4149,6 @@ class osd_unit_e(IntEnum):
     OSD_UNIT_UK = 3
     OSD_UNIT_GA = 4
     OSD_UNIT_MAX = 4
-
-
-class osdCustomElementType_e(IntEnum):
-    """From inav/src/main/io/osd/custom_elements.h"""
-
-    CUSTOM_ELEMENT_TYPE_NONE = 0
-    CUSTOM_ELEMENT_TYPE_TEXT = 1
-    CUSTOM_ELEMENT_TYPE_ICON_STATIC = 2
-    CUSTOM_ELEMENT_TYPE_ICON_GV = 3
-    CUSTOM_ELEMENT_TYPE_ICON_LC = 4
-    CUSTOM_ELEMENT_TYPE_GV_1 = 5
-    CUSTOM_ELEMENT_TYPE_GV_2 = 6
-    CUSTOM_ELEMENT_TYPE_GV_3 = 7
-    CUSTOM_ELEMENT_TYPE_GV_4 = 8
-    CUSTOM_ELEMENT_TYPE_GV_5 = 9
-    CUSTOM_ELEMENT_TYPE_GV_FLOAT_1_1 = 10
-    CUSTOM_ELEMENT_TYPE_GV_FLOAT_1_2 = 11
-    CUSTOM_ELEMENT_TYPE_GV_FLOAT_2_1 = 12
-    CUSTOM_ELEMENT_TYPE_GV_FLOAT_2_2 = 13
-    CUSTOM_ELEMENT_TYPE_GV_FLOAT_3_1 = 14
-    CUSTOM_ELEMENT_TYPE_GV_FLOAT_3_2 = 15
-    CUSTOM_ELEMENT_TYPE_GV_FLOAT_4_1 = 16
-    CUSTOM_ELEMENT_TYPE_LC_1 = 17
-    CUSTOM_ELEMENT_TYPE_LC_2 = 18
-    CUSTOM_ELEMENT_TYPE_LC_3 = 19
-    CUSTOM_ELEMENT_TYPE_LC_4 = 20
-    CUSTOM_ELEMENT_TYPE_LC_5 = 21
-    CUSTOM_ELEMENT_TYPE_LC_FLOAT_1_1 = 22
-    CUSTOM_ELEMENT_TYPE_LC_FLOAT_1_2 = 23
-    CUSTOM_ELEMENT_TYPE_LC_FLOAT_2_1 = 24
-    CUSTOM_ELEMENT_TYPE_LC_FLOAT_2_2 = 25
-    CUSTOM_ELEMENT_TYPE_LC_FLOAT_3_1 = 26
-    CUSTOM_ELEMENT_TYPE_LC_FLOAT_3_2 = 27
-    CUSTOM_ELEMENT_TYPE_LC_FLOAT_4_1 = 28
-    CUSTOM_ELEMENT_TYPE_END = 29
-
-
-class osdCustomElementTypeVisibility_e(IntEnum):
-    """From inav/src/main/io/osd/custom_elements.h"""
-
-    CUSTOM_ELEMENT_VISIBILITY_ALWAYS = 0
-    CUSTOM_ELEMENT_VISIBILITY_GV = 1
-    CUSTOM_ELEMENT_VISIBILITY_LOGIC_CON = 2
-
-
-class osdDrawPointType_e(IntEnum):
-    """From inav/src/main/io/osd_common.h"""
-
-    OSD_DRAW_POINT_TYPE_GRID = 0
-    OSD_DRAW_POINT_TYPE_PIXEL = 1
-
-
-class osdDriver_e(IntEnum):
-    """From inav/src/main/drivers/osd.h"""
-
-    OSD_DRIVER_NONE = 0
-    OSD_DRIVER_MAX7456 = 1
-
-
-class osdSpeedSource_e(IntEnum):
-    """From inav/src/main/io/osd_common.h"""
-
-    OSD_SPEED_SOURCE_GROUND = 0
-    OSD_SPEED_SOURCE_3D = 1
-    OSD_SPEED_SOURCE_AIR = 2
 
 
 class outputMode_e(IntEnum):
@@ -3588,6 +4196,17 @@ class pidAutotuneState_e(IntEnum):
     DEMAND_UNDERSHOOT = 1
     DEMAND_OVERSHOOT = 2
     TUNE_UPDATED = 3
+
+
+class pidControllerFlags_e(IntEnum):
+    """From inav/src/main/common/fp_pid.h"""
+
+    PID_DTERM_FROM_ERROR = 1
+    PID_ZERO_INTEGRATOR = 2
+    PID_SHRINK_INTEGRATOR = 4
+    PID_LIMIT_INTEGRATOR = 8
+    PID_FREEZE_INTEGRATOR = 16
+    PID_USING_HEADING = 32
 
 
 class pidIndex_e(IntEnum):
@@ -3654,6 +4273,25 @@ class portMode_t(IntEnum):
     MODE_RXTX = 3
 
 
+class portOptions_t(IntEnum):
+    """From inav/src/main/drivers/serial.h"""
+
+    SERIAL_NOT_INVERTED = 0
+    SERIAL_INVERTED = 1
+    SERIAL_STOPBITS_1 = 0
+    SERIAL_STOPBITS_2 = 2
+    SERIAL_PARITY_NO = 0
+    SERIAL_PARITY_EVEN = 4
+    SERIAL_UNIDIR = 0
+    SERIAL_BIDIR = 8
+    SERIAL_BIDIR_OD = 0
+    SERIAL_BIDIR_PP = 16
+    SERIAL_BIDIR_NOPULL = 32
+    SERIAL_BIDIR_UP = 0
+    SERIAL_LONGSTOP = 0
+    SERIAL_SHORTSTOP = 64
+
+
 class portSharing_e(IntEnum):
     """From inav/src/main/io/serial.h"""
 
@@ -3673,6 +4311,14 @@ class pwmInitError_e(IntEnum):
     PWM_INIT_ERROR_TIMER_INIT_FAILED = 5
 
 
+class quadSpiMode_e(IntEnum):
+    """From inav/src/main/drivers/bus_quadspi.h"""
+
+    QUADSPI_MODE_BK1_ONLY = 0
+    QUADSPI_MODE_BK2_ONLY = 1
+    QUADSPI_MODE_DUAL_FLASH = 2
+
+
 class quadrant_e(IntEnum):
     """From inav/src/main/io/ledstrip.c"""
 
@@ -3687,31 +4333,6 @@ class quadrant_e(IntEnum):
     QUADRANT_NONE = 256
     QUADRANT_NOTDIAG = 512
     QUADRANT_ANY = 271
-
-
-class QUADSPIClockDivider_e(IntEnum):
-    """From inav/src/main/drivers/bus_quadspi.h"""
-
-    QUADSPI_CLOCK_INITIALISATION = 255
-    QUADSPI_CLOCK_SLOW = 19
-    QUADSPI_CLOCK_STANDARD = 9
-    QUADSPI_CLOCK_FAST = 3
-    QUADSPI_CLOCK_ULTRAFAST = 1
-
-
-class QUADSPIDevice(IntEnum):
-    """From inav/src/main/drivers/bus_quadspi.h"""
-
-    QUADSPIINVALID = -1
-    QUADSPIDEV_1 = 0
-
-
-class quadSpiMode_e(IntEnum):
-    """From inav/src/main/drivers/bus_quadspi.h"""
-
-    QUADSPI_MODE_BK1_ONLY = 0
-    QUADSPI_MODE_BK2_ONLY = 1
-    QUADSPI_MODE_DUAL_FLASH = 2
 
 
 class rangefinderType_e(IntEnum):
@@ -3787,11 +4408,26 @@ class rcc_reg(IntEnum):
     RCC_APB4 = 11
 
 
-class RCDEVICE_5key_connection_event_e(IntEnum):
+class rcdeviceCamSimulationKeyEvent_e(IntEnum):
     """From inav/src/main/io/rcdevice.h"""
 
-    RCDEVICE_PROTOCOL_5KEY_CONNECTION_OPEN = 1
-    RCDEVICE_PROTOCOL_5KEY_CONNECTION_CLOSE = 2
+    RCDEVICE_CAM_KEY_NONE = 0
+    RCDEVICE_CAM_KEY_ENTER = 1
+    RCDEVICE_CAM_KEY_LEFT = 2
+    RCDEVICE_CAM_KEY_UP = 3
+    RCDEVICE_CAM_KEY_RIGHT = 4
+    RCDEVICE_CAM_KEY_DOWN = 5
+    RCDEVICE_CAM_KEY_CONNECTION_CLOSE = 6
+    RCDEVICE_CAM_KEY_CONNECTION_OPEN = 7
+    RCDEVICE_CAM_KEY_RELEASE = 8
+
+
+class rcdeviceResponseStatus_e(IntEnum):
+    """From inav/src/main/io/rcdevice.h"""
+
+    RCDEVICE_RESP_SUCCESS = 0
+    RCDEVICE_RESP_INCORRECT_CRC = 1
+    RCDEVICE_RESP_TIMEOUT = 2
 
 
 class rcdevice_5key_simulation_operation_e(IntEnum):
@@ -3816,34 +4452,24 @@ class rcdevice_camera_control_opeation_e(IntEnum):
     RCDEVICE_PROTOCOL_CAM_CTRL_UNKNOWN_CAMERA_OPERATION = 255
 
 
+class rcdevice_features_e(IntEnum):
+    """From inav/src/main/io/rcdevice.h"""
+
+    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON = 1
+    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON = 2
+    RCDEVICE_PROTOCOL_FEATURE_CHANGE_MODE = 4
+    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_5_KEY_OSD_CABLE = 8
+    RCDEVICE_PROTOCOL_FEATURE_START_RECORDING = 64
+    RCDEVICE_PROTOCOL_FEATURE_STOP_RECORDING = 128
+    RCDEVICE_PROTOCOL_FEATURE_CMS_MENU = 256
+
+
 class rcdevice_protocol_version_e(IntEnum):
     """From inav/src/main/io/rcdevice.h"""
 
     RCDEVICE_PROTOCOL_RCSPLIT_VERSION = 0
     RCDEVICE_PROTOCOL_VERSION_1_0 = 1
     RCDEVICE_PROTOCOL_UNKNOWN = 2
-
-
-class rcdeviceCamSimulationKeyEvent_e(IntEnum):
-    """From inav/src/main/io/rcdevice.h"""
-
-    RCDEVICE_CAM_KEY_NONE = 0
-    RCDEVICE_CAM_KEY_ENTER = 1
-    RCDEVICE_CAM_KEY_LEFT = 2
-    RCDEVICE_CAM_KEY_UP = 3
-    RCDEVICE_CAM_KEY_RIGHT = 4
-    RCDEVICE_CAM_KEY_DOWN = 5
-    RCDEVICE_CAM_KEY_CONNECTION_CLOSE = 6
-    RCDEVICE_CAM_KEY_CONNECTION_OPEN = 7
-    RCDEVICE_CAM_KEY_RELEASE = 8
-
-
-class rcdeviceResponseStatus_e(IntEnum):
-    """From inav/src/main/io/rcdevice.h"""
-
-    RCDEVICE_RESP_SUCCESS = 0
-    RCDEVICE_RESP_INCORRECT_CRC = 1
-    RCDEVICE_RESP_TIMEOUT = 2
 
 
 class resolutionType_e(IntEnum):
@@ -3970,6 +4596,16 @@ class rthTrackbackMode_e(IntEnum):
     RTH_TRACKBACK_FS = 2
 
 
+class rxFrameState_e(IntEnum):
+    """From inav/src/main/rx/rx.h"""
+
+    RX_FRAME_PENDING = 0
+    RX_FRAME_COMPLETE = 1
+    RX_FRAME_FAILSAFE = 2
+    RX_FRAME_PROCESSING_REQUIRED = 4
+    RX_FRAME_DROPPED = 8
+
+
 class rxReceiverType_e(IntEnum):
     """From inav/src/main/rx/rx.h"""
 
@@ -3999,14 +4635,6 @@ class rxSerialReceiverType_e(IntEnum):
     SERIALRX_SBUS2 = 14
 
 
-class safehomeUsageMode_e(IntEnum):
-    """From inav/src/main/navigation/navigation.h"""
-
-    SAFEHOME_USAGE_OFF = 0
-    SAFEHOME_USAGE_RTH = 1
-    SAFEHOME_USAGE_RTH_FS = 2
-
-
 class saFramerState_e(IntEnum):
     """From inav/src/main/io/vtx_smartaudio.c"""
 
@@ -4016,6 +4644,14 @@ class saFramerState_e(IntEnum):
     S_WAITLEN = 3
     S_DATA = 4
     S_WAITCRC = 5
+
+
+class safehomeUsageMode_e(IntEnum):
+    """From inav/src/main/navigation/navigation.h"""
+
+    SAFEHOME_USAGE_OFF = 0
+    SAFEHOME_USAGE_RTH = 1
+    SAFEHOME_USAGE_RTH_FS = 2
 
 
 class sbasMode_e(IntEnum):
@@ -4079,28 +4715,6 @@ class sdcardState_e(IntEnum):
     SDCARD_STATE_STOPPING_MULTIPLE_BLOCK_WRITE = 9
 
 
-class SDIODevice(IntEnum):
-    """From inav/src/main/drivers/sdio.h"""
-
-    SDIOINVALID = -1
-    SDIODEV_1 = 0
-    SDIODEV_2 = 1
-
-
-class sensor_align_e(IntEnum):
-    """From inav/src/main/drivers/sensor.h"""
-
-    ALIGN_DEFAULT = 0
-    CW0_DEG = 1
-    CW90_DEG = 2
-    CW180_DEG = 3
-    CW270_DEG = 4
-    CW0_DEG_FLIP = 5
-    CW90_DEG_FLIP = 6
-    CW180_DEG_FLIP = 7
-    CW270_DEG_FLIP = 8
-
-
 class sensorIndex_e(IntEnum):
     """From inav/src/main/sensors/sensors.h"""
 
@@ -4120,6 +4734,69 @@ class sensorTempCalState_e(IntEnum):
     SENSOR_TEMP_CAL_INITIALISE = 0
     SENSOR_TEMP_CAL_IN_PROGRESS = 1
     SENSOR_TEMP_CAL_COMPLETE = 2
+
+
+class sensor_align_e(IntEnum):
+    """From inav/src/main/drivers/sensor.h"""
+
+    ALIGN_DEFAULT = 0
+    CW0_DEG = 1
+    CW90_DEG = 2
+    CW180_DEG = 3
+    CW270_DEG = 4
+    CW0_DEG_FLIP = 5
+    CW90_DEG_FLIP = 6
+    CW180_DEG_FLIP = 7
+    CW270_DEG_FLIP = 8
+
+
+class sensors_e(IntEnum):
+    """From inav/src/main/sensors/sensors.h"""
+
+    SENSOR_GYRO = 1
+    SENSOR_ACC = 2
+    SENSOR_BARO = 4
+    SENSOR_MAG = 8
+    SENSOR_RANGEFINDER = 16
+    SENSOR_PITOT = 32
+    SENSOR_OPFLOW = 64
+    SENSOR_GPS = 128
+    SENSOR_GPSMAG = 256
+    SENSOR_TEMP = 512
+
+
+class serialPortFunction_e(IntEnum):
+    """From inav/src/main/io/serial.h"""
+
+    FUNCTION_NONE = 0
+    FUNCTION_MSP = 1
+    FUNCTION_GPS = 2
+    FUNCTION_UNUSED_3 = 4
+    FUNCTION_TELEMETRY_HOTT = 8
+    FUNCTION_TELEMETRY_LTM = 16
+    FUNCTION_TELEMETRY_SMARTPORT = 32
+    FUNCTION_RX_SERIAL = 64
+    FUNCTION_BLACKBOX = 128
+    FUNCTION_TELEMETRY_MAVLINK = 256
+    FUNCTION_TELEMETRY_IBUS = 512
+    FUNCTION_RCDEVICE = 1024
+    FUNCTION_VTX_SMARTAUDIO = 2048
+    FUNCTION_VTX_TRAMP = 4096
+    FUNCTION_UNUSED_1 = 8192
+    FUNCTION_OPTICAL_FLOW = 16384
+    FUNCTION_LOG = 32768
+    FUNCTION_RANGEFINDER = 65536
+    FUNCTION_VTX_FFPV = 131072
+    FUNCTION_ESCSERIAL = 262144
+    FUNCTION_TELEMETRY_SIM = 524288
+    FUNCTION_FRSKY_OSD = 1048576
+    FUNCTION_DJI_HD_OSD = 2097152
+    FUNCTION_SERVO_SERIAL = 4194304
+    FUNCTION_TELEMETRY_SMARTPORT_MASTER = 8388608
+    FUNCTION_CRSF_SENSOR = 16777216
+    FUNCTION_MSP_OSD = 33554432
+    FUNCTION_GIMBAL = 67108864
+    FUNCTION_GIMBAL_HEADTRACKER = 134217728
 
 
 class serialPortIdentifier_e(IntEnum):
@@ -4176,29 +4853,6 @@ class servoProtocolType_e(IntEnum):
     SERVO_TYPE_SBUS_PWM = 2
 
 
-class setting_section_e(IntEnum):
-    """From inav/src/main/fc/settings.h"""
-
-    MASTER_VALUE = 0
-    PROFILE_VALUE = 8
-    CONTROL_VALUE = 16
-    BATTERY_CONFIG_VALUE = 24
-    MIXER_CONFIG_VALUE = 32
-    EZ_TUNE_VALUE = 40
-
-
-class setting_type_e(IntEnum):
-    """From inav/src/main/fc/settings.h"""
-
-    VAR_UINT8 = 0
-    VAR_INT8 = 1
-    VAR_UINT16 = 2
-    VAR_INT16 = 3
-    VAR_UINT32 = 4
-    VAR_FLOAT = 5
-    VAR_STRING = 6
-
-
 class simATCommandState_e(IntEnum):
     """From inav/src/main/telemetry/sim.c"""
 
@@ -4242,6 +4896,38 @@ class simTransmissionState_e(IntEnum):
     SIM_TX = 2
 
 
+class simTxFlags_e(IntEnum):
+    """From inav/src/main/telemetry/sim.h"""
+
+    SIM_TX_FLAG = 1
+    SIM_TX_FLAG_FAILSAFE = 2
+    SIM_TX_FLAG_GPS = 4
+    SIM_TX_FLAG_ACC = 8
+    SIM_TX_FLAG_LOW_ALT = 16
+    SIM_TX_FLAG_RESPONSE = 32
+
+
+class simulatorFlags_t(IntEnum):
+    """From inav/src/main/fc/runtime_config.h"""
+
+    HITL_RESET_FLAGS = 0
+    HITL_ENABLE = 1
+    HITL_SIMULATE_BATTERY = 2
+    HITL_MUTE_BEEPER = 4
+    HITL_USE_IMU = 8
+    HITL_HAS_NEW_GPS_DATA = 16
+    HITL_EXT_BATTERY_VOLTAGE = 32
+    HITL_AIRSPEED = 64
+    HITL_EXTENDED_FLAGS = 128
+    HITL_GPS_TIMEOUT = 256
+    HITL_PITOT_FAILURE = 512
+    HITL_CURRENT_SENSOR = 1024
+    HITL_SIM_RC_INPUT = 2048
+    HITL_RANGEFINDER = 4096
+    HITL_FAILSAFE_TRIGGERED = 8192
+    HITL_SITL_MODE = 16384
+
+
 class sitlCANMode_e(IntEnum):
     """From inav/src/main/drivers/dronecan/libcanard/canard_sitl_driver.c"""
 
@@ -4281,98 +4967,38 @@ class softSerialPortIndex_e(IntEnum):
     SOFTSERIAL2 = 1
 
 
-class SPIClockSpeed_e(IntEnum):
-    """From inav/src/main/drivers/bus_spi.h"""
+class stateFlags_t(IntEnum):
+    """From inav/src/main/fc/runtime_config.h"""
 
-    SPI_CLOCK_INITIALIZATON = 0
-    SPI_CLOCK_SLOW = 1
-    SPI_CLOCK_STANDARD = 2
-    SPI_CLOCK_FAST = 3
-    SPI_CLOCK_ULTRAFAST = 4
-
-
-class SPIDevice(IntEnum):
-    """From inav/src/main/drivers/bus_spi.h"""
-
-    SPIINVALID = -1
-    SPIDEV_1 = 0
-    SPIDEV_2 = 1
-    SPIDEV_3 = 2
-    SPIDEV_4 = 3
-
-
-class Srxl2BindRequest(IntEnum):
-    """From inav/src/main/rx/srxl2_types.h"""
-
-    EnterBindMode = 235
-    RequestBindStatus = 181
-    BoundDataReport = 219
-    SetBindInfo = 91
-
-
-class Srxl2BindType(IntEnum):
-    """From inav/src/main/rx/srxl2_types.h"""
-
-    NotBound = 0
-    DSM2_1024_22ms = 1
-    DSM2_1024_MC24 = 2
-    DMS2_2048_11ms = 18
-    DMSX_22ms = 162
-    DMSX_11ms = 178
-    Surface_DSM2_16_5ms = 99
-    DSMR_11ms_22ms = 226
-    DSMR_5_5ms = 228
-
-
-class Srxl2ControlDataCommand(IntEnum):
-    """From inav/src/main/rx/srxl2_types.h"""
-
-    ChannelData = 0
-    FailsafeChannelData = 1
-    VTXData = 2
-
-
-class Srxl2DeviceId(IntEnum):
-    """From inav/src/main/rx/srxl2_types.h"""
-
-    FlightControllerDefault = 48
-    FlightControllerMax = 63
-    Broadcast = 255
-
-
-class Srxl2DeviceType(IntEnum):
-    """From inav/src/main/rx/srxl2_types.h"""
-
-    NoDevice = 0
-    RemoteReceiver = 1
-    Receiver = 2
-    FlightController = 3
-    ESC = 4
-    Reserved = 5
-    SRXLServo = 6
-    SRXLServo_2 = 7
-    VTX = 8
-
-
-class Srxl2PacketType(IntEnum):
-    """From inav/src/main/rx/srxl2_types.h"""
-
-    Handshake = 33
-    BindInfo = 65
-    ParameterConfiguration = 80
-    SignalQuality = 85
-    TelemetrySensorData = 128
-    ControlData = 205
-
-
-class Srxl2State(IntEnum):
-    """From inav/src/main/rx/srxl2_types.h"""
-
-    Disabled = 0
-    ListenForActivity = 1
-    SendHandshake = 2
-    ListenForHandshake = 3
-    Running = 4
+    GPS_FIX_HOME = 1
+    GPS_FIX = 2
+    CALIBRATE_MAG = 4
+    SMALL_ANGLE = 8
+    FIXED_WING_LEGACY = 16
+    ANTI_WINDUP = 32
+    FLAPERON_AVAILABLE = 64
+    NAV_MOTOR_STOP_OR_IDLE = 128
+    COMPASS_CALIBRATED = 256
+    ACCELEROMETER_CALIBRATED = 512
+    GPS_ESTIMATED_FIX = 1024
+    NAV_CRUISE_BRAKING = 2048
+    NAV_CRUISE_BRAKING_BOOST = 4096
+    NAV_CRUISE_BRAKING_LOCKED = 8192
+    NAV_EXTRA_ARMING_SAFETY_BYPASSED = 16384
+    AIRMODE_ACTIVE = 32768
+    ESC_SENSOR_ENABLED = 65536
+    AIRPLANE = 131072
+    MULTIROTOR = 262144
+    ROVER = 524288
+    BOAT = 1048576
+    ALTITUDE_CONTROL = 2097152
+    MOVE_FORWARD_ONLY = 4194304
+    SET_REVERSIBLE_MOTORS_FORWARD = 8388608
+    FW_HEADING_USE_YAW = 16777216
+    ANTI_WINDUP_DEACTIVATED = 33554432
+    LANDING_DETECTED = 67108864
+    IN_FLIGHT_EMERG_REARM = 134217728
+    TAILSITTER = 268435456
 
 
 class stickPositions_e(IntEnum):
@@ -4392,6 +5018,17 @@ class stickPositions_e(IntEnum):
     THR_HI = 128
 
 
+class systemState_e(IntEnum):
+    """From inav/src/main/fc/fc_init.h"""
+
+    SYSTEM_STATE_INITIALISING = 0
+    SYSTEM_STATE_CONFIG_LOADED = 1
+    SYSTEM_STATE_SENSORS_READY = 2
+    SYSTEM_STATE_MOTORS_READY = 4
+    SYSTEM_STATE_TRANSPONDER_ENABLED = 8
+    SYSTEM_STATE_READY = 128
+
+
 class tchDmaState_e(IntEnum):
     """From inav/src/main/drivers/timer.h"""
 
@@ -4409,13 +5046,6 @@ class tempSensorType_e(IntEnum):
     TEMP_SENSOR_DS18B20 = 2
 
 
-class throttleStatus_e(IntEnum):
-    """From inav/src/main/fc/rc_controls.h"""
-
-    THROTTLE_LOW = 0
-    THROTTLE_HIGH = 1
-
-
 class throttleStatusType_e(IntEnum):
     """From inav/src/main/fc/rc_controls.h"""
 
@@ -4423,11 +5053,11 @@ class throttleStatusType_e(IntEnum):
     THROTTLE_STATUS_TYPE_COMMAND = 1
 
 
-class timerMode_e(IntEnum):
-    """From inav/src/main/drivers/serial_softserial.c"""
+class throttleStatus_e(IntEnum):
+    """From inav/src/main/fc/rc_controls.h"""
 
-    TIMER_MODE_SINGLE = 0
-    TIMER_MODE_DUAL = 1
+    THROTTLE_LOW = 0
+    THROTTLE_HIGH = 1
 
 
 class timId_e(IntEnum):
@@ -4443,6 +5073,27 @@ class timId_e(IntEnum):
     timAnimation = 7
     timRing = 8
     timTimerCount = 9
+
+
+class timerMode_e(IntEnum):
+    """From inav/src/main/drivers/serial_softserial.c"""
+
+    TIMER_MODE_SINGLE = 0
+    TIMER_MODE_DUAL = 1
+
+
+class timerUsageFlag_e(IntEnum):
+    """From inav/src/main/drivers/timer.h"""
+
+    TIM_USE_ANY = 0
+    TIM_USE_PPM = 1
+    TIM_USE_PWM = 2
+    TIM_USE_MOTOR = 4
+    TIM_USE_SERVO = 8
+    TIM_USE_MC_CHNFW = 16
+    TIM_USE_LED = 16777216
+    TIM_USE_BEEPER = 33554432
+    TIM_USE_PINIO = 67108864
 
 
 class tristate_e(IntEnum):
@@ -4461,18 +5112,12 @@ class tz_automatic_dst_e(IntEnum):
     TZ_AUTO_DST_USA = 2
 
 
-class UARTDevice_e(IntEnum):
-    """From inav/src/main/drivers/serial_uart.h"""
+class uartInverterLine_e(IntEnum):
+    """From inav/src/main/drivers/uart_inverter.h"""
 
-    UARTDEV_1 = 0
-    UARTDEV_2 = 1
-    UARTDEV_3 = 2
-    UARTDEV_4 = 3
-    UARTDEV_5 = 4
-    UARTDEV_6 = 5
-    UARTDEV_7 = 6
-    UARTDEV_8 = 7
-    UARTDEV_MAX = 8
+    UART_INVERTER_LINE_NONE = 0
+    UART_INVERTER_LINE_RX = 1
+    UART_INVERTER_LINE_TX = 2
 
 
 class ublox_nav_sig_health_e(IntEnum):
@@ -4567,14 +5212,6 @@ class vcselPeriodType_e(IntEnum):
     VcselPeriodFinalRange = 1
 
 
-class VIDEO_TYPES(IntEnum):
-    """From inav/src/main/drivers/max7456.h"""
-
-    AUTO = 0
-    PAL = 1
-    NTSC = 2
-
-
 class videoSystem_e(IntEnum):
     """From inav/src/main/drivers/osd.h"""
 
@@ -4621,6 +5258,22 @@ class vs600Power_e(IntEnum):
     VS600_POWER_25MW = 1
     VS600_POWER_200MW = 2
     VS600_POWER_600MW = 3
+
+
+class vtolMcProtectionDebugFlags_e(IntEnum):
+    """From inav/src/main/navigation/navigation_vtol_mc_protection.c"""
+
+    VTOL_MC_PROTECT_FLAG_CONFIGURED = 1
+    VTOL_MC_PROTECT_FLAG_VTOL_MC = 2
+    VTOL_MC_PROTECT_FLAG_NAV_ACTIVE = 4
+    VTOL_MC_PROTECT_FLAG_STABILIZED_ACTIVE = 8
+    VTOL_MC_PROTECT_FLAG_CAPTURE_ACTIVE = 16
+    VTOL_MC_PROTECT_FLAG_LANDING_SETTLE = 32
+    VTOL_MC_PROTECT_FLAG_BAILOUT_ACTIVE = 64
+    VTOL_MC_PROTECT_FLAG_RESERVE_SHRUNK = 128
+    VTOL_MC_PROTECT_FLAG_SOFT_ALTITUDE = 256
+    VTOL_MC_PROTECT_FLAG_COMMAND_SHAPED = 512
+    VTOL_MC_PROTECT_FLAG_VELOCITY_FALLBACK = 1024
 
 
 class vtolMcProtectionMode_e(IntEnum):
@@ -4705,11 +5358,26 @@ class warningLedState_e(IntEnum):
     WARNING_LED_FLASH = 2
 
 
+class widgetAHIOptions_t(IntEnum):
+    """From inav/src/main/drivers/display_widgets.h"""
+
+    DISPLAY_WIDGET_AHI_OPTION_SHOW_CORNERS = 1
+
+
 class widgetAHIStyle_e(IntEnum):
     """From inav/src/main/drivers/display_widgets.h"""
 
     DISPLAY_WIDGET_AHI_STYLE_STAIRCASE = 0
     DISPLAY_WIDGET_AHI_STYLE_LINE = 1
+
+
+class widgetSidebarOptions_t(IntEnum):
+    """From inav/src/main/drivers/display_widgets.h"""
+
+    DISPLAY_WIDGET_SIDEBAR_OPTION_LEFT = 1
+    DISPLAY_WIDGET_SIDEBAR_OPTION_REVERSE = 2
+    DISPLAY_WIDGET_SIDEBAR_OPTION_UNLABELED = 4
+    DISPLAY_WIDGET_SIDEBAR_OPTION_STATIC = 8
 
 
 class wpFwTurnSmoothing_e(IntEnum):
@@ -4736,523 +5404,3 @@ class zeroCalibrationState_e(IntEnum):
     ZERO_CALIBRATION_IN_PROGRESS = 1
     ZERO_CALIBRATION_DONE = 2
     ZERO_CALIBRATION_FAIL = 3
-
-
-class blackboxFeatureMask_e(IntFlag):
-    """From inav/src/main/blackbox/blackbox.h"""
-
-    BLACKBOX_FEATURE_NAV_ACC = 1 << 0
-    BLACKBOX_FEATURE_NAV_POS = 1 << 1
-    BLACKBOX_FEATURE_NAV_PID = 1 << 2
-    BLACKBOX_FEATURE_MAG = 1 << 3
-    BLACKBOX_FEATURE_ACC = 1 << 4
-    BLACKBOX_FEATURE_ATTITUDE = 1 << 5
-    BLACKBOX_FEATURE_RC_DATA = 1 << 6
-    BLACKBOX_FEATURE_RC_COMMAND = 1 << 7
-    BLACKBOX_FEATURE_MOTORS = 1 << 8
-    BLACKBOX_FEATURE_GYRO_RAW = 1 << 9
-    BLACKBOX_FEATURE_GYRO_PEAKS_ROLL = 1 << 10
-    BLACKBOX_FEATURE_GYRO_PEAKS_PITCH = 1 << 11
-    BLACKBOX_FEATURE_GYRO_PEAKS_YAW = 1 << 12
-    BLACKBOX_FEATURE_SERVOS = 1 << 13
-
-
-class bootLogFlags_e(IntFlag):
-    """From inav/src/main/drivers/logging_codes.h"""
-
-    BOOT_EVENT_FLAGS_NONE = 0
-    BOOT_EVENT_FLAGS_WARNING = 1 << 0
-    BOOT_EVENT_FLAGS_ERROR = 1 << 1
-    BOOT_EVENT_FLAGS_PARAM16 = 1 << 14
-    BOOT_EVENT_FLAGS_PARAM32 = 1 << 15
-
-
-class deviceFlags_e(IntFlag):
-    """From inav/src/main/drivers/bus.h"""
-
-    DEVFLAGS_NONE = 0
-    DEVFLAGS_USE_RAW_REGISTERS = 1 << 0
-    DEVFLAGS_USE_MANUAL_DEVICE_SELECT = 1 << 1
-    DEVFLAGS_SPI_MODE_0 = 1 << 2
-
-
-class displayCanvasBitmapOption_t(IntFlag):
-    """From inav/src/main/drivers/display_canvas.h"""
-
-    DISPLAY_CANVAS_BITMAP_OPT_INVERT_COLORS = 1 << 0
-    DISPLAY_CANVAS_BITMAP_OPT_SOLID_BACKGROUND = 1 << 1
-    DISPLAY_CANVAS_BITMAP_OPT_ERASE_TRANSPARENT = 1 << 2
-
-
-class displayCanvasOutlineType_e(IntFlag):
-    """From inav/src/main/drivers/display_canvas.h"""
-
-    DISPLAY_CANVAS_OUTLINE_TYPE_NONE = 0
-    DISPLAY_CANVAS_OUTLINE_TYPE_TOP = 1 << 0
-    DISPLAY_CANVAS_OUTLINE_TYPE_RIGHT = 1 << 1
-    DISPLAY_CANVAS_OUTLINE_TYPE_BOTTOM = 1 << 2
-    DISPLAY_CANVAS_OUTLINE_TYPE_LEFT = 1 << 3
-
-
-class displayTransactionOption_e(IntFlag):
-    """From inav/src/main/drivers/display.h"""
-
-    DISPLAY_TRANSACTION_OPT_NONE = 0
-    DISPLAY_TRANSACTION_OPT_PROFILED = 1 << 0
-    DISPLAY_TRANSACTION_OPT_RESET_DRAWING = 1 << 1
-
-
-class djiOsdProtoWorkarounds_e(IntFlag):
-    """From inav/src/main/io/osd_dji_hd.h"""
-
-    DJI_OSD_USE_NON_STANDARD_MSP_ESC_SENSOR_DATA = 1 << 0
-
-
-class dumpFlags_e(IntFlag):
-    """From inav/src/main/fc/cli.c"""
-
-    DUMP_MASTER = 1 << 0
-    DUMP_CONTROL_PROFILE = 1 << 1
-    DUMP_BATTERY_PROFILE = 1 << 2
-    DUMP_MIXER_PROFILE = 1 << 3
-    DUMP_ALL = 1 << 4
-    DO_DIFF = 1 << 5
-    SHOW_DEFAULTS = 1 << 6
-    HIDE_UNUSED = 1 << 7
-
-
-class features_e(IntFlag):
-    """From inav/src/main/fc/config.h"""
-
-    FEATURE_THR_VBAT_COMP = 1 << 0
-    FEATURE_VBAT = 1 << 1
-    FEATURE_TX_PROF_SEL = 1 << 2
-    FEATURE_BAT_PROFILE_AUTOSWITCH = 1 << 3
-    FEATURE_GEOZONE = 1 << 4
-    FEATURE_UNUSED_1 = 1 << 5
-    FEATURE_SOFTSERIAL = 1 << 6
-    FEATURE_GPS = 1 << 7
-    FEATURE_UNUSED_3 = 1 << 8
-    FEATURE_UNUSED_4 = 1 << 9
-    FEATURE_TELEMETRY = 1 << 10
-    FEATURE_CURRENT_METER = 1 << 11
-    FEATURE_REVERSIBLE_MOTORS = 1 << 12
-    FEATURE_UNUSED_5 = 1 << 13
-    FEATURE_UNUSED_6 = 1 << 14
-    FEATURE_RSSI_ADC = 1 << 15
-    FEATURE_LED_STRIP = 1 << 16
-    FEATURE_DASHBOARD = 1 << 17
-    FEATURE_UNUSED_7 = 1 << 18
-    FEATURE_BLACKBOX = 1 << 19
-    FEATURE_UNUSED_10 = 1 << 20
-    FEATURE_TRANSPONDER = 1 << 21
-    FEATURE_AIRMODE = 1 << 22
-    FEATURE_SUPEREXPO_RATES = 1 << 23
-    FEATURE_VTX = 1 << 24
-    FEATURE_UNUSED_8 = 1 << 25
-    FEATURE_UNUSED_9 = 1 << 26
-    FEATURE_UNUSED_11 = 1 << 27
-    FEATURE_PWM_OUTPUT_ENABLE = 1 << 28
-    FEATURE_OSD = 1 << 29
-    FEATURE_FW_LAUNCH = 1 << 30
-    FEATURE_FW_AUTOTRIM = 1 << 31
-
-
-class flightModeFlags_e(IntFlag):
-    """From inav/src/main/fc/runtime_config.h"""
-
-    ANGLE_MODE = 1 << 0
-    HORIZON_MODE = 1 << 1
-    HEADING_MODE = 1 << 2
-    NAV_ALTHOLD_MODE = 1 << 3
-    NAV_RTH_MODE = 1 << 4
-    NAV_POSHOLD_MODE = 1 << 5
-    HEADFREE_MODE = 1 << 6
-    NAV_LAUNCH_MODE = 1 << 7
-    MANUAL_MODE = 1 << 8
-    FAILSAFE_MODE = 1 << 9
-    AUTO_TUNE = 1 << 10
-    NAV_WP_MODE = 1 << 11
-    NAV_COURSE_HOLD_MODE = 1 << 12
-    FLAPERON = 1 << 13
-    TURN_ASSISTANT = 1 << 14
-    TURTLE_MODE = 1 << 15
-    SOARING_MODE = 1 << 16
-    ANGLEHOLD_MODE = 1 << 17
-    NAV_FW_AUTOLAND = 1 << 18
-    NAV_SEND_TO = 1 << 19
-
-
-class frskyOSDLineOutlineType_e(IntFlag):
-    """From inav/src/main/io/frsky_osd.h"""
-
-    FRSKY_OSD_OUTLINE_TYPE_NONE = 0
-    FRSKY_OSD_OUTLINE_TYPE_TOP = 1 << 0
-    FRSKY_OSD_OUTLINE_TYPE_RIGHT = 1 << 1
-    FRSKY_OSD_OUTLINE_TYPE_BOTTOM = 1 << 2
-    FRSKY_OSD_OUTLINE_TYPE_LEFT = 1 << 3
-
-
-class frskyOSDTransactionOptions_e(IntFlag):
-    """From inav/src/main/io/frsky_osd.h"""
-
-    FRSKY_OSD_TRANSACTION_OPT_PROFILED = 1 << 0
-    FRSKY_OSD_TRANSACTION_OPT_RESET_DRAWING = 1 << 1
-
-
-class gimbal_htk_mode_e(IntFlag):
-    """From inav/src/main/drivers/gimbal_common.h"""
-
-    GIMBAL_MODE_FOLLOW = 0
-    GIMBAL_MODE_TILT_LOCK = 1 << 0
-    GIMBAL_MODE_ROLL_LOCK = 1 << 1
-    GIMBAL_MODE_PAN_LOCK = 1 << 2
-
-
-class hottEamAlarm1Flag_e(IntFlag):
-    """From inav/src/main/telemetry/hott.h"""
-
-    HOTT_EAM_ALARM1_FLAG_NONE = 0
-    HOTT_EAM_ALARM1_FLAG_MAH = 1 << 0
-    HOTT_EAM_ALARM1_FLAG_BATTERY_1 = 1 << 1
-    HOTT_EAM_ALARM1_FLAG_BATTERY_2 = 1 << 2
-    HOTT_EAM_ALARM1_FLAG_TEMPERATURE_1 = 1 << 3
-    HOTT_EAM_ALARM1_FLAG_TEMPERATURE_2 = 1 << 4
-    HOTT_EAM_ALARM1_FLAG_ALTITUDE = 1 << 5
-    HOTT_EAM_ALARM1_FLAG_CURRENT = 1 << 6
-    HOTT_EAM_ALARM1_FLAG_MAIN_VOLTAGE = 1 << 7
-
-
-class hottEamAlarm2Flag_e(IntFlag):
-    """From inav/src/main/telemetry/hott.h"""
-
-    HOTT_EAM_ALARM2_FLAG_NONE = 0
-    HOTT_EAM_ALARM2_FLAG_MS = 1 << 0
-    HOTT_EAM_ALARM2_FLAG_M3S = 1 << 1
-    HOTT_EAM_ALARM2_FLAG_ALTITUDE_DUPLICATE = 1 << 2
-    HOTT_EAM_ALARM2_FLAG_MS_DUPLICATE = 1 << 3
-    HOTT_EAM_ALARM2_FLAG_M3S_DUPLICATE = 1 << 4
-    HOTT_EAM_ALARM2_FLAG_UNKNOWN_1 = 1 << 5
-    HOTT_EAM_ALARM2_FLAG_UNKNOWN_2 = 1 << 6
-    HOTT_EAM_ALARM2_FLAG_ON_SIGN_OR_TEXT_ACTIVE = 1 << 7
-
-
-class logicConditionFlags_e(IntFlag):
-    """From inav/src/main/programming/logic_condition.h"""
-
-    LOGIC_CONDITION_FLAG_LATCH = 1 << 0
-    LOGIC_CONDITION_FLAG_TIMEOUT_SATISFIED = 1 << 1
-
-
-class logicConditionsGlobalFlags_t(IntFlag):
-    """From inav/src/main/programming/logic_condition.h"""
-
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_ARMING_SAFETY = 1 << 0
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_THROTTLE_SCALE = 1 << 1
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_SWAP_ROLL_YAW = 1 << 2
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_INVERT_ROLL = 1 << 3
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_INVERT_PITCH = 1 << 4
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_INVERT_YAW = 1 << 5
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_THROTTLE = 1 << 6
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_OSD_LAYOUT = 1 << 7
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_RC_CHANNEL = 1 << 8
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_LOITER_RADIUS = 1 << 9
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_FLIGHT_AXIS = 1 << 10
-    LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_GPS_FIX = 1 << 11
-    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_MIN_GROUND_SPEED = 1 << 12
-    LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_AUTOSPEED_AIRSPEED = 1 << 13
-
-
-class multiFunctionFlags_e(IntFlag):
-    """From inav/src/main/fc/multifunction.h"""
-
-    MF_SUSPEND_SAFEHOMES = 1 << 0
-    MF_SUSPEND_TRACKBACK = 1 << 1
-    MF_TURTLE_MODE = 1 << 2
-
-
-class navigationFSMStateFlags_t(IntFlag):
-    """From inav/src/main/navigation/navigation_private.h"""
-
-    NAV_CTL_ALT = 1 << 0
-    NAV_CTL_POS = 1 << 1
-    NAV_CTL_YAW = 1 << 2
-    NAV_CTL_EMERG = 1 << 3
-    NAV_CTL_LAUNCH = 1 << 4
-    NAV_REQUIRE_ANGLE = 1 << 5
-    NAV_REQUIRE_ANGLE_FW = 1 << 6
-    NAV_REQUIRE_MAGHOLD = 1 << 7
-    NAV_REQUIRE_THRTILT = 1 << 8
-    NAV_AUTO_RTH = 1 << 9
-    NAV_AUTO_WP = 1 << 10
-    NAV_RC_ALT = 1 << 11
-    NAV_RC_POS = 1 << 12
-    NAV_RC_YAW = 1 << 13
-    NAV_CTL_LAND = 1 << 14
-    NAV_AUTO_WP_DONE = 1 << 15
-    NAV_MIXERAT = 1 << 16
-    NAV_CTL_HOLD = 1 << 17
-    NAV_CTL_SPEED = 1 << 18
-
-
-class navPositionEstimationFlags_e(IntFlag):
-    """From inav/src/main/navigation/navigation_pos_estimator_private.h"""
-
-    EST_GPS_XY_VALID = 1 << 0
-    EST_GPS_Z_VALID = 1 << 1
-    EST_BARO_VALID = 1 << 2
-    EST_SURFACE_VALID = 1 << 3
-    EST_FLOW_VALID = 1 << 4
-    EST_XY_VALID = 1 << 5
-    EST_Z_VALID = 1 << 6
-
-
-class navSetWaypointFlags_t(IntFlag):
-    """From inav/src/main/navigation/navigation_private.h"""
-
-    NAV_POS_UPDATE_NONE = 0
-    NAV_POS_UPDATE_Z = 1 << 1
-    NAV_POS_UPDATE_XY = 1 << 0
-    NAV_POS_UPDATE_HEADING = 1 << 2
-    NAV_POS_UPDATE_BEARING = 1 << 3
-    NAV_POS_UPDATE_BEARING_TAIL_FIRST = 1 << 4
-
-
-class navSystemStatus_Flags_e(IntFlag):
-    """From inav/src/main/navigation/navigation.h"""
-
-    MW_NAV_FLAG_ADJUSTING_POSITION = 1 << 0
-    MW_NAV_FLAG_ADJUSTING_ALTITUDE = 1 << 1
-
-
-class navWaypointP3Flags_e(IntFlag):
-    """From inav/src/main/navigation/navigation.h"""
-
-    NAV_WP_ALTMODE = 1 << 0
-    NAV_WP_USER1 = 1 << 1
-    NAV_WP_USER2 = 1 << 2
-    NAV_WP_USER3 = 1 << 3
-    NAV_WP_USER4 = 1 << 4
-
-
-class pidControllerFlags_e(IntFlag):
-    """From inav/src/main/common/fp_pid.h"""
-
-    PID_DTERM_FROM_ERROR = 1 << 0
-    PID_ZERO_INTEGRATOR = 1 << 1
-    PID_SHRINK_INTEGRATOR = 1 << 2
-    PID_LIMIT_INTEGRATOR = 1 << 3
-    PID_FREEZE_INTEGRATOR = 1 << 4
-    PID_USING_HEADING = 1 << 5
-
-
-class portOptions_t(IntFlag):
-    """From inav/src/main/drivers/serial.h"""
-
-    SERIAL_LONGSTOP = 0
-    SERIAL_INVERTED = 1 << 0
-    SERIAL_STOPBITS_2 = 1 << 1
-    SERIAL_PARITY_EVEN = 1 << 2
-    SERIAL_BIDIR = 1 << 3
-    SERIAL_BIDIR_PP = 1 << 4
-    SERIAL_BIDIR_NOPULL = 1 << 5
-    SERIAL_SHORTSTOP = 1 << 6
-
-
-class rcdevice_features_e(IntFlag):
-    """From inav/src/main/io/rcdevice.h"""
-
-    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_POWER_BUTTON = 1 << 0
-    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_WIFI_BUTTON = 1 << 1
-    RCDEVICE_PROTOCOL_FEATURE_CHANGE_MODE = 1 << 2
-    RCDEVICE_PROTOCOL_FEATURE_SIMULATE_5_KEY_OSD_CABLE = 1 << 3
-    RCDEVICE_PROTOCOL_FEATURE_START_RECORDING = 1 << 6
-    RCDEVICE_PROTOCOL_FEATURE_STOP_RECORDING = 1 << 7
-    RCDEVICE_PROTOCOL_FEATURE_CMS_MENU = 1 << 8
-
-
-class rxFrameState_e(IntFlag):
-    """From inav/src/main/rx/rx.h"""
-
-    RX_FRAME_PENDING = 0
-    RX_FRAME_COMPLETE = 1 << 0
-    RX_FRAME_FAILSAFE = 1 << 1
-    RX_FRAME_PROCESSING_REQUIRED = 1 << 2
-    RX_FRAME_DROPPED = 1 << 3
-
-
-class sensors_e(IntFlag):
-    """From inav/src/main/sensors/sensors.h"""
-
-    SENSOR_GYRO = 1 << 0
-    SENSOR_ACC = 1 << 1
-    SENSOR_BARO = 1 << 2
-    SENSOR_MAG = 1 << 3
-    SENSOR_RANGEFINDER = 1 << 4
-    SENSOR_PITOT = 1 << 5
-    SENSOR_OPFLOW = 1 << 6
-    SENSOR_GPS = 1 << 7
-    SENSOR_GPSMAG = 1 << 8
-    SENSOR_TEMP = 1 << 9
-
-
-class serialPortFunction_e(IntFlag):
-    """From inav/src/main/io/serial.h"""
-
-    FUNCTION_NONE = 0
-    FUNCTION_MSP = 1 << 0
-    FUNCTION_GPS = 1 << 1
-    FUNCTION_UNUSED_3 = 1 << 2
-    FUNCTION_TELEMETRY_HOTT = 1 << 3
-    FUNCTION_TELEMETRY_LTM = 1 << 4
-    FUNCTION_TELEMETRY_SMARTPORT = 1 << 5
-    FUNCTION_RX_SERIAL = 1 << 6
-    FUNCTION_BLACKBOX = 1 << 7
-    FUNCTION_TELEMETRY_MAVLINK = 1 << 8
-    FUNCTION_TELEMETRY_IBUS = 1 << 9
-    FUNCTION_RCDEVICE = 1 << 10
-    FUNCTION_VTX_SMARTAUDIO = 1 << 11
-    FUNCTION_VTX_TRAMP = 1 << 12
-    FUNCTION_UNUSED_1 = 1 << 13
-    FUNCTION_OPTICAL_FLOW = 1 << 14
-    FUNCTION_LOG = 1 << 15
-    FUNCTION_RANGEFINDER = 1 << 16
-    FUNCTION_VTX_FFPV = 1 << 17
-    FUNCTION_ESCSERIAL = 1 << 18
-    FUNCTION_TELEMETRY_SIM = 1 << 19
-    FUNCTION_FRSKY_OSD = 1 << 20
-    FUNCTION_DJI_HD_OSD = 1 << 21
-    FUNCTION_SERVO_SERIAL = 1 << 22
-    FUNCTION_TELEMETRY_SMARTPORT_MASTER = 1 << 23
-    FUNCTION_CRSF_SENSOR = 1 << 24
-    FUNCTION_MSP_OSD = 1 << 25
-    FUNCTION_GIMBAL = 1 << 26
-    FUNCTION_GIMBAL_HEADTRACKER = 1 << 27
-
-
-class setting_mode_e(IntFlag):
-    """From inav/src/main/fc/settings.h"""
-
-    MODE_DIRECT = 0
-    MODE_LOOKUP = 1 << 6
-
-
-class simTxFlags_e(IntFlag):
-    """From inav/src/main/telemetry/sim.h"""
-
-    SIM_TX_FLAG = 1 << 0
-    SIM_TX_FLAG_FAILSAFE = 1 << 1
-    SIM_TX_FLAG_GPS = 1 << 2
-    SIM_TX_FLAG_ACC = 1 << 3
-    SIM_TX_FLAG_LOW_ALT = 1 << 4
-    SIM_TX_FLAG_RESPONSE = 1 << 5
-
-
-class simulatorFlags_t(IntFlag):
-    """From inav/src/main/fc/runtime_config.h"""
-
-    HITL_RESET_FLAGS = 0
-    HITL_ENABLE = 1 << 0
-    HITL_SIMULATE_BATTERY = 1 << 1
-    HITL_MUTE_BEEPER = 1 << 2
-    HITL_USE_IMU = 1 << 3
-    HITL_HAS_NEW_GPS_DATA = 1 << 4
-    HITL_EXT_BATTERY_VOLTAGE = 1 << 5
-    HITL_AIRSPEED = 1 << 6
-    HITL_EXTENDED_FLAGS = 1 << 7
-    HITL_GPS_TIMEOUT = 1 << 8
-    HITL_PITOT_FAILURE = 1 << 9
-    HITL_CURRENT_SENSOR = 1 << 10
-    HITL_SIM_RC_INPUT = 1 << 11
-    HITL_RANGEFINDER = 1 << 12
-    HITL_FAILSAFE_TRIGGERED = 1 << 13
-    HITL_SITL_MODE = 1 << 14
-
-
-class stateFlags_t(IntFlag):
-    """From inav/src/main/fc/runtime_config.h"""
-
-    GPS_FIX_HOME = 1 << 0
-    GPS_FIX = 1 << 1
-    CALIBRATE_MAG = 1 << 2
-    SMALL_ANGLE = 1 << 3
-    FIXED_WING_LEGACY = 1 << 4
-    ANTI_WINDUP = 1 << 5
-    FLAPERON_AVAILABLE = 1 << 6
-    NAV_MOTOR_STOP_OR_IDLE = 1 << 7
-    COMPASS_CALIBRATED = 1 << 8
-    ACCELEROMETER_CALIBRATED = 1 << 9
-    GPS_ESTIMATED_FIX = 1 << 10
-    NAV_CRUISE_BRAKING = 1 << 11
-    NAV_CRUISE_BRAKING_BOOST = 1 << 12
-    NAV_CRUISE_BRAKING_LOCKED = 1 << 13
-    NAV_EXTRA_ARMING_SAFETY_BYPASSED = 1 << 14
-    AIRMODE_ACTIVE = 1 << 15
-    ESC_SENSOR_ENABLED = 1 << 16
-    AIRPLANE = 1 << 17
-    MULTIROTOR = 1 << 18
-    ROVER = 1 << 19
-    BOAT = 1 << 20
-    ALTITUDE_CONTROL = 1 << 21
-    MOVE_FORWARD_ONLY = 1 << 22
-    SET_REVERSIBLE_MOTORS_FORWARD = 1 << 23
-    FW_HEADING_USE_YAW = 1 << 24
-    ANTI_WINDUP_DEACTIVATED = 1 << 25
-    LANDING_DETECTED = 1 << 26
-    IN_FLIGHT_EMERG_REARM = 1 << 27
-    TAILSITTER = 1 << 28
-
-
-class systemState_e(IntFlag):
-    """From inav/src/main/fc/fc_init.h"""
-
-    SYSTEM_STATE_INITIALISING = 0
-    SYSTEM_STATE_CONFIG_LOADED = 1 << 0
-    SYSTEM_STATE_SENSORS_READY = 1 << 1
-    SYSTEM_STATE_MOTORS_READY = 1 << 2
-    SYSTEM_STATE_TRANSPONDER_ENABLED = 1 << 3
-    SYSTEM_STATE_READY = 1 << 7
-
-
-class timerUsageFlag_e(IntFlag):
-    """From inav/src/main/drivers/timer.h"""
-
-    TIM_USE_ANY = 0
-    TIM_USE_PPM = 1 << 0
-    TIM_USE_PWM = 1 << 1
-    TIM_USE_MOTOR = 1 << 2
-    TIM_USE_SERVO = 1 << 3
-    TIM_USE_MC_CHNFW = 1 << 4
-    TIM_USE_LED = 1 << 24
-    TIM_USE_BEEPER = 1 << 25
-    TIM_USE_PINIO = 1 << 26
-
-
-class uartInverterLine_e(IntFlag):
-    """From inav/src/main/drivers/uart_inverter.h"""
-
-    UART_INVERTER_LINE_NONE = 0
-    UART_INVERTER_LINE_RX = 1 << 0
-    UART_INVERTER_LINE_TX = 1 << 1
-
-
-class vtolMcProtectionDebugFlags_e(IntFlag):
-    """From inav/src/main/navigation/navigation_vtol_mc_protection.c"""
-
-    VTOL_MC_PROTECT_FLAG_CONFIGURED = 1 << 0
-    VTOL_MC_PROTECT_FLAG_VTOL_MC = 1 << 1
-    VTOL_MC_PROTECT_FLAG_NAV_ACTIVE = 1 << 2
-    VTOL_MC_PROTECT_FLAG_STABILIZED_ACTIVE = 1 << 3
-    VTOL_MC_PROTECT_FLAG_CAPTURE_ACTIVE = 1 << 4
-    VTOL_MC_PROTECT_FLAG_LANDING_SETTLE = 1 << 5
-    VTOL_MC_PROTECT_FLAG_BAILOUT_ACTIVE = 1 << 6
-    VTOL_MC_PROTECT_FLAG_RESERVE_SHRUNK = 1 << 7
-    VTOL_MC_PROTECT_FLAG_SOFT_ALTITUDE = 1 << 8
-    VTOL_MC_PROTECT_FLAG_COMMAND_SHAPED = 1 << 9
-    VTOL_MC_PROTECT_FLAG_VELOCITY_FALLBACK = 1 << 10
-
-
-class widgetAHIOptions_t(IntFlag):
-    """From inav/src/main/drivers/display_widgets.h"""
-
-    DISPLAY_WIDGET_AHI_OPTION_SHOW_CORNERS = 1 << 0

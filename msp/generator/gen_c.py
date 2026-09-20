@@ -5,11 +5,13 @@
     schema/constants.yaml      -> msp_consts.h      #defines used as array sizes
     schema/msp_v2.yaml         -> msp_msgs.h        one packed struct per message payload
     schema/msp_v2.yaml         -> msp_protocol*.h   message-id #defines (four headers)
-    + schema/protocol_extras.yaml
 
-The message-id headers (msp_protocol*.h) and the wire structs (msp_msgs.h) are
-two facets of one library, so one backend emits both into one directory.
-msp_msgs.h includes msp_protocol.h for the ids.
+The static parts of msp_msgs.h and msp_protocol*.h (licence, MSP guidelines, the
+non-message #defines, pack pragmas, includes) are real C in templates/*.in;
+generation only injects the message ids and structs at the @MESSAGE_IDS@ /
+@MESSAGE_STRUCTS@ markers. The message-id headers and the wire structs are two
+facets of one library, so one backend emits both into one directory; msp_msgs.h
+includes msp_protocol.h for the ids.
 
 Design notes:
 
@@ -39,6 +41,7 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 MSP_ROOT = HERE.parent          # inav/msp
+TEMPLATE_DIR = HERE / "templates"
 
 # --- message-id protocol headers (msp_protocol*.h) ---------------------------
 # group -> (filename, includes emitted at the end)
@@ -340,39 +343,7 @@ class Emitter:
             )
         self.lines.append("")
 
-
-PREAMBLE = """#pragma once
-// Generated from the MSP YAML schema by msp/generator/gen_c.py. Do not edit by hand.
-
-#include <stdint.h>
-#include "msp_consts.h"
-
-#if defined(_MSC_VER)
-#  pragma pack(push, 1)
-#  define MSP_PACKED
-#else
-#  define MSP_PACKED __attribute__((__packed__))
-#endif
-
-#if !defined(MSP_STATIC_ASSERT)
-#  if defined(__cplusplus)
-#    define MSP_STATIC_ASSERT(cond, name) static_assert(cond, #name)
-#  elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-#    define MSP_STATIC_ASSERT(cond, name) _Static_assert(cond, #name)
-#  else
-#    define MSP_STATIC_ASSERT(cond, name) typedef char name[(cond) ? 1 : -1]
-#  endif
-#endif
-"""
-
-POSTAMBLE = """
-#if defined(_MSC_VER)
-#  pragma pack(pop)
-#endif
-#undef MSP_PACKED
-"""
-
-
+# user note: This is unacceptable, we never ever do this; sticking code strings into schemas or executable code. We use template files.
 def emit_consts(model: Model) -> str:
     out = ["#pragma once",
            "// Generated from the MSP YAML schema by msp/generator/gen_c.py (constants.yaml). Do not edit by hand.",
@@ -510,34 +481,22 @@ def emit_enums(model: Model) -> str:
     return "\n".join(out) + "\n"
 
 
-def render_protocol(group: str, messages: dict, extras: dict) -> str:
-    """One msp_protocol*.h: the message-id #defines for a group, plus the
-    non-message content (licence, preamble, includes) carried verbatim from
-    protocol_extras.yaml so the header is a drop-in replacement."""
-    filename, includes = PROTOCOL_LAYOUT[group]
-    block = extras["headers"][group]
-    out = [block["license"], "", "#pragma once", ""]
-    out.append("// Message ids generated from the MSP YAML schema by "
-               "msp/generator/gen_c.py. Do not edit by hand.")
-    out.append("")
-    if block["preamble"].strip():
-        out.append(block["preamble"])
-        out.append("")
+def render_protocol(group: str, messages: dict) -> str:
+    """One msp_protocol*.h. The static header (licence, MSP guidelines, the
+    non-message #defines, and includes) is the real C in templates/<file>.in;
+    only the message-id #defines are generated, injected at @MESSAGE_IDS@.
 
-    # not_implemented refers to the handler, not the id: INAV still #defines
-    # those codes, so every message in the group is emitted.
+    not_implemented refers to the handler, not the id: INAV still #defines those
+    codes, so every message in the group is emitted."""
+    filename, _includes = PROTOCOL_LAYOUT[group]
+    template = (TEMPLATE_DIR / (filename + ".in")).read_text()
     rows = [(name, body["id"], body.get("mspv"))
             for name, body in messages.items() if body.get("group") == group]
     rows.sort(key=lambda r: r[1])
     width = max((len(n) for n, _, _ in rows), default=0) + 2
-    for name, code, mspv in rows:
-        value = f"0x{code:04X}" if mspv == 2 else str(code)
-        out.append(f"#define {name.ljust(width)}{value}")
-    if includes:
-        out.append("")
-        for inc in includes:
-            out.append(f'#include "{inc}"')
-    return "\n".join(out) + "\n"
+    lines = [f"#define {name.ljust(width)}{f'0x{code:04X}' if mspv == 2 else str(code)}"
+             for name, code, mspv in rows]
+    return template.replace("@MESSAGE_IDS@", "\n".join(lines))
 
 
 def defines_in(text: str) -> dict[str, int]:
@@ -562,9 +521,8 @@ def main() -> int:
     model = Model(args.schema)
 
     # --- message-id protocol headers (msp_protocol*.h) ---
-    extras = yaml.safe_load((args.schema / "protocol_extras.yaml").read_text())
     messages = model.messages["messages"]
-    protocol = {PROTOCOL_LAYOUT[g][0]: render_protocol(g, messages, extras)
+    protocol = {PROTOCOL_LAYOUT[g][0]: render_protocol(g, messages)
                 for g in PROTOCOL_LAYOUT}
 
     if args.check:
@@ -658,12 +616,12 @@ def main() -> int:
             payload("request", msg.get("request"))
             payload("reply", msg.get("reply"))
 
-    # Ids live in the generated msp_protocol*.h, which uses INAV's own spelling.
-    # Emitting them here as well would collide for any file including both.
-    ids_block = ['#include "msp_protocol.h"   // message ids', ""]
-
-    out = [PREAMBLE, "\n".join(ids_block), "", "\n".join(emitter.lines), POSTAMBLE]
-    (args.out / "msp_msgs.h").write_text("\n".join(out))
+    # The static header (includes, pack pragmas, MSP_STATIC_ASSERT) is the real
+    # C in templates/msp_msgs.h.in; only the structs are generated. Ids come from
+    # msp_protocol.h, which the template includes.
+    template = (TEMPLATE_DIR / "msp_msgs.h.in").read_text()
+    (args.out / "msp_msgs.h").write_text(
+        template.replace("@MESSAGE_STRUCTS@", "\n".join(emitter.lines)))
 
     print(f"wrote {args.out}/msp_consts.h")
     print(f"wrote {args.out}/msp_enums.h")

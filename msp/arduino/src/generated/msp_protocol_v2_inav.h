@@ -17,7 +17,7 @@
 
 #pragma once
 
-// Message ids generated from the MSP YAML schema by msp/generator/gen_c.py. Do not edit by hand.
+// Message ids below are generated from the MSP YAML schema by msp/generator/gen_c.py.
 
 // INAV specific IDs start from 0x2000
 // See https://github.com/iNavFlight/inav/wiki/MSP-V2#msp-v2-message-catalogue

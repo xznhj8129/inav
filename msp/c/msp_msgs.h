@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "msp_consts.h"
+#include "msp_protocol.h"   // message ids
 
 #if defined(_MSC_VER)
 #  pragma pack(push, 1)
@@ -20,9 +21,6 @@
 #    define MSP_STATIC_ASSERT(cond, name) typedef char name[(cond) ? 1 : -1]
 #  endif
 #endif
-
-#include "msp_protocol.h"   // message ids
-
 
 // MSP_API_VERSION (MSPv1) id=1
 // Provides the MSP protocol version and the INAV API version.

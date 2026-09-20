@@ -17,7 +17,7 @@
 
 #pragma once
 
-// Message ids generated from the MSP YAML schema by msp/generator/gen_c.py. Do not edit by hand.
+// Message ids below are generated from the MSP YAML schema by msp/generator/gen_c.py.
 
 /**
  * MSP Guidelines, emphasis is used to clarify.

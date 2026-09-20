@@ -10,14 +10,6 @@
 #ifndef BUILD_TIME_LENGTH
 #  define BUILD_TIME_LENGTH 8
 #endif
-// Lowest PWM value a mode-activation range step maps to.
-#ifndef CHANNEL_RANGE_MIN
-#  define CHANNEL_RANGE_MIN 900
-#endif
-// PWM microseconds per mode-activation range step.
-#ifndef CHANNEL_RANGE_STEP_WIDTH
-#  define CHANNEL_RANGE_STEP_WIDTH 25
-#endif
 #ifndef CUSTOM_ELEMENTS_PARTS
 #  define CUSTOM_ELEMENTS_PARTS 3
 #endif

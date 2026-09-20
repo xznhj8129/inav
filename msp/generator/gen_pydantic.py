@@ -74,9 +74,11 @@ ENUM_KEYS = {"prefix", "storage", "description", "values", "zero"}
 ENUM_MEMBER_KEYS = {"name", "value", "condition"}
 STRUCT_KEYS = {"description", "fields", "unresolved"}
 MESSAGE_KEYS = {"id", "request", "reply", "description", "mspv", "group", "notes",
-                "variable_len", "not_implemented", "replaced_by", "variants"}
+                "variable_len", "not_implemented", "replaced_by", "variants",
+                "inav_version"}
+INAV_VERSION_KEYS = {"since", "until"}
 PAYLOAD_KEYS = {"fields", "repeat", "description"}
-PLAIN_FIELD_KEYS = {"type", "unit", "description", "value", "bitmask"}
+PLAIN_FIELD_KEYS = {"type", "unit", "description", "value", "bitmask", "enum"}
 DISCRIMINATED_FIELD_KEYS = {"discriminated", "description"}
 GROUP_FIELD_KEYS = {"repeat", "fields", "description"}
 CONSTANT_KEYS = {"type", "value", "description", "configurable", "header"}
@@ -477,6 +479,14 @@ def parse_message(name: str, spec: dict) -> MessageDef:
         raise SchemaError(f"{where}: requires 'id'")
     if not isinstance(spec["id"], int) or isinstance(spec["id"], bool):
         raise SchemaError(f"{where}: 'id' must be an integer")
+
+    iv = spec.get("inav_version")
+    if iv is not None:
+        if not isinstance(iv, dict):
+            raise SchemaError(f"{where}.inav_version: must be a mapping")
+        check_keys(f"{where}.inav_version", iv, INAV_VERSION_KEYS)
+        if "since" not in iv:
+            raise SchemaError(f"{where}.inav_version: requires 'since' (the version it was introduced)")
 
     variants: dict[str, dict] = {}
     if spec.get("variants"):
