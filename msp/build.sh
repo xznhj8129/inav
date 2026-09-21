@@ -39,6 +39,9 @@ cmd_generate() {
     echo "- Harvesting constants from INAV source -> schema/constants.yaml"
     python3 "${GEN}/harvest_consts.py"
 
+    echo "- Extracting INAV-owned wire types from source -> c/ (msp_wire_types.h, wire_layouts.json)"
+    python3 "${GEN}/extract_wire_types.py" --inav-dir "${REPO_ROOT}" --out "${CDIR}/msp_wire_types.h"
+
     echo "- Generating the C library (schema -> c/)"
     python3 "${GEN}/gen_c.py"
 
