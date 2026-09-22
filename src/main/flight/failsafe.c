@@ -86,9 +86,7 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
 #ifdef USE_GPS_FIX_ESTIMATION
     .failsafe_gps_fix_estimation_delay = SETTING_FAILSAFE_GPS_FIX_ESTIMATION_DELAY_DEFAULT, // Time delay before Failsafe activated when GPS Fix estimation is allied
 #endif
-    .failsafe_telem_link_enabled = SETTING_FAILSAFE_TELEM_LINK_ENABLED_DEFAULT,         // Autopilot mode: telemetry-link heartbeat failsafe off by default
-    .failsafe_telem_link_timeout = SETTING_FAILSAFE_TELEM_LINK_TIMEOUT_DEFAULT,         // Autopilot mode: 5 seconds without a heartbeat
-    .failsafe_telem_link_source = SETTING_FAILSAFE_TELEM_LINK_SOURCE_DEFAULT,           // Autopilot mode: MSP activity
+    .failsafe_telem_timeout = SETTING_FAILSAFE_TELEM_TIMEOUT_DEFAULT,                   // Autopilot mode: 5 seconds without a heartbeat
 );
 
 typedef enum {
@@ -297,17 +295,12 @@ bool failsafeIsReceivingRxData(void)
 
 static bool failsafeTelemetryLinkIsUp(void)
 {
-    if (!failsafeConfig()->failsafe_telem_link_enabled) {
-        // No telemetry liveness required; safe operation is the user's responsibility
-        return true;
-    }
-
     if (!failsafeState.telemLinkSeen) {
         return false;
     }
 
     const timeMs_t now = millis();
-    if ((now - failsafeState.telemLinkActivityAt) > (timeMs_t)failsafeConfig()->failsafe_telem_link_timeout * MILLIS_PER_SECOND) {
+    if ((now - failsafeState.telemLinkActivityAt) > (timeMs_t)failsafeConfig()->failsafe_telem_timeout * MILLIS_PER_TENTH_SECOND) {
         failsafeState.telemLinkUpSince = 0;
         return false;
     }
@@ -321,17 +314,8 @@ static bool failsafeTelemetryLinkIsUp(void)
     return (now - failsafeState.telemLinkUpSince) >= failsafeState.rxDataRecoveryPeriod;
 }
 
-void failsafeNotifyTelemetryLinkActivity(failsafeTelemLinkSource_e source)
+void failsafeNotifyTelemetryActivity(void)
 {
-    if (!failsafeConfig()->failsafe_telem_link_enabled) {
-        return;
-    }
-
-    const uint8_t configuredSource = failsafeConfig()->failsafe_telem_link_source;
-    if (configuredSource != FAILSAFE_TELEM_LINK_SOURCE_ANY && configuredSource != source) {
-        return;
-    }
-
     failsafeState.telemLinkActivityAt = millis();
     failsafeState.telemLinkSeen = true;
 }

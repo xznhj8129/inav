@@ -570,7 +570,7 @@ void mspSerialProcessOnePort(mspPort_t * const mspPort, mspEvaluateNonMspData_e 
                 // Inbound MSP traffic on a physical port is a control-link heartbeat candidate.
                 // USB is excluded so bench/configurator sessions do not keep a link alive.
                 if (mspPort->port->identifier != SERIAL_PORT_USB_VCP) {
-                    failsafeNotifyTelemetryLinkActivity(FAILSAFE_TELEM_LINK_SOURCE_MSP);
+                    failsafeNotifyTelemetryActivity();
                 }
                 mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort, mspProcessCommandFn);
                 break; // process one command at a time so as not to block.

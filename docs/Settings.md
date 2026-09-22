@@ -1346,35 +1346,13 @@ Threshold for stick motion to consider failsafe condition resolved. If non-zero 
 
 ---
 
-### failsafe_telem_link_enabled
+### failsafe_telem_timeout
 
-Autopilot mode: trigger the failsafe procedure when the telemetry-link heartbeat is lost. When disabled, Autopilot mode has no liveness source and safe operation is the user's responsibility.
-
-| Default | Min | Max |
-| --- | --- | --- |
-| OFF | OFF | ON |
-
----
-
-### failsafe_telem_link_source
-
-Autopilot mode: which inbound link counts as the telemetry-link heartbeat. MSP: any inbound message on a physical MSP port (USB excluded). MAVLink: an inbound HEARTBEAT from a GCS or onboard controller.
-
-| Allowed Values |  |
-| --- | --- |
-| MSP | Default |
-| MAVLINK |  |
-| ANY |  |
-
----
-
-### failsafe_telem_link_timeout
-
-Autopilot mode: time in seconds without a telemetry-link heartbeat before the failsafe procedure is triggered.
+Autopilot mode: time in deciseconds to wait before activating failsafe when the telemetry link is lost. The heartbeat is any inbound message on a physical MSP port (USB excluded) or a MAVLink HEARTBEAT from a GCS or onboard controller. 0 = no guard time.
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 5 | 1 | 60 |
+| 50 | 0 | 200 |
 
 ---
 

@@ -1226,7 +1226,7 @@ bool mavlinkHandleIncomingHeartbeat(void)
     // Only control peers keep the link alive: a GCS or an onboard controller.
     // Other vehicles' heartbeats must not mask a lost control link.
     if (msg.type == MAV_TYPE_GCS || msg.type == MAV_TYPE_ONBOARD_CONTROLLER) {
-        failsafeNotifyTelemetryLinkActivity(FAILSAFE_TELEM_LINK_SOURCE_MAVLINK);
+        failsafeNotifyTelemetryActivity();
     }
 
     // A framed HEARTBEAT is the protocol's presence signal. Track it per peer

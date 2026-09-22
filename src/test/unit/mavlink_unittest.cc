@@ -3768,9 +3768,8 @@ bool failsafeIsActive(void)
     return false;
 }
 
-void failsafeNotifyTelemetryLinkActivity(failsafeTelemLinkSource_e source)
+void failsafeNotifyTelemetryActivity(void)
 {
-    UNUSED(source);
 }
 
 failsafePhase_e failsafePhase(void)

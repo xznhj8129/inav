@@ -39,9 +39,6 @@ tables:
     values: ["PWM", "SBUS", "SBUS_PWM"]
   - name: failsafe_procedure
     values: ["LAND", "DROP", "RTH", "NONE"]
-  - name: failsafe_telem_link_source
-    values: ["MSP", "MAVLINK", "ANY"]
-    enum: failsafeTelemLinkSource_e
   - name: control_mode
     values: ["PILOT", "AUTOPILOT"]
     enum: controlMode_e
@@ -977,19 +974,11 @@ groups:
         default_value: 7
         min: -1
         max: 600
-      - name: failsafe_telem_link_enabled
-        description: "Autopilot mode: trigger the failsafe procedure when the telemetry-link heartbeat is lost. When disabled, Autopilot mode has no liveness source and safe operation is the user's responsibility."
-        default_value: OFF
-        type: bool
-      - name: failsafe_telem_link_timeout
-        description: "Autopilot mode: time in seconds without a telemetry-link heartbeat before the failsafe procedure is triggered."
-        default_value: 5
-        min: 1
-        max: 60
-      - name: failsafe_telem_link_source
-        description: "Autopilot mode: which inbound link counts as the telemetry-link heartbeat. MSP: any inbound message on a physical MSP port (USB excluded). MAVLink: an inbound HEARTBEAT from a GCS or onboard controller."
-        default_value: MSP
-        table: failsafe_telem_link_source
+      - name: failsafe_telem_timeout
+        description: "Autopilot mode: time in deciseconds to wait before activating failsafe when the telemetry link is lost. The heartbeat is any inbound message on a physical MSP port (USB excluded) or a MAVLink HEARTBEAT from a GCS or onboard controller. 0 = no guard time."
+        default_value: 50
+        min: 0
+        max: 200
 
   - name: PG_LIGHTS_CONFIG
     type: lightsConfig_t

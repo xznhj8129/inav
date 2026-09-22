@@ -46,9 +46,7 @@ typedef struct failsafeConfig_s {
 #ifdef USE_GPS_FIX_ESTIMATION
     int16_t failsafe_gps_fix_estimation_delay;  // Time delay before Failsafe triggered when GPX Fix estimation is applied (s)
 #endif
-    uint8_t failsafe_telem_link_enabled;        // Autopilot mode: enable the telemetry-link heartbeat failsafe
-    uint8_t failsafe_telem_link_timeout;        // Autopilot mode: heartbeat staleness timeout (seconds)
-    uint8_t failsafe_telem_link_source;         // failsafeTelemLinkSource_e
+    uint8_t failsafe_telem_timeout;             // Autopilot mode: guard time for failsafe activation after telemetry link loss. 1 step = 0.1sec (TENTH_SECOND)
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
@@ -122,12 +120,6 @@ typedef enum {
 } failsafeRxLinkState_e;
 
 typedef enum {
-    FAILSAFE_TELEM_LINK_SOURCE_MSP = 0,     // Inbound MSP messages on a physical MSP port
-    FAILSAFE_TELEM_LINK_SOURCE_MAVLINK,     // Inbound MAVLink HEARTBEAT
-    FAILSAFE_TELEM_LINK_SOURCE_ANY,         // Either of the above
-} failsafeTelemLinkSource_e;
-
-typedef enum {
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
     FAILSAFE_PROCEDURE_DROP_IT,
     FAILSAFE_PROCEDURE_RTH,
@@ -184,8 +176,8 @@ bool failsafeIsMonitoring(void);
 bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
 
-// Autopilot mode: the active liveness source is the configured telemetry link instead of RC
-void failsafeNotifyTelemetryLinkActivity(failsafeTelemLinkSource_e source);
+// Autopilot mode: the active liveness source is the telemetry link instead of RC
+void failsafeNotifyTelemetryActivity(void);
 bool failsafeIsReceivingControlLinkData(void);
 void failsafeOnRxSuspend(void);
 void failsafeOnRxResume(void);
