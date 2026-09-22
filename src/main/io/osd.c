@@ -916,6 +916,8 @@ static const char * osdArmingDisabledReasonMessage(void)
             return OSD_MESSAGE_STR(OSD_MSG_FS_EN);
         case ARMING_DISABLED_RC_LINK:
             return OSD_MESSAGE_STR(OSD_MSG_NO_RC_LINK);
+        case ARMING_DISABLED_TELEM_LINK:
+            return OSD_MESSAGE_STR(OSD_MSG_NO_TELEM_LINK);
         case ARMING_DISABLED_THROTTLE:
             return OSD_MESSAGE_STR(OSD_MSG_THROTTLE_NOT_LOW);
         case ARMING_DISABLED_ROLLPITCH_NOT_CENTERED:
@@ -943,8 +945,6 @@ static const char * osdArmingDisabledReasonMessage(void)
 #endif
 
             // Cases without message
-        case ARMING_DISABLED_TELEM_LINK:
-            FALLTHROUGH;
         case ARMING_DISABLED_LANDING_DETECTED:
             FALLTHROUGH;
         case ARMING_DISABLED_CMS_MENU:

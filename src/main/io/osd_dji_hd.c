@@ -499,6 +499,8 @@ static char * osdArmingDisabledReasonMessage(void)
             return OSD_MESSAGE_STR("FAILSAFE ENABLED");
         case ARMING_DISABLED_RC_LINK:
             return OSD_MESSAGE_STR("NO RC LINK");
+        case ARMING_DISABLED_TELEM_LINK:
+            return OSD_MESSAGE_STR("NO TELEM LINK");
         case ARMING_DISABLED_THROTTLE:
             return OSD_MESSAGE_STR("THROTTLE!");
         case ARMING_DISABLED_ROLLPITCH_NOT_CENTERED:
@@ -520,8 +522,6 @@ static char * osdArmingDisabledReasonMessage(void)
             // Cases without message
         case ARMING_DISABLED_GEOZONE:
             return OSD_MESSAGE_STR("NO FLY ZONE");
-        case ARMING_DISABLED_TELEM_LINK:
-            FALLTHROUGH;
         case ARMING_DISABLED_LANDING_DETECTED:
             FALLTHROUGH;
         case ARMING_DISABLED_CMS_MENU:
