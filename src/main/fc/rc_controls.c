@@ -41,6 +41,7 @@
 
 #include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/fc_core.h"
 #include "fc/rc_controls.h"
@@ -108,6 +109,11 @@ bool areSticksDeflected(void)
 
 bool isRollPitchStickDeflected(uint8_t deadband)
 {
+    // Autopilot has no pilot on the sticks; the frozen channel values are meaningless
+    if (isAutopilotControlMode()) {
+        return false;
+    }
+
     return (ABS(rcCommand[ROLL]) > deadband) || (ABS(rcCommand[PITCH]) > deadband);
 }
 
@@ -128,11 +134,22 @@ throttleStatus_e FAST_CODE NOINLINE calculateThrottleStatus(throttleStatusType_e
 
 bool throttleStickIsLow(void)
 {
+    // Autopilot has no pilot throttle stick; the frozen channel value is meaningless
+    if (isAutopilotControlMode()) {
+        return false;
+    }
+
     return calculateThrottleStatus(feature(FEATURE_REVERSIBLE_MOTORS) ? THROTTLE_STATUS_TYPE_COMMAND : THROTTLE_STATUS_TYPE_RC) == THROTTLE_LOW;
 }
 
 int16_t RP2350_FAST_CODE throttleStickMixedValue(void)
 {
+    // Autopilot has no pilot throttle; nav modes command throttle themselves, and the
+    // neutral value here is the throttle curve's zero point.
+    if (isAutopilotControlMode()) {
+        return rcLookupThrottle(0);
+    }
+
     int16_t throttleValue;
     uint16_t lowLimit = feature(FEATURE_REVERSIBLE_MOTORS) ? PWM_RANGE_MIN : rxConfig()->mincheck;
 
@@ -158,6 +175,11 @@ stickPositions_e getRcStickPositions(void)
 
 bool checkStickPosition(stickPositions_e stickPos)
 {
+    // Autopilot has no pilot on the sticks, so no stick gesture is ever held
+    if (isAutopilotControlMode()) {
+        return false;
+    }
+
     const uint8_t mask[4] = { ROL_LO | ROL_HI, PIT_LO | PIT_HI, YAW_LO | YAW_HI, THR_LO | THR_HI };
     for (int i = 0; i < 4; i++) {
         if (((stickPos & mask[i]) != 0) && ((stickPos & mask[i]) != (rcStickPositions & mask[i]))) {
@@ -189,6 +211,12 @@ static void updateRcStickPositions(void)
 
 void processRcStickPositions(bool isThrottleLow)
 {
+    // Autopilot has no pilot on the sticks: no stick commands, no channel-driven
+    // arming or disarming, no throttle-based auto-arm. Telemetry commands do both.
+    if (isAutopilotControlMode()) {
+        return;
+    }
+
     static timeMs_t lastTickTimeMs = 0;
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint32_t rcSticks;           // this hold sticks position for command combos

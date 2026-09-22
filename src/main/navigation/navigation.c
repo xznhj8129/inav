@@ -36,6 +36,7 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/multifunction.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
@@ -7058,11 +7059,22 @@ bool navigationRTHAllowsLanding(void)
 
 bool isNavLaunchEnabled(void)
 {
+    // FW launch is a pilot-initiated sequence (hand launch / bungee); Autopilot
+    // takeoff comes from telemetry instead.
+    if (isAutopilotControlMode()) {
+        return false;
+    }
+
     return (IS_RC_MODE_ACTIVE(BOXNAVLAUNCH) || feature(FEATURE_FW_LAUNCH)) && STATE(AIRPLANE);
 }
 
 bool abortLaunchAllowed(void)
 {
+    // Autopilot has no pilot sticks; launch abort comes from telemetry
+    if (isAutopilotControlMode()) {
+        return false;
+    }
+
     // allow NAV_LAUNCH_MODE to be aborted if throttle is low or throttle stick position is < launch idle throttle setting
     return throttleStickIsLow() || throttleStickMixedValue() < currentBatteryProfile->nav.fw.launch_idle_throttle;
 }

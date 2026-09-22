@@ -244,7 +244,7 @@ static void updateArmingStatus(void)
         }
 
         /* CHECK: Throttle */
-        if (!armingConfig()->fixed_wing_auto_arm) {
+        if (!armingConfig()->fixed_wing_auto_arm && !isAutopilotControlMode()) {
             // Don't want this check if fixed_wing_auto_arm is in use - machine arms on throttle > LOW
             if (throttleStickIsLow()) {
                 DISABLE_ARMING_FLAG(ARMING_DISABLED_THROTTLE);
@@ -370,7 +370,7 @@ static void updateArmingStatus(void)
         DISABLE_ARMING_FLAG(ARMING_DISABLED_DSHOT_BEEPER);
 #endif
 
-        if (isModeActivationConditionPresent(BOXPREARM)) {
+        if (!isAutopilotControlMode() && isModeActivationConditionPresent(BOXPREARM)) {
             if (IS_RC_MODE_ACTIVE(BOXPREARM)) {
                 if (prearmWasReset && (armingConfig()->prearmTimeoutMs == 0 || millis() - prearmActivationTime < armingConfig()->prearmTimeoutMs)) {
                     DISABLE_ARMING_FLAG(ARMING_DISABLED_NO_PREARM);
@@ -707,7 +707,7 @@ void processRx(timeUs_t currentTimeUs)
     calculateRxChannelsAndUpdateFailsafe(currentTimeUs);
 
     // in 3D mode, we need to be able to disarm by switch at any time
-    if (feature(FEATURE_REVERSIBLE_MOTORS)) {
+    if (feature(FEATURE_REVERSIBLE_MOTORS) && !isAutopilotControlMode()) {
         if (!IS_RC_MODE_ACTIVE(BOXARM)) {
             disarm(DISARM_SWITCH_3D);
         }
