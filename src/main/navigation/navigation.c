@@ -6376,7 +6376,11 @@ bool navigationPositionEstimateIsHealthy(void)
 
 navArmingBlocker_e navigationIsBlockingArming(bool *usedBypass)
 {
-    const bool navBoxModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVCOURSEHOLD) ||
+    // Arming safety policy, not the model's NAV-mode set (rc_modes.c isNavModeBox):
+    // only modes that depend on a healthy position estimate block arming. GCSNAV and
+    // NAVLAUNCH are routinely active before arming and are deliberately excluded;
+    // AUTOSPEED and ALTHOLD only matter for this check on fixed wing.
+    const bool positionDependentModeIsActive = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVCOURSEHOLD) ||
                                     IS_RC_MODE_ACTIVE(BOXNAVCRUISE) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) ||
                                     (STATE(FIXED_WING_LEGACY) && (IS_RC_MODE_ACTIVE(BOXAUTOSPEED) || IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)));
 
@@ -6396,8 +6400,8 @@ navArmingBlocker_e navigationIsBlockingArming(bool *usedBypass)
         return NAV_ARMING_BLOCKER_MISSING_GPS_FIX;
     }
 
-    // Don't allow arming if any of NAV modes is active
-    if (!ARMING_FLAG(ARMED) && navBoxModesEnabled) {
+    // Don't allow arming if any position-dependent mode is active
+    if (!ARMING_FLAG(ARMED) && positionDependentModeIsActive) {
         return NAV_ARMING_BLOCKER_NAV_IS_ALREADY_ACTIVE;
     }
 

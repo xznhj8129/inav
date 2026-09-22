@@ -179,30 +179,32 @@ static boxBitmask_t rcModeFlightModeMask(const boxBitmask_t *source)
     return mask;
 }
 
-// In Autopilot mode only navigation modes are activatable. Everything else
-// (manual, angle, airmode, arming switch, ...) is off the table by definition.
+// The model's navigation-mode boxes: flight modes that navigate the aircraft.
+// Autopilot mode allows only these to activate; manual and assist modes are off
+// the table by definition. This is not the same question as which active modes
+// require a healthy position estimate before arming (see navigation.c).
+bool isNavModeBox(boxId_e box)
+{
+    switch (box) {
+        case BOXNAVALTHOLD:
+        case BOXNAVPOSHOLD:
+        case BOXNAVRTH:
+        case BOXNAVWP:
+        case BOXNAVCOURSEHOLD:
+        case BOXNAVCRUISE:
+        case BOXNAVLAUNCH:
+        case BOXGCSNAV:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 static void rcModeRetainNavModesOnly(boxBitmask_t *mask)
 {
-    static const boxId_e navModeBoxes[] = {
-        BOXNAVALTHOLD,
-        BOXNAVPOSHOLD,
-        BOXNAVRTH,
-        BOXNAVWP,
-        BOXNAVCOURSEHOLD,
-        BOXNAVCRUISE,
-        BOXNAVLAUNCH,
-        BOXGCSNAV,
-    };
-
     for (unsigned box = 0; box < CHECKBOX_ITEM_COUNT; box++) {
-        bool isNavMode = false;
-        for (unsigned i = 0; i < ARRAYLEN(navModeBoxes); i++) {
-            if (navModeBoxes[i] == (boxId_e)box) {
-                isNavMode = true;
-                break;
-            }
-        }
-        if (!isNavMode) {
+        if (!isNavModeBox((boxId_e)box)) {
             bitArrayClr(mask->bits, box);
         }
     }
@@ -230,7 +232,7 @@ static void rcModeUpdateEffectiveActivationMask(void)
         }
     }
 
-    if (isAutopilotControlMode()) {
+    if (!controlAllowsManualModes()) {
         rcModeRetainNavModesOnly(&rcModeActivationMask);
     }
 }
