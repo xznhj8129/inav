@@ -344,8 +344,9 @@ static void serializeSDCardSummaryReply(sbuf_t *dst)
     reply.fsError = afatfs_getLastError();
     // Free space and total space in kilobytes
     reply.freeSpaceKB = afatfs_getContiguousFreeSpace() / 1024;
-    // sdcard_getMetadata() is NULL until a card driver has registered its vtable,
-    // which is every reply where the state above is not READY.
+    // sdcard_getMetadata() is NULL when sdcardVTable is, i.e. when fc_init skipped
+    // sdcard_init() because nothing asked for the card (blackbox not logging to SD
+    // and terrain disabled). The drivers themselves always return a static struct.
     const sdcardMetadata_t *metadata = sdcard_getMetadata();
     reply.totalSpaceKB = metadata ? metadata->numBlocks / 2 : 0; // Block size is half a kilobyte
 #endif
