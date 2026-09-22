@@ -87,6 +87,7 @@ static bool mspOverrideDataProcessingRequired = false;
 static bool rxSignalReceived = false;
 static bool rxFlightChannelsValid = false;
 static uint8_t rxChannelCount;
+static timeMs_t lastValidChannelUpdateAt = 0;   // when valid channel data was last processed (Autopilot freshness)
 
 static timeUs_t rxNextUpdateAtUs = 0;
 static timeUs_t needRxSignalBefore = 0;
@@ -382,6 +383,11 @@ bool rxIsReceivingSignal(void)
     return rxSignalReceived;
 }
 
+timeMs_t rxGetLastValidChannelUpdateAt(void)
+{
+    return lastValidChannelUpdateAt;
+}
+
 bool rxAreFlightChannelsValid(void)
 {
     return rxFlightChannelsValid;
@@ -542,6 +548,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
     // Update failsafe
     if (rxFlightChannelsValid && rxSignalReceived) {
+        lastValidChannelUpdateAt = millis();
         failsafeOnValidDataReceived();
     } else {
         failsafeOnValidDataFailed();

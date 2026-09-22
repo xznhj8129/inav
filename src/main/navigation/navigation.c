@@ -36,7 +36,6 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
-#include "fc/control_mode.h"
 #include "fc/multifunction.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
@@ -7063,24 +7062,14 @@ bool navigationRTHAllowsLanding(void)
 
 bool isNavLaunchAvailable(void)
 {
-    // Launch is configured and available to the pilot. Callers treat this as
-    // "launch is in play" (FSM activation, arming checks, flight-time accounting,
-    // flying detection); in Autopilot it is false everywhere, because takeoff
-    // comes from telemetry instead of a pilot-initiated launch.
-    if (isAutopilotControlMode()) {
-        return false;
-    }
-
+    // Launch is configured and in play: FSM activation, arming checks, flight-time
+    // accounting, flying detection. Channel-fed launch works in Autopilot too; a
+    // telemetry takeoff command for headless launches comes with the MC launch work.
     return (IS_RC_MODE_ACTIVE(BOXNAVLAUNCH) || feature(FEATURE_FW_LAUNCH)) && STATE(AIRPLANE);
 }
 
 bool abortLaunchAllowed(void)
 {
-    // Autopilot has no pilot sticks; launch abort comes from telemetry
-    if (isAutopilotControlMode()) {
-        return false;
-    }
-
     // allow NAV_LAUNCH_MODE to be aborted if throttle is low or throttle stick position is < launch idle throttle setting
     return throttleStickIsLow() || throttleStickMixedValue() < currentBatteryProfile->nav.fw.launch_idle_throttle;
 }

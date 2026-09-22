@@ -118,6 +118,10 @@ static bool handleIncoming_COMMAND(
         case MAV_CMD_NAV_TAKEOFF:
             mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
             return true;
+        case MAV_CMD_DO_CHANGE_SPEED:
+            // TODO: live speed target (MC cruise / FW auto-speed). No implementation yet.
+            mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
+            return true;
         case MAV_CMD_DO_SET_HOME:
             {
                 if ((param1 != 0.0f && param1 != 1.0f) ||

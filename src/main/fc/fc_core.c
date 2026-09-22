@@ -249,7 +249,7 @@ static void updateArmingStatus(void)
         }
 
         /* CHECK: Throttle */
-        if (!armingConfig()->fixed_wing_auto_arm && !isAutopilotControlMode()) {
+        if (!armingConfig()->fixed_wing_auto_arm) {
             // Don't want this check if fixed_wing_auto_arm is in use - machine arms on throttle > LOW
             if (throttleStickIsLow()) {
                 DISABLE_ARMING_FLAG(ARMING_DISABLED_THROTTLE);
@@ -456,7 +456,22 @@ static RP2350_FAST_CODE void processPilotAndFailSafeActions(float dT)
         // Only recompute when the RX task has delivered new data (~50 Hz).
         {
             static int16_t cachedCmd[3] = {0, 0, 0};
-            if (isRXDataNew) {
+
+            // Autopilot: channel values are real but nothing is required to keep updating
+            // them. When they stop arriving, AER decays to centered so a disappeared
+            // telemetry client cannot leave a stick deflection latched. Throttle is
+            // deliberately sticky. The window mirrors the MSP RC override data-failure
+            // window.
+            bool channelDataStale = false;
+            if (isAutopilotControlMode()) {
+                const timeMs_t lastChannelUpdateAt = rxGetLastValidChannelUpdateAt();
+                const timeMs_t channelDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
+                channelDataStale = (lastChannelUpdateAt == 0) || ((millis() - lastChannelUpdateAt) > channelDataFailurePeriod);
+            }
+
+            if (channelDataStale) {
+                cachedCmd[ROLL] = cachedCmd[PITCH] = cachedCmd[YAW] = 0;
+            } else if (isRXDataNew) {
                 cachedCmd[ROLL]  = getAxisRcCommand(rxGetChannelValue(ROLL),
                     FLIGHT_MODE(MANUAL_MODE) ? currentControlProfile->manual.rcExpo8 : currentControlProfile->stabilized.rcExpo8,
                     rcControlsConfig()->deadband);
