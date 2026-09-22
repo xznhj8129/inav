@@ -2,10 +2,13 @@
 
 #include "fc/fc_mavlink.h"
 
+#include "flight/failsafe.h"
+
 #include "mavlink/mavlink_command.h"
 #include "mavlink/mavlink_guided.h"
 #include "mavlink/mavlink_mission.h"
 #include "mavlink/mavlink_ports.h"
+#include "mavlink/mavlink_routing.h"
 #include "mavlink/mavlink_runtime.h"
 #include "mavlink/mavlink_streams.h"
 
@@ -410,6 +413,14 @@ static bool handleIncoming_ADSB_VEHICLE(void) {
 
 mavlinkFcDispatchResult_e mavlinkFcDispatchIncomingMessage(uint8_t ingressPortIndex)
 {
+    // Any traffic addressed to us from an identified control peer (GCS or onboard
+    // controller) refreshes the telemetry-link liveness, mirroring how any inbound
+    // MSP message counts. Identity is the sysid/compid; the heartbeat established it.
+    const mavlinkRouteEntry_t *senderRoute = mavlinkFindRoute(mavlinkContext.recvMsg.sysid, mavlinkContext.recvMsg.compid);
+    if (senderRoute && senderRoute->isControlPeer) {
+        failsafeNotifyTelemetryActivity();
+    }
+
     switch (mavlinkContext.recvMsg.msgid) {
     case MAVLINK_MSG_ID_HEARTBEAT:
         return mavlinkHandleIncomingHeartbeat() ? MAVLINK_FC_DISPATCH_HANDLED_ACTIVITY : MAVLINK_FC_DISPATCH_NOT_HANDLED;

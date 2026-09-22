@@ -81,6 +81,10 @@ typedef struct mavlinkRouteEntry_s {
     // cannot be used to detect the port a heartbeat last arrived on.
     uint8_t lastHeartbeatPortIndex;
     timeMs_t lastHeartbeatMs;
+    // Set once a HEARTBEAT identifies this peer as a GCS or onboard controller.
+    // Afterwards any traffic from the peer refreshes the telemetry-link liveness,
+    // mirroring how any inbound MSP message counts.
+    bool isControlPeer;
     // Snapshot rate limit, per peer rather than per port: two peers sharing a
     // port must not consume each other's allowance.
     timeMs_t lastArmingSnapshotMs;

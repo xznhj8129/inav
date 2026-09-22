@@ -1223,9 +1223,11 @@ bool mavlinkHandleIncomingHeartbeat(void)
     mavlink_heartbeat_t msg;
     mavlink_msg_heartbeat_decode(&mavlinkContext.recvMsg, &msg);
 
-    // Only control peers keep the link alive: a GCS or an onboard controller.
-    // Other vehicles' heartbeats must not mask a lost control link.
-    if (msg.type == MAV_TYPE_GCS || msg.type == MAV_TYPE_ONBOARD_CONTROLLER) {
+    // A heartbeat from a GCS or onboard controller identifies the peer as a control
+    // peer. Only control peers keep the telemetry link alive; other vehicles must not
+    // mask a lost control link.
+    const bool isControlPeer = (msg.type == MAV_TYPE_GCS || msg.type == MAV_TYPE_ONBOARD_CONTROLLER);
+    if (isControlPeer) {
         failsafeNotifyTelemetryActivity();
     }
 
@@ -1240,6 +1242,9 @@ bool mavlinkHandleIncomingHeartbeat(void)
     // holds MAVLINK_MAX_ROUTES peers and is not expected to fill in practice.
     mavlinkRouteEntry_t *route = mavlinkFindRoute(mavlinkContext.recvMsg.sysid, mavlinkContext.recvMsg.compid);
     if (route) {
+        if (isControlPeer) {
+            route->isControlPeer = true;
+        }
         const timeMs_t nowMs = millis();
         const bool firstHeartbeat = route->lastHeartbeatMs == 0;
         const bool heartbeatGap = nowMs - route->lastHeartbeatMs >= MAVLINK_HEARTBEAT_RECONNECT_GAP_MS;
