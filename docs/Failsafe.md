@@ -46,7 +46,7 @@ In `AUTOPILOT` mode:
 
 * Only navigation modes are available. Stick *commands* (gyro calibration, profile switching, stick arming, save/load) and channel-driven arming do not exist.
 * Channel values are real, never zeroed: they are initialized at boot (AER centered, throttle and aux low) and afterwards written only by telemetry commands. Roll/pitch/yaw decay to centered when channel updates stop — they must be refreshed at 5 Hz (200 ms), like the MSP axes overrides — so a vanished controller cannot leave a stick deflection latched; throttle and aux stay at their last value. Navigation-mode adjustments (position, altitude, heading, fixed-wing manual throttle increase, auto-speed) work with these values.
-* The telemetry heartbeat is any inbound MSP message on a physical MSP port (USB sessions do not count) or a MAVLink HEARTBEAT from a GCS or onboard controller. Heartbeats from other vehicles do not keep the link alive.
+* The telemetry heartbeat is any inbound MSP message on a physical MSP port (USB sessions do not count). For MAVLink, a HEARTBEAT from a GCS or onboard controller identifies that peer; afterwards any traffic from that same peer keeps the link alive. Other vehicles never count.
 * `failsafe_telem_timeout` is the guard time in 0.1 second units (default 50 = 5 seconds) after the last heartbeat before failsafe activates. It works like `failsafe_delay`; 0 removes the guard time. Recovery uses `failsafe_recovery_delay`, the same as the RC link.
 * Arming is blocked until the telemetry link has been seen and is fresh.
 
