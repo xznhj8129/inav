@@ -593,10 +593,10 @@ Sets sensor calibration data.
 | magZeroX | `int16` |  Raw ADC | Sets `compassConfigMutable()->magZero.raw[X]` (if `USE_MAG`) |
 | magZeroY | `int16` |  Raw ADC | Sets `compassConfigMutable()->magZero.raw[Y]` (if `USE_MAG`) |
 | magZeroZ | `int16` |  Raw ADC | Sets `compassConfigMutable()->magZero.raw[Z]` (if `USE_MAG`) |
-| opflowScale | `uint16` |  Scale * 256 | Sets `opticalFlowConfigMutable()->opflow_scale = value / 256.0f` (if `USE_OPFLOW`) |
-| magGainX | `int16` |  Raw ADC | Sets `compassConfigMutable()->magGain[X]` (if `USE_MAG`) |
-| magGainY | `int16` |  Raw ADC | Sets `compassConfigMutable()->magGain[Y]` (if `USE_MAG`) |
-| magGainZ | `int16` |  Raw ADC | Sets `compassConfigMutable()->magGain[Z]` (if `USE_MAG`) |
+| opflowScale | `optional uint16` |  Scale * 256 | Sets `opticalFlowConfigMutable()->opflow_scale = value / 256.0f` (if `USE_OPFLOW`) |
+| magGainX | `optional int16` |  Raw ADC | Sets `compassConfigMutable()->magGain[X]` (if `USE_MAG`) |
+| magGainY | `optional int16` |  Raw ADC | Sets `compassConfigMutable()->magGain[Y]` (if `USE_MAG`) |
+| magGainZ | `optional int16` |  Raw ADC | Sets `compassConfigMutable()->magGain[Z]` (if `USE_MAG`) |
 
 *reply:* none
 
@@ -1665,15 +1665,15 @@ Retrieves OSD configuration settings and layout for screen 0. Coordinates are pa
 | Field | Type | Enum / flags | Description |
 |---|---|---|---|
 | osdDriverType | `uint8` | `osdDriver_e`  | Enum `osdDriver_e`: `OSD_DRIVER_MAX7456` if `USE_OSD`, else `OSD_DRIVER_NONE`. |
-| videoSystem | `uint8` | `videoSystem_e`  | Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Sent even if OSD disabled |
-| units | `uint8` | `osd_unit_e`  | Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Sent even if OSD disabled |
-| rssiAlarm | `uint8` |  % | RSSI alarm threshold (`osdConfig()->rssi_alarm`). Sent even if OSD disabled |
-| capAlarm | `uint16` |  mAh/mWh | Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Sent even if OSD disabled. |
-| timerAlarm | `uint16` |  minutes | Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Sent even if OSD disabled. |
-| altAlarm | `uint16` |  meters | Altitude alarm threshold (`osdConfig()->alt_alarm`). Sent even if OSD disabled |
-| distAlarm | `uint16` |  meters | Distance alarm threshold (`osdConfig()->dist_alarm`). Sent even if OSD disabled |
-| negAltAlarm | `uint16` |  meters | Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Sent even if OSD disabled |
-| itemPositions | `uint16[OSD_ITEM_COUNT]` |  packed | Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Sent even if OSD disabled |
+| videoSystem | `optional uint8` | `videoSystem_e`  | Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Absent when `USE_OSD` is not compiled in |
+| units | `optional uint8` | `osd_unit_e`  | Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Absent when `USE_OSD` is not compiled in |
+| rssiAlarm | `optional uint8` |  % | RSSI alarm threshold (`osdConfig()->rssi_alarm`). Absent when `USE_OSD` is not compiled in |
+| capAlarm | `optional uint16` |  mAh/mWh | Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Absent when `USE_OSD` is not compiled in. |
+| timerAlarm | `optional uint16` |  minutes | Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Absent when `USE_OSD` is not compiled in. |
+| altAlarm | `optional uint16` |  meters | Altitude alarm threshold (`osdConfig()->alt_alarm`). Absent when `USE_OSD` is not compiled in |
+| distAlarm | `optional uint16` |  meters | Distance alarm threshold (`osdConfig()->dist_alarm`). Absent when `USE_OSD` is not compiled in |
+| negAltAlarm | `optional uint16` |  meters | Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Absent when `USE_OSD` is not compiled in |
+| itemPositions | `optional uint16[OSD_ITEM_COUNT]` |  packed | Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Absent when `USE_OSD` is not compiled in |
 
 ---
 ## MSP_SET_OSD_CONFIG
@@ -2292,7 +2292,7 @@ Provides raw GPS data (fix status, coordinates, altitude, speed, course).
 | numSat | `uint8` |  Count | Number of satellites used in solution (`gpsSol.numSat`) |
 | latitude | `int32` |  deg * 1e7 | Latitude (`gpsSol.llh.lat`) |
 | longitude | `int32` |  deg * 1e7 | Longitude (`gpsSol.llh.lon`) |
-| altitude | `int16` |  cm | Altitude above MSL (`gpsSol.llh.alt`) sent as centimeters |
+| altitude | `int16` |  m | Altitude above MSL, sent as whole metres (`gpsSol.llh.alt / 100`) |
 | speed | `int16` |  cm/s | Ground speed (`gpsSol.groundSpeed`) |
 | groundCourse | `int16` |  deci-degrees | Ground course (`gpsSol.groundCourse`) |
 | hdop | `uint16` |  HDOP * 100 | Horizontal Dilution of Precision (`gpsSol.hdop`) |
@@ -2596,6 +2596,7 @@ Retrieves the current status of the navigation system.
 | activeWpNumber | `uint8` |   | Index: Index of the currently executing waypoint (`NAV_Status.activeWpNumber`) |
 | navError | `uint8` | `navSystemStatus_Error_e`  | Enum (`navSystemStatus_Error_e`): Current navigation error code (`NAV_Status.error`) |
 | targetHeading | `int16` |  degrees | Target heading for heading controller (`getHeadingHoldTarget()`) |
+| desiredHeading | `uint16` |  centi-degrees | Guidance course/track the navigation controller is steering to (`navDesiredHeading`, `wrap_36000()` of the desired yaw) |
 
 ---
 ## MSP_NAV_CONFIG
@@ -4752,6 +4753,7 @@ Retrieves OSD display preferences (video system, units, styles, etc.).
 | sidebarScrollArrows | `uint8` |   | Boolean: Show arrows for scrollable sidebars (`osdConfig()->sidebar_scroll_arrows`) |
 | units | `uint8` | `osd_unit_e`  | Enum: `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`) |
 | statsEnergyUnit | `uint8` | `osd_stats_energy_unit_e`  | Enum `osd_stats_energy_unit_e`: Unit for energy display in post-flight stats (`osdConfig()->stats_energy_unit`) |
+| adsbWarningStyle | `uint8` |   | Enum `osd_adsb_warning_style_e`: How ADSB proximity warnings are drawn (`osdConfig()->adsb_warning_style`). 0 if `USE_ADSB` disabled |
 
 ---
 ## MSP2_INAV_OSD_SET_PREFERENCES
@@ -4777,6 +4779,7 @@ Sets OSD display preferences.
 | sidebarScrollArrows | `uint8` |   | Sets `osdConfigMutable()->sidebar_scroll_arrows` |
 | units | `uint8` | `osd_unit_e`  | Sets `osdConfigMutable()->units` (enum `osd_unit_e`) |
 | statsEnergyUnit | `uint8` | `osd_stats_energy_unit_e`  | Sets `osdConfigMutable()->stats_energy_unit` |
+| adsbWarningStyle | `optional uint8` |   | Sets `osdConfigMutable()->adsb_warning_style`. Only read when the payload is at least 10 bytes and the firmware has `USE_ADSB` |
 
 *reply:* none
 
@@ -4839,7 +4842,7 @@ Retrieves the Blackbox configuration. Supersedes `MSP_BLACKBOX_CONFIG`.
 | blackboxDevice | `uint8` | `BlackboxDevice`  | Enum `BlackboxDevice`: Target device for logging (`blackboxConfig()->device`). 0 if not supported |
 | blackboxRateNum | `uint16` |   | Numerator for logging rate divider (`blackboxConfig()->rate_num`). 0 if not supported |
 | blackboxRateDenom | `uint16` |   | Denominator for logging rate divider (`blackboxConfig()->rate_denom`). 0 if not supported |
-| blackboxIncludeFlags | `uint32` | `bitmask`  | Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`) |
+| blackboxIncludeFlags | `optional uint32` | `bitmask`  | Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`). Absent when the firmware was built without `USE_BLACKBOX`, which replies with the first 6 bytes only |
 
 ---
 ## MSP2_SET_BLACKBOX_CONFIG
@@ -5003,7 +5006,7 @@ since INAV 1.0
 
 Retrieves the custom servo mixer rules, including programming framework condition IDs, for primary and secondary mixer profiles. Supersedes `MSP_SERVO_MIX_RULES`.
 
-> `conditionId` requires `USE_PROGRAMMING_FRAMEWORK`.
+> `conditionId` requires `USE_PROGRAMMING_FRAMEWORK`. If multiple mixer profiles are enabled (`MAX_MIXER_PROFILE_COUNT > 1`), a second block of `MAX_SERVO_RULES` rules for the next profile follows immediately.
 
 *request:* none
 
@@ -5016,11 +5019,6 @@ Retrieves the custom servo mixer rules, including programming framework conditio
 | rate | `int16` |   | Mixing rate/weight |
 | speed | `uint8` |   | Speed/Slew rate limit (0-100) |
 | conditionId | `int8` |   | Logic Condition ID (0 to `MAX_LOGIC_CONDITIONS - 1`, or 255/-1 if none/disabled) |
-| p2TargetChannel | `optional uint8` |   | (Optional) Profile 2 Target channel |
-| p2InputSource | `optional uint8` | `inputSource_e`  | (Optional) Profile 2 Enum `inputSource_e` Input source |
-| p2Rate | `optional int16` |   | (Optional) Profile 2 Rate |
-| p2Speed | `optional uint8` |   | (Optional) Profile 2 Speed |
-| p2ConditionId | `optional int8` |   | (Optional) Profile 2 Logic Condition ID |
 
 ---
 ## MSP2_INAV_SET_SERVO_MIXER
@@ -5523,7 +5521,8 @@ Retrieves the full telemetry data structure reported by each ESC.
 | Field | Type | Enum / flags | Description |
 |---|---|---|---|
 | motorCount | `uint8` |   | Number of motors reporting telemetry (`getMotorCount()`) |
-| escData | `escSensorData_t` |   | Array of `escSensorData_t` structures containing voltage, current, temp, RPM, errors etc. for each ESC |
+| escData[] | *repeat: motorCount* | | |
+|  esc | `escSensorData_t` |   | One ESC's telemetry (voltage, current, temperature, RPM, error count); see `escSensorData_t` |
 
 ---
 ## MSP2_INAV_DRONECAN_NODES
@@ -5857,8 +5856,8 @@ Retrieves the list of currently tracked ADSB (Automatic Dependent Surveillance�
 | items[] | *repeat: maxVehicles* | | |
 |  callsign | `char[ADSB_CALL_SIGN_MAX_LENGTH]` |   | Fixed-length callsign from `adsbVehicle->vehicleValues.callsign` (padded with NULs if shorter). |
 |  icao | `uint32` |   | ICAO address (`adsbVehicle->vehicleValues.icao`). |
-|  lat | `int32` |  1e-7 deg | Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lat`). |
-|  lon | `int32` |  1e-7 deg | Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lon`). |
+|  lat | `int32` |  1e-7 deg | Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lat`). |
+|  lon | `int32` |  1e-7 deg | Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lon`). |
 |  alt | `int32` |  cm | Altitude above sea level (`adsbVehicle->vehicleValues.alt`). |
 |  headingDeg | `uint16` |  deg | Course over ground in whole degrees (`CENTIDEGREES_TO_DEGREES(vehicleValues.heading)`). |
 |  tslc | `uint8` |  s | Time since last communication (`adsbVehicle->vehicleValues.tslc`). |
@@ -6423,9 +6422,9 @@ Sets a body-frame offset target relative to the current vehicle position.
 
 | Field | Type | Enum / flags | Description |
 |---|---|---|---|
-| posX | `int32` |  cm | Desired X in local NEU frame |
-| posY | `int32` |  cm | Desired Y in local NEU frame |
-| posZ | `optional int32` |  cm | Desired Z in local NEU frame (up-positive). Omit this field to leave Z unchanged. |
+| offsetForward | `int32` |  cm | Body-frame forward offset from the current position, rotated into NEU by the current yaw |
+| offsetRight | `int32` |  cm | Body-frame right offset from the current position, rotated into NEU by the current yaw |
+| offsetUp | `int32` |  cm | Offset above the current altitude (up-positive). 0 keeps the current altitude |
 
 *reply:* none
 

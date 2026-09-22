@@ -543,22 +543,22 @@ messages:
           description: Sets `compassConfigMutable()->magZero.raw[Z]` (if `USE_MAG`)
 
         opflowScale:
-          type: uint16
+          type: optional uint16
           unit: Scale * 256
           description: Sets `opticalFlowConfigMutable()->opflow_scale = value / 256.0f` (if `USE_OPFLOW`)
 
         magGainX:
-          type: int16
+          type: optional int16
           unit: Raw ADC
           description: Sets `compassConfigMutable()->magGain[X]` (if `USE_MAG`)
 
         magGainY:
-          type: int16
+          type: optional int16
           unit: Raw ADC
           description: Sets `compassConfigMutable()->magGain[Y]` (if `USE_MAG`)
 
         magGainZ:
-          type: int16
+          type: optional int16
           unit: Raw ADC
           description: Sets `compassConfigMutable()->magGain[Z]` (if `USE_MAG`)
     reply: null
@@ -2080,49 +2080,49 @@ messages:
           description: 'Enum `osdDriver_e`: `OSD_DRIVER_MAX7456` if `USE_OSD`, else `OSD_DRIVER_NONE`.'
 
         videoSystem:
-          type: uint8
+          type: optional uint8
           enum: videoSystem_e
-          description: 'Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Sent even if OSD disabled'
+          description: 'Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Absent when `USE_OSD` is not compiled in'
 
         units:
-          type: uint8
+          type: optional uint8
           enum: osd_unit_e
-          description: Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Sent even if OSD disabled
+          description: Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Absent when `USE_OSD` is not compiled in
 
         rssiAlarm:
-          type: uint8
+          type: optional uint8
           unit: '%'
-          description: RSSI alarm threshold (`osdConfig()->rssi_alarm`). Sent even if OSD disabled
+          description: RSSI alarm threshold (`osdConfig()->rssi_alarm`). Absent when `USE_OSD` is not compiled in
 
         capAlarm:
-          type: uint16
+          type: optional uint16
           unit: mAh/mWh
-          description: Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Sent even if OSD disabled.
+          description: Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Absent when `USE_OSD` is not compiled in.
 
         timerAlarm:
-          type: uint16
+          type: optional uint16
           unit: minutes
-          description: Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Sent even if OSD disabled.
+          description: Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Absent when `USE_OSD` is not compiled in.
 
         altAlarm:
-          type: uint16
+          type: optional uint16
           unit: meters
-          description: Altitude alarm threshold (`osdConfig()->alt_alarm`). Sent even if OSD disabled
+          description: Altitude alarm threshold (`osdConfig()->alt_alarm`). Absent when `USE_OSD` is not compiled in
 
         distAlarm:
-          type: uint16
+          type: optional uint16
           unit: meters
-          description: Distance alarm threshold (`osdConfig()->dist_alarm`). Sent even if OSD disabled
+          description: Distance alarm threshold (`osdConfig()->dist_alarm`). Absent when `USE_OSD` is not compiled in
 
         negAltAlarm:
-          type: uint16
+          type: optional uint16
           unit: meters
-          description: Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Sent even if OSD disabled
+          description: Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Absent when `USE_OSD` is not compiled in
 
         itemPositions:
-          type: uint16[OSD_ITEM_COUNT]
+          type: optional uint16[OSD_ITEM_COUNT]
           unit: packed
-          description: Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Sent even if OSD disabled
+          description: Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Absent when `USE_OSD` is not compiled in
 
   MSP_SET_OSD_CONFIG:
     id: 85
@@ -3088,8 +3088,8 @@ messages:
 
         altitude:
           type: int16
-          unit: cm
-          description: Altitude above MSL (`gpsSol.llh.alt`) sent as centimeters
+          unit: m
+          description: Altitude above MSL, sent as whole metres (`gpsSol.llh.alt / 100`)
 
         speed:
           type: int16
@@ -3577,6 +3577,11 @@ messages:
           type: int16
           unit: degrees
           description: Target heading for heading controller (`getHeadingHoldTarget()`)
+
+        desiredHeading:
+          type: uint16
+          unit: centi-degrees
+          description: Guidance course/track the navigation controller is steering to (`navDesiredHeading`, `wrap_36000()` of the desired yaw)
 
   MSP_NAV_CONFIG:
     id: 122
@@ -6898,6 +6903,10 @@ messages:
           enum: osd_stats_energy_unit_e
           description: 'Enum `osd_stats_energy_unit_e`: Unit for energy display in post-flight stats (`osdConfig()->stats_energy_unit`)'
 
+        adsbWarningStyle:
+          type: uint8
+          description: 'Enum `osd_adsb_warning_style_e`: How ADSB proximity warnings are drawn (`osdConfig()->adsb_warning_style`). 0 if `USE_ADSB` disabled'
+
   MSP2_INAV_OSD_SET_PREFERENCES:
     id: 8215
     inav_version:
@@ -6949,6 +6958,10 @@ messages:
           type: uint8
           enum: osd_stats_energy_unit_e
           description: Sets `osdConfigMutable()->stats_energy_unit`
+
+        adsbWarningStyle:
+          type: optional uint8
+          description: Sets `osdConfigMutable()->adsb_warning_style`. Only read when the payload is at least 10 bytes and the firmware has `USE_ADSB`
     reply: null
 
   MSP2_INAV_SELECT_BATTERY_PROFILE:
@@ -7011,9 +7024,9 @@ messages:
           description: Denominator for logging rate divider (`blackboxConfig()->rate_denom`). 0 if not supported
 
         blackboxIncludeFlags:
-          type: uint32
+          type: optional uint32
           bitmask: true
-          description: 'Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`)'
+          description: 'Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`). Absent when the firmware was built without `USE_BLACKBOX`, which replies with the first 6 bytes only'
 
   MSP2_SET_BLACKBOX_CONFIG:
     id: 8219
@@ -7335,7 +7348,7 @@ messages:
     mspv: 2
     group: inav
     description: Retrieves the custom servo mixer rules, including programming framework condition IDs, for primary and secondary mixer profiles. Supersedes `MSP_SERVO_MIX_RULES`.
-    notes: '`conditionId` requires `USE_PROGRAMMING_FRAMEWORK`.'
+    notes: '`conditionId` requires `USE_PROGRAMMING_FRAMEWORK`. If multiple mixer profiles are enabled (`MAX_MIXER_PROFILE_COUNT > 1`), a second block of `MAX_SERVO_RULES` rules for the next profile follows immediately.'
     variable_len: MAX_SERVO_RULES
     request: null
     reply:
@@ -7361,27 +7374,6 @@ messages:
         conditionId:
           type: int8
           description: Logic Condition ID (0 to `MAX_LOGIC_CONDITIONS - 1`, or 255/-1 if none/disabled)
-
-        p2TargetChannel:
-          type: optional uint8
-          description: (Optional) Profile 2 Target channel
-
-        p2InputSource:
-          type: optional uint8
-          enum: inputSource_e
-          description: (Optional) Profile 2 Enum `inputSource_e` Input source
-
-        p2Rate:
-          type: optional int16
-          description: (Optional) Profile 2 Rate
-
-        p2Speed:
-          type: optional uint8
-          description: (Optional) Profile 2 Speed
-
-        p2ConditionId:
-          type: optional int8
-          description: (Optional) Profile 2 Logic Condition ID
 
   MSP2_INAV_SET_SERVO_MIXER:
     id: 8225
@@ -7983,8 +7975,11 @@ messages:
           description: Number of motors reporting telemetry (`getMotorCount()`)
 
         escData:
-          type: escSensorData_t
-          description: Array of `escSensorData_t` structures containing voltage, current, temp, RPM, errors etc. for each ESC
+          repeat: motorCount
+          fields:
+            esc:
+              type: escSensorData_t
+              description: One ESC's telemetry (voltage, current, temperature, RPM, error count); see `escSensorData_t`
 
   MSP2_INAV_DRONECAN_NODES:
     id: 8258
@@ -8480,12 +8475,12 @@ messages:
             lat:
               type: int32
               unit: 1e-7 deg
-              description: Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lat`).
+              description: Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lat`).
 
             lon:
               type: int32
               unit: 1e-7 deg
-              description: Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lon`).
+              description: Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lon`).
 
             alt:
               type: int32
@@ -9307,20 +9302,20 @@ messages:
     variable_len: true
     request:
       fields:
-        posX:
+        offsetForward:
           type: int32
           unit: cm
-          description: Desired X in local NEU frame
+          description: Body-frame forward offset from the current position, rotated into NEU by the current yaw
 
-        posY:
+        offsetRight:
           type: int32
           unit: cm
-          description: Desired Y in local NEU frame
+          description: Body-frame right offset from the current position, rotated into NEU by the current yaw
 
-        posZ:
-          type: optional int32
+        offsetUp:
+          type: int32
           unit: cm
-          description: Desired Z in local NEU frame (up-positive). Omit this field to leave Z unchanged.
+          description: Offset above the current altitude (up-positive). 0 keeps the current altitude
     reply: null
 
   MSP2_INAV_LOCAL_TARGET:

@@ -185,12 +185,11 @@ typedef struct MSP_PACKED {
     int16_t magZeroX;  // Sets `compassConfigMutable()->magZero.raw[X]` (if `USE_MAG`) | Raw ADC
     int16_t magZeroY;  // Sets `compassConfigMutable()->magZero.raw[Y]` (if `USE_MAG`) | Raw ADC
     int16_t magZeroZ;  // Sets `compassConfigMutable()->magZero.raw[Z]` (if `USE_MAG`) | Raw ADC
-    uint16_t opflowScale;  // Sets `opticalFlowConfigMutable()->opflow_scale = value / 256.0f` (if `USE_OPFLOW`) | Scale * 256
-    int16_t magGainX;  // Sets `compassConfigMutable()->magGain[X]` (if `USE_MAG`) | Raw ADC
-    int16_t magGainY;  // Sets `compassConfigMutable()->magGain[Y]` (if `USE_MAG`) | Raw ADC
-    int16_t magGainZ;  // Sets `compassConfigMutable()->magGain[Z]` (if `USE_MAG`) | Raw ADC
+    uint16_t opflowScale;  // Sets `opticalFlowConfigMutable()->opflow_scale = value / 256.0f` (if `USE_OPFLOW`) | Scale * 256 | OPTIONAL: may be absent from a shorter payload
+    int16_t magGainX;  // Sets `compassConfigMutable()->magGain[X]` (if `USE_MAG`) | Raw ADC | OPTIONAL: may be absent from a shorter payload
+    int16_t magGainY;  // Sets `compassConfigMutable()->magGain[Y]` (if `USE_MAG`) | Raw ADC | OPTIONAL: may be absent from a shorter payload
+    int16_t magGainZ;  // Sets `compassConfigMutable()->magGain[Z]` (if `USE_MAG`) | Raw ADC | OPTIONAL: may be absent from a shorter payload
 } mspSetCalibrationDataRequest_t;
-MSP_STATIC_ASSERT(sizeof(mspSetCalibrationDataRequest_t) == 26, mspSetCalibrationDataRequest_t_size);
 
 // MSP_POSITION_ESTIMATION_CONFIG (MSPv1) id=16
 // Retrieves parameters related to the INAV position estimation fusion weights and GPS minimum satellite count.
@@ -698,17 +697,16 @@ MSP_STATIC_ASSERT(sizeof(mspBlackboxConfigReply_t) == 4, mspBlackboxConfigReply_
 // Notes: 1 byte if `USE_OSD` disabled; full payload (1 + fields + 2*OSD_ITEM_COUNT bytes) otherwise.
 typedef struct MSP_PACKED {
     uint8_t osdDriverType;  // Enum `osdDriver_e`: `OSD_DRIVER_MAX7456` if `USE_OSD`, else `OSD_DRIVER_NONE`.
-    uint8_t videoSystem;  // Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Sent even if OSD disabled
-    uint8_t units;  // Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Sent even if OSD disabled
-    uint8_t rssiAlarm;  // RSSI alarm threshold (`osdConfig()->rssi_alarm`). Sent even if OSD disabled | %
-    uint16_t capAlarm;  // Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Sent even if OSD disabled. | mAh/mWh
-    uint16_t timerAlarm;  // Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Sent even if OSD disabled. | minutes
-    uint16_t altAlarm;  // Altitude alarm threshold (`osdConfig()->alt_alarm`). Sent even if OSD disabled | meters
-    uint16_t distAlarm;  // Distance alarm threshold (`osdConfig()->dist_alarm`). Sent even if OSD disabled | meters
-    uint16_t negAltAlarm;  // Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Sent even if OSD disabled | meters
-    uint16_t itemPositions[OSD_ITEM_COUNT];  // Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Sent even if OSD disabled | packed
+    uint8_t videoSystem;  // Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Absent when `USE_OSD` is not compiled in | OPTIONAL: may be absent from a shorter payload
+    uint8_t units;  // Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Absent when `USE_OSD` is not compiled in | OPTIONAL: may be absent from a shorter payload
+    uint8_t rssiAlarm;  // RSSI alarm threshold (`osdConfig()->rssi_alarm`). Absent when `USE_OSD` is not compiled in | % | OPTIONAL: may be absent from a shorter payload
+    uint16_t capAlarm;  // Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Absent when `USE_OSD` is not compiled in. | mAh/mWh | OPTIONAL: may be absent from a shorter payload
+    uint16_t timerAlarm;  // Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Absent when `USE_OSD` is not compiled in. | minutes | OPTIONAL: may be absent from a shorter payload
+    uint16_t altAlarm;  // Altitude alarm threshold (`osdConfig()->alt_alarm`). Absent when `USE_OSD` is not compiled in | meters | OPTIONAL: may be absent from a shorter payload
+    uint16_t distAlarm;  // Distance alarm threshold (`osdConfig()->dist_alarm`). Absent when `USE_OSD` is not compiled in | meters | OPTIONAL: may be absent from a shorter payload
+    uint16_t negAltAlarm;  // Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Absent when `USE_OSD` is not compiled in | meters | OPTIONAL: may be absent from a shorter payload
+    uint16_t itemPositions[OSD_ITEM_COUNT];  // Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Absent when `USE_OSD` is not compiled in | packed | OPTIONAL: may be absent from a shorter payload
 } mspOsdConfigReply_t;
-MSP_STATIC_ASSERT(sizeof(mspOsdConfigReply_t) == 358, mspOsdConfigReply_t_size);
 
 // MSP_SET_OSD_CONFIG (MSPv1) id=85
 // Sets OSD configuration or a single item's position on screen 0.
@@ -1058,7 +1056,7 @@ typedef struct MSP_PACKED {
     uint8_t numSat;  // Number of satellites used in solution (`gpsSol.numSat`) | Count
     int32_t latitude;  // Latitude (`gpsSol.llh.lat`) | deg * 1e7
     int32_t longitude;  // Longitude (`gpsSol.llh.lon`) | deg * 1e7
-    int16_t altitude;  // Altitude above MSL (`gpsSol.llh.alt`) sent as centimeters | cm
+    int16_t altitude;  // Altitude above MSL, sent as whole metres (`gpsSol.llh.alt / 100`) | m
     int16_t speed;  // Ground speed (`gpsSol.groundSpeed`) | cm/s
     int16_t groundCourse;  // Ground course (`gpsSol.groundCourse`) | deci-degrees
     uint16_t hdop;  // Horizontal Dilution of Precision (`gpsSol.hdop`) | HDOP * 100
@@ -1223,8 +1221,9 @@ typedef struct MSP_PACKED {
     uint8_t activeWpNumber;  // Index: Index of the currently executing waypoint (`NAV_Status.activeWpNumber`)
     uint8_t navError;  // Enum (`navSystemStatus_Error_e`): Current navigation error code (`NAV_Status.error`) | enum navSystemStatus_Error_e
     int16_t targetHeading;  // Target heading for heading controller (`getHeadingHoldTarget()`) | degrees
+    uint16_t desiredHeading;  // Guidance course/track the navigation controller is steering to (`navDesiredHeading`, `wrap_36000()` of the desired yaw) | centi-degrees
 } mspNavStatusReply_t;
-MSP_STATIC_ASSERT(sizeof(mspNavStatusReply_t) == 7, mspNavStatusReply_t_size);
+MSP_STATIC_ASSERT(sizeof(mspNavStatusReply_t) == 9, mspNavStatusReply_t_size);
 
 // MSP_3D (MSPv1) id=124
 // Retrieves settings related to 3D/reversible motor operation.
@@ -2297,8 +2296,9 @@ typedef struct MSP_PACKED {
     uint8_t sidebarScrollArrows;  // Boolean: Show arrows for scrollable sidebars (`osdConfig()->sidebar_scroll_arrows`)
     uint8_t units;  // Enum: `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`) | enum osd_unit_e
     uint8_t statsEnergyUnit;  // Enum `osd_stats_energy_unit_e`: Unit for energy display in post-flight stats (`osdConfig()->stats_energy_unit`)
+    uint8_t adsbWarningStyle;  // Enum `osd_adsb_warning_style_e`: How ADSB proximity warnings are drawn (`osdConfig()->adsb_warning_style`). 0 if `USE_ADSB` disabled
 } msp2InavOsdPreferencesReply_t;
-MSP_STATIC_ASSERT(sizeof(msp2InavOsdPreferencesReply_t) == 9, msp2InavOsdPreferencesReply_t_size);
+MSP_STATIC_ASSERT(sizeof(msp2InavOsdPreferencesReply_t) == 10, msp2InavOsdPreferencesReply_t_size);
 
 // MSP2_INAV_OSD_SET_PREFERENCES (MSPv2) id=8215
 // Sets OSD display preferences.
@@ -2313,8 +2313,8 @@ typedef struct MSP_PACKED {
     uint8_t sidebarScrollArrows;  // Sets `osdConfigMutable()->sidebar_scroll_arrows`
     uint8_t units;  // Sets `osdConfigMutable()->units` (enum `osd_unit_e`)
     uint8_t statsEnergyUnit;  // Sets `osdConfigMutable()->stats_energy_unit` | enum osd_stats_energy_unit_e
+    uint8_t adsbWarningStyle;  // Sets `osdConfigMutable()->adsb_warning_style`. Only read when the payload is at least 10 bytes and the firmware has `USE_ADSB` | OPTIONAL: may be absent from a shorter payload
 } msp2InavOsdSetPreferencesRequest_t;
-MSP_STATIC_ASSERT(sizeof(msp2InavOsdSetPreferencesRequest_t) == 9, msp2InavOsdSetPreferencesRequest_t_size);
 
 // MSP2_INAV_SELECT_BATTERY_PROFILE (MSPv2) id=8216
 // Selects the active battery profile and saves configuration.
@@ -2340,9 +2340,8 @@ typedef struct MSP_PACKED {
     uint8_t blackboxDevice;  // Enum `BlackboxDevice`: Target device for logging (`blackboxConfig()->device`). 0 if not supported
     uint16_t blackboxRateNum;  // Numerator for logging rate divider (`blackboxConfig()->rate_num`). 0 if not supported
     uint16_t blackboxRateDenom;  // Denominator for logging rate divider (`blackboxConfig()->rate_denom`). 0 if not supported
-    uint32_t blackboxIncludeFlags;  // Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`) | bitmask
+    uint32_t blackboxIncludeFlags;  // Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`). Absent when the firmware was built without `USE_BLACKBOX`, which replies with the first 6 bytes only | bitmask | OPTIONAL: may be absent from a shorter payload
 } msp2BlackboxConfigReply_t;
-MSP_STATIC_ASSERT(sizeof(msp2BlackboxConfigReply_t) == 10, msp2BlackboxConfigReply_t_size);
 
 // MSP2_SET_BLACKBOX_CONFIG (MSPv2) id=8219
 // Sets the Blackbox configuration. Supersedes `MSP_SET_BLACKBOX_CONFIG`.
@@ -2454,7 +2453,7 @@ typedef struct MSP_PACKED {
 
 // MSP2_INAV_SERVO_MIXER (MSPv2) id=8224
 // Retrieves the custom servo mixer rules, including programming framework condition IDs, for primary and secondary mixer profiles. Supersedes `MSP_SERVO_MIX_RULES`.
-// Notes: `conditionId` requires `USE_PROGRAMMING_FRAMEWORK`.
+// Notes: `conditionId` requires `USE_PROGRAMMING_FRAMEWORK`. If multiple mixer profiles are enabled (`MAX_MIXER_PROFILE_COUNT > 1`), a second block of `MAX_SERVO_RULES` rules for the next profile follows immediately.
 typedef struct MSP_PACKED {
     struct MSP_PACKED {
         uint8_t targetChannel;  // Servo output channel index (0-based)
@@ -2462,13 +2461,9 @@ typedef struct MSP_PACKED {
         int16_t rate;  // Mixing rate/weight
         uint8_t speed;  // Speed/Slew rate limit (0-100)
         int8_t conditionId;  // Logic Condition ID (0 to `MAX_LOGIC_CONDITIONS - 1`, or 255/-1 if none/disabled)
-        uint8_t p2TargetChannel;  // (Optional) Profile 2 Target channel | OPTIONAL: may be absent from a shorter payload
-        uint8_t p2InputSource;  // (Optional) Profile 2 Enum `inputSource_e` Input source | OPTIONAL: may be absent from a shorter payload
-        int16_t p2Rate;  // (Optional) Profile 2 Rate | OPTIONAL: may be absent from a shorter payload
-        uint8_t p2Speed;  // (Optional) Profile 2 Speed | OPTIONAL: may be absent from a shorter payload
-        int8_t p2ConditionId;  // (Optional) Profile 2 Logic Condition ID | OPTIONAL: may be absent from a shorter payload
     } items[MAX_SERVO_RULES];  // repeat: MAX_SERVO_RULES
 } msp2InavServoMixerReply_t;
+MSP_STATIC_ASSERT(sizeof(msp2InavServoMixerReply_t) == 216, msp2InavServoMixerReply_t_size);
 
 // MSP2_INAV_SET_SERVO_MIXER (MSPv2) id=8225
 // Sets a single custom servo mixer rule, including programming framework condition ID. Supersedes `MSP_SET_SERVO_MIX_RULE`.
@@ -2694,8 +2689,11 @@ MSP_STATIC_ASSERT(sizeof(msp2InavEscRpmReplyElem_t) == 4, msp2InavEscRpmReplyEle
 // Notes: Requires `USE_ESC_SENSOR`. See `escSensorData_t` in `sensors/esc_sensor.h` for the exact structure fields.
 typedef struct MSP_PACKED {
     uint8_t motorCount;  // Number of motors reporting telemetry (`getMotorCount()`)
-    escSensorData_t escData;  // Array of `escSensorData_t` structures containing voltage, current, temp, RPM, errors etc. for each ESC
+    struct MSP_PACKED {
+        escSensorData_t esc;  // One ESC's telemetry (voltage, current, temperature, RPM, error count); see `escSensorData_t`
+    } escData[];  // repeat: motorCount
 } msp2InavEscTelemReply_t;
+// variable length: sizeof(msp2InavEscTelemReply_t) is the fixed header only
 
 // MSP2_INAV_DRONECAN_NODES (MSPv2) id=8258
 // Returns the list of all detected DroneCAN nodes with their current status.
@@ -2880,8 +2878,8 @@ typedef struct MSP_PACKED {
     struct MSP_PACKED {
         char callsign[ADSB_CALL_SIGN_MAX_LENGTH];  // Fixed-length callsign from `adsbVehicle->vehicleValues.callsign` (padded with NULs if shorter).
         uint32_t icao;  // ICAO address (`adsbVehicle->vehicleValues.icao`).
-        int32_t lat;  // Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lat`). | 1e-7 deg
-        int32_t lon;  // Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lon`). | 1e-7 deg
+        int32_t lat;  // Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lat`). | 1e-7 deg
+        int32_t lon;  // Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lon`). | 1e-7 deg
         int32_t alt;  // Altitude above sea level (`adsbVehicle->vehicleValues.alt`). | cm
         uint16_t headingDeg;  // Course over ground in whole degrees (`CENTIDEGREES_TO_DEGREES(vehicleValues.heading)`). | deg
         uint8_t tslc;  // Time since last communication (`adsbVehicle->vehicleValues.tslc`). | s
@@ -3218,10 +3216,11 @@ MSP_STATIC_ASSERT(sizeof(msp2InavFlightAxisRateOverrideRequest_t) == 7, msp2Inav
 // Sets a body-frame offset target relative to the current vehicle position.
 // Notes: Offsets are in the vehicle body frame (forward/right/up, cm) and are rotated into the NEU frame using the current yaw, applied relative to current position. Z offset is always provided; Z=0 keeps current altitude, non-zero offsets are relative to current altitude. Requires GCSNAV/offboard to be active and a valid guided poshold; updates the navigation desired position via `setDesiredPosition()`.
 typedef struct MSP_PACKED {
-    int32_t posX;  // Desired X in local NEU frame | cm
-    int32_t posY;  // Desired Y in local NEU frame | cm
-    int32_t posZ;  // Desired Z in local NEU frame (up-positive). Omit this field to leave Z unchanged. | cm | OPTIONAL: may be absent from a shorter payload
+    int32_t offsetForward;  // Body-frame forward offset from the current position, rotated into NEU by the current yaw | cm
+    int32_t offsetRight;  // Body-frame right offset from the current position, rotated into NEU by the current yaw | cm
+    int32_t offsetUp;  // Offset above the current altitude (up-positive). 0 keeps the current altitude | cm
 } msp2InavSetLocalTargetRequest_t;
+MSP_STATIC_ASSERT(sizeof(msp2InavSetLocalTargetRequest_t) == 12, msp2InavSetLocalTargetRequest_t_size);
 
 // MSP2_INAV_LOCAL_TARGET (MSPv2) id=8729
 // Returns the current navigation desired state (position, velocity, yaw, and climb rate).

@@ -217,10 +217,10 @@ class MSP_SET_CALIBRATION_DATA_request_t(BaseModel):
     magZeroX: int16 = Field(description='Sets `compassConfigMutable()->magZero.raw[X]` (if `USE_MAG`) [Raw ADC]')
     magZeroY: int16 = Field(description='Sets `compassConfigMutable()->magZero.raw[Y]` (if `USE_MAG`) [Raw ADC]')
     magZeroZ: int16 = Field(description='Sets `compassConfigMutable()->magZero.raw[Z]` (if `USE_MAG`) [Raw ADC]')
-    opflowScale: uint16 = Field(description='Sets `opticalFlowConfigMutable()->opflow_scale = value / 256.0f` (if `USE_OPFLOW`) [Scale * 256]')
-    magGainX: int16 = Field(description='Sets `compassConfigMutable()->magGain[X]` (if `USE_MAG`) [Raw ADC]')
-    magGainY: int16 = Field(description='Sets `compassConfigMutable()->magGain[Y]` (if `USE_MAG`) [Raw ADC]')
-    magGainZ: int16 = Field(description='Sets `compassConfigMutable()->magGain[Z]` (if `USE_MAG`) [Raw ADC]')
+    opflowScale: uint16 | None = Field(default=None, description='Sets `opticalFlowConfigMutable()->opflow_scale = value / 256.0f` (if `USE_OPFLOW`) [Scale * 256]')
+    magGainX: int16 | None = Field(default=None, description='Sets `compassConfigMutable()->magGain[X]` (if `USE_MAG`) [Raw ADC]')
+    magGainY: int16 | None = Field(default=None, description='Sets `compassConfigMutable()->magGain[Y]` (if `USE_MAG`) [Raw ADC]')
+    magGainZ: int16 | None = Field(default=None, description='Sets `compassConfigMutable()->magGain[Z]` (if `USE_MAG`) [Raw ADC]')
 
 
 MSP_POSITION_ESTIMATION_CONFIG: Final[int] = 16
@@ -854,15 +854,15 @@ class MSP_OSD_CONFIG_reply_t(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     osdDriverType: uint8 = Field(description='Enum `osdDriver_e`: `OSD_DRIVER_MAX7456` if `USE_OSD`, else `OSD_DRIVER_NONE`.')
-    videoSystem: uint8 = Field(description='Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Sent even if OSD disabled')
-    units: uint8 = Field(description='Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Sent even if OSD disabled')
-    rssiAlarm: uint8 = Field(description='RSSI alarm threshold (`osdConfig()->rssi_alarm`). Sent even if OSD disabled [%]')
-    capAlarm: uint16 = Field(description='Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Sent even if OSD disabled. [mAh/mWh]')
-    timerAlarm: uint16 = Field(description='Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Sent even if OSD disabled. [minutes]')
-    altAlarm: uint16 = Field(description='Altitude alarm threshold (`osdConfig()->alt_alarm`). Sent even if OSD disabled [meters]')
-    distAlarm: uint16 = Field(description='Distance alarm threshold (`osdConfig()->dist_alarm`). Sent even if OSD disabled [meters]')
-    negAltAlarm: uint16 = Field(description='Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Sent even if OSD disabled [meters]')
-    itemPositions: list[uint16] = Field(description='Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Sent even if OSD disabled [packed]')
+    videoSystem: uint8 | None = Field(default=None, description='Enum `videoSystem_e`: Video system (Auto/PAL/NTSC) (`osdConfig()->video_system`). Absent when `USE_OSD` is not compiled in')
+    units: uint8 | None = Field(default=None, description='Enum `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`). Absent when `USE_OSD` is not compiled in')
+    rssiAlarm: uint8 | None = Field(default=None, description='RSSI alarm threshold (`osdConfig()->rssi_alarm`). Absent when `USE_OSD` is not compiled in [%]')
+    capAlarm: uint16 | None = Field(default=None, description='Capacity alarm threshold (`currentBatteryProfile->capacity.warning`). Truncated to 16 bits. Absent when `USE_OSD` is not compiled in. [mAh/mWh]')
+    timerAlarm: uint16 | None = Field(default=None, description='Timer alarm threshold in minutes (`osdConfig()->time_alarm`). Absent when `USE_OSD` is not compiled in. [minutes]')
+    altAlarm: uint16 | None = Field(default=None, description='Altitude alarm threshold (`osdConfig()->alt_alarm`). Absent when `USE_OSD` is not compiled in [meters]')
+    distAlarm: uint16 | None = Field(default=None, description='Distance alarm threshold (`osdConfig()->dist_alarm`). Absent when `USE_OSD` is not compiled in [meters]')
+    negAltAlarm: uint16 | None = Field(default=None, description='Negative altitude alarm threshold (`osdConfig()->neg_alt_alarm`). Absent when `USE_OSD` is not compiled in [meters]')
+    itemPositions: list[uint16] | None = Field(default=None, description='Packed X/Y position for each OSD item on screen 0 (`osdLayoutsConfig()->item_pos[0][i]`). Absent when `USE_OSD` is not compiled in [packed]')
 
 
 MSP_SET_OSD_CONFIG: Final[int] = 85
@@ -1115,7 +1115,7 @@ class MSP_RAW_GPS_reply_t(BaseModel):
     numSat: uint8 = Field(description='Number of satellites used in solution (`gpsSol.numSat`) [Count]')
     latitude: int32 = Field(description='Latitude (`gpsSol.llh.lat`) [deg * 1e7]')
     longitude: int32 = Field(description='Longitude (`gpsSol.llh.lon`) [deg * 1e7]')
-    altitude: int16 = Field(description='Altitude above MSL (`gpsSol.llh.alt`) sent as centimeters [cm]')
+    altitude: int16 = Field(description='Altitude above MSL, sent as whole metres (`gpsSol.llh.alt / 100`) [m]')
     speed: int16 = Field(description='Ground speed (`gpsSol.groundSpeed`) [cm/s]')
     groundCourse: int16 = Field(description='Ground course (`gpsSol.groundCourse`) [deci-degrees]')
     hdop: uint16 = Field(description='Horizontal Dilution of Precision (`gpsSol.hdop`) [HDOP * 100]')
@@ -1315,6 +1315,7 @@ class MSP_NAV_STATUS_reply_t(BaseModel):
     activeWpNumber: uint8 = Field(description='Index: Index of the currently executing waypoint (`NAV_Status.activeWpNumber`)')
     navError: uint8 = Field(description='Enum (`navSystemStatus_Error_e`): Current navigation error code (`NAV_Status.error`)')
     targetHeading: int16 = Field(description='Target heading for heading controller (`getHeadingHoldTarget()`) [degrees]')
+    desiredHeading: uint16 = Field(description='Guidance course/track the navigation controller is steering to (`navDesiredHeading`, `wrap_36000()` of the desired yaw) [centi-degrees]')
 
 
 MSP_NAV_CONFIG: Final[int] = 122
@@ -2554,6 +2555,7 @@ class MSP2_INAV_OSD_PREFERENCES_reply_t(BaseModel):
     sidebarScrollArrows: uint8 = Field(description='Boolean: Show arrows for scrollable sidebars (`osdConfig()->sidebar_scroll_arrows`)')
     units: uint8 = Field(description='Enum: `osd_unit_e` Measurement units (Metric/Imperial) (`osdConfig()->units`)')
     statsEnergyUnit: uint8 = Field(description='Enum `osd_stats_energy_unit_e`: Unit for energy display in post-flight stats (`osdConfig()->stats_energy_unit`)')
+    adsbWarningStyle: uint8 = Field(description='Enum `osd_adsb_warning_style_e`: How ADSB proximity warnings are drawn (`osdConfig()->adsb_warning_style`). 0 if `USE_ADSB` disabled')
 
 
 MSP2_INAV_OSD_SET_PREFERENCES: Final[int] = 8215
@@ -2572,6 +2574,7 @@ class MSP2_INAV_OSD_SET_PREFERENCES_request_t(BaseModel):
     sidebarScrollArrows: uint8 = Field(description='Sets `osdConfigMutable()->sidebar_scroll_arrows`')
     units: uint8 = Field(description='Sets `osdConfigMutable()->units` (enum `osd_unit_e`)')
     statsEnergyUnit: uint8 = Field(description='Sets `osdConfigMutable()->stats_energy_unit`')
+    adsbWarningStyle: uint8 | None = Field(default=None, description='Sets `osdConfigMutable()->adsb_warning_style`. Only read when the payload is at least 10 bytes and the firmware has `USE_ADSB`')
 
 
 MSP2_INAV_SELECT_BATTERY_PROFILE: Final[int] = 8216
@@ -2605,7 +2608,7 @@ class MSP2_BLACKBOX_CONFIG_reply_t(BaseModel):
     blackboxDevice: uint8 = Field(description='Enum `BlackboxDevice`: Target device for logging (`blackboxConfig()->device`). 0 if not supported')
     blackboxRateNum: uint16 = Field(description='Numerator for logging rate divider (`blackboxConfig()->rate_num`). 0 if not supported')
     blackboxRateDenom: uint16 = Field(description='Denominator for logging rate divider (`blackboxConfig()->rate_denom`). 0 if not supported')
-    blackboxIncludeFlags: uint32 = Field(description='Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`)')
+    blackboxIncludeFlags: uint32 | None = Field(default=None, description='Bitmask: Flags for fields included/excluded from logging (`blackboxConfig()->includeFlags`). Absent when the firmware was built without `USE_BLACKBOX`, which replies with the first 6 bytes only')
 
 
 MSP2_SET_BLACKBOX_CONFIG: Final[int] = 8219
@@ -2745,11 +2748,6 @@ class MSP2_INAV_SERVO_MIXER_reply_tItem(BaseModel):
     rate: int16 = Field(description='Mixing rate/weight')
     speed: uint8 = Field(description='Speed/Slew rate limit (0-100)')
     conditionId: int8 = Field(description='Logic Condition ID (0 to `MAX_LOGIC_CONDITIONS - 1`, or 255/-1 if none/disabled)')
-    p2TargetChannel: uint8 | None = Field(default=None, description='(Optional) Profile 2 Target channel')
-    p2InputSource: uint8 | None = Field(default=None, description='(Optional) Profile 2 Enum `inputSource_e` Input source')
-    p2Rate: int16 | None = Field(default=None, description='(Optional) Profile 2 Rate')
-    p2Speed: uint8 | None = Field(default=None, description='(Optional) Profile 2 Speed')
-    p2ConditionId: int8 | None = Field(default=None, description='(Optional) Profile 2 Logic Condition ID')
 
 
 class MSP2_INAV_SERVO_MIXER_reply_t(BaseModel):
@@ -3042,13 +3040,19 @@ class MSP2_INAV_ESC_RPM_reply_t(BaseModel):
 
 MSP2_INAV_ESC_TELEM: Final[int] = 8257
 
+class MSP2_INAV_ESC_TELEM_reply_tescDataItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    esc: escSensorData_t = Field(description="One ESC's telemetry (voltage, current, temperature, RPM, error count); see `escSensorData_t`")
+
+
 class MSP2_INAV_ESC_TELEM_reply_t(BaseModel):
     """Retrieves the full telemetry data structure reported by each ESC."""
 
     model_config = ConfigDict(populate_by_name=True)
 
     motorCount: uint8 = Field(description='Number of motors reporting telemetry (`getMotorCount()`)')
-    escData: escSensorData_t = Field(description='Array of `escSensorData_t` structures containing voltage, current, temp, RPM, errors etc. for each ESC')
+    escData: list[MSP2_INAV_ESC_TELEM_reply_tescDataItem]
 
 
 MSP2_INAV_DRONECAN_NODES: Final[int] = 8258
@@ -3267,8 +3271,8 @@ class MSP2_ADSB_VEHICLE_LIST_reply_titemsItem(BaseModel):
 
     callsign: str = Field(description='Fixed-length callsign from `adsbVehicle->vehicleValues.callsign` (padded with NULs if shorter).')
     icao: uint32 = Field(description='ICAO address (`adsbVehicle->vehicleValues.icao`).')
-    lat: int32 = Field(description='Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lat`). [1e-7 deg]')
-    lon: int32 = Field(description='Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.lon`). [1e-7 deg]')
+    lat: int32 = Field(description='Latitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lat`). [1e-7 deg]')
+    lon: int32 = Field(description='Longitude in degrees * 1e7 (`adsbVehicle->vehicleValues.gps.lon`). [1e-7 deg]')
     alt: int32 = Field(description='Altitude above sea level (`adsbVehicle->vehicleValues.alt`). [cm]')
     headingDeg: uint16 = Field(description='Course over ground in whole degrees (`CENTIDEGREES_TO_DEGREES(vehicleValues.heading)`). [deg]')
     tslc: uint8 = Field(description='Time since last communication (`adsbVehicle->vehicleValues.tslc`). [s]')
@@ -3623,9 +3627,9 @@ class MSP2_INAV_SET_LOCAL_TARGET_request_t(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    posX: int32 = Field(description='Desired X in local NEU frame [cm]')
-    posY: int32 = Field(description='Desired Y in local NEU frame [cm]')
-    posZ: int32 | None = Field(default=None, description='Desired Z in local NEU frame (up-positive). Omit this field to leave Z unchanged. [cm]')
+    offsetForward: int32 = Field(description='Body-frame forward offset from the current position, rotated into NEU by the current yaw [cm]')
+    offsetRight: int32 = Field(description='Body-frame right offset from the current position, rotated into NEU by the current yaw [cm]')
+    offsetUp: int32 = Field(description='Offset above the current altitude (up-positive). 0 keeps the current altitude [cm]')
 
 
 MSP2_INAV_LOCAL_TARGET: Final[int] = 8729

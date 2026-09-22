@@ -74,10 +74,14 @@ class CodecTest(unittest.TestCase):
                 "motorCount": 1,
                 # escSensorData_t's field offsets come from the compiler that
                 # builds INAV, not from a layout restated in the schema.
-                "escData": {
-                    "dataAge": 2, "temperature": 45, "voltage": 1200,
-                    "current": 340, "rpm": 5000,
-                },
+                "escData": [
+                    {
+                        "esc": {
+                            "dataAge": 2, "temperature": 45, "voltage": 1200,
+                            "current": 340, "rpm": 5000,
+                        },
+                    },
+                ],
             },
         )
 
