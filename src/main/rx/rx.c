@@ -41,6 +41,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/settings.h"
@@ -279,6 +280,16 @@ void rxInit(void)
 
     rcChannels[THROTTLE].raw = (feature(FEATURE_REVERSIBLE_MOTORS)) ? PWM_RANGE_MIDDLE : rxConfig()->rx_min_usec;
     rcChannels[THROTTLE].data = rcChannels[THROTTLE].raw;
+
+    // Autopilot has no receiver writing channels, so auxiliary channels also start at a
+    // valid, inert LOW (the same value the throttle uses, below every mode range by
+    // default). Reversible motors keep the mid throttle, which is their neutral.
+    // Pilot mode keeps the upstream initialization.
+    if (isAutopilotControlMode()) {
+        for (int i = NON_AUX_CHANNEL_COUNT; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+            rcChannels[i].raw = rcChannels[i].data = rxConfig()->rx_min_usec;
+        }
+    }
 
     // Initialize ARM switch to OFF position when arming via switch is defined
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {

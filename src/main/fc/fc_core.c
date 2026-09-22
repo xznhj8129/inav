@@ -460,13 +460,12 @@ static RP2350_FAST_CODE void processPilotAndFailSafeActions(float dT)
             // Autopilot: channel values are real but nothing is required to keep updating
             // them. When they stop arriving, AER decays to centered so a disappeared
             // telemetry client cannot leave a stick deflection latched. Throttle is
-            // deliberately sticky. The window mirrors the MSP RC override data-failure
-            // window.
+            // deliberately sticky. The window is the frame-loss detection period (200 ms),
+            // the same freshness the MSP overrides use; it is not extended by failsafe_delay.
             bool channelDataStale = false;
             if (isAutopilotControlMode()) {
                 const timeMs_t lastChannelUpdateAt = rxGetLastValidChannelUpdateAt();
-                const timeMs_t channelDataFailurePeriod = PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
-                channelDataStale = (lastChannelUpdateAt == 0) || ((millis() - lastChannelUpdateAt) > channelDataFailurePeriod);
+                channelDataStale = (lastChannelUpdateAt == 0) || ((millis() - lastChannelUpdateAt) > PERIOD_RXDATA_FAILURE);
             }
 
             if (channelDataStale) {

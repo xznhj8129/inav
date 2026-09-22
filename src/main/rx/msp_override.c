@@ -154,8 +154,10 @@ static bool mspFlightAxisOverridesEnabled(void)
     }
 
     const timeMs_t nowMs = millis();
-    const timeMs_t overrideTimeoutMs = PERIOD_RXDATA_FAILURE + failsafeConfig()->failsafe_delay * MILLIS_PER_TENTH_SECOND;
-    const bool freshOverride = lastAxisOverrideAt && (nowMs - lastAxisOverrideAt) <= overrideTimeoutMs;
+    // Command freshness: the override dies if commands stop arriving. 200 ms matches the
+    // frame-loss detection window; it is deliberately NOT extended by failsafe_delay
+    // (that is the user's RC-failsafe guard, not a client dead-man timer).
+    const bool freshOverride = lastAxisOverrideAt && (nowMs - lastAxisOverrideAt) <= PERIOD_RXDATA_FAILURE;
     enabled = enabled && freshOverride;
 
     if (!enabled) {
