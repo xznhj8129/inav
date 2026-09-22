@@ -645,6 +645,17 @@ Blackbox logging rate numerator. Use num/denom settings to decide if a frame sho
 
 ---
 
+### control_mode
+
+PILOT: a pilot controls the aircraft through RC channels (default). AUTOPILOT: RC channels are ignored; the aircraft is controlled through telemetry commands and navigation modes only.
+
+| Allowed Values |  |
+| --- | --- |
+| PILOT | Default |
+| AUTOPILOT |  |
+
+---
+
 ### crsf_use_legacy_baro_packet
 
 CRSF telemetry: If `ON`, send altitude about start point in GPS telemetry packet. If `OFF`, GPS has ASL altitude, altitude about start point in separate packet. Default: 'OFF'

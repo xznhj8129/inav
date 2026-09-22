@@ -943,6 +943,8 @@ static const char * osdArmingDisabledReasonMessage(void)
 #endif
 
             // Cases without message
+        case ARMING_DISABLED_TELEM_LINK:
+            FALLTHROUGH;
         case ARMING_DISABLED_LANDING_DETECTED:
             FALLTHROUGH;
         case ARMING_DISABLED_CMS_MENU:

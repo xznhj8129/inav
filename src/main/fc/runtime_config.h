@@ -35,6 +35,7 @@ typedef enum {
     ARMING_DISABLED_HARDWARE_FAILURE                = (1 << 15),
     ARMING_DISABLED_BOXFAILSAFE                     = (1 << 16),
 
+    ARMING_DISABLED_TELEM_LINK                      = (1 << 17),
     ARMING_DISABLED_RC_LINK                         = (1 << 18),
     ARMING_DISABLED_THROTTLE                        = (1 << 19),
     ARMING_DISABLED_CLI                             = (1 << 20),
@@ -53,7 +54,7 @@ typedef enum {
                                                        ARMING_DISABLED_SENSORS_CALIBRATING | ARMING_DISABLED_SYSTEM_OVERLOADED | ARMING_DISABLED_NAVIGATION_UNSAFE |
                                                        ARMING_DISABLED_COMPASS_NOT_CALIBRATED | ARMING_DISABLED_ACCELEROMETER_NOT_CALIBRATED |
                                                        ARMING_DISABLED_ARM_SWITCH | ARMING_DISABLED_HARDWARE_FAILURE | ARMING_DISABLED_BOXFAILSAFE |
-                                                       ARMING_DISABLED_RC_LINK | ARMING_DISABLED_THROTTLE | ARMING_DISABLED_CLI |
+                                                       ARMING_DISABLED_TELEM_LINK | ARMING_DISABLED_RC_LINK | ARMING_DISABLED_THROTTLE | ARMING_DISABLED_CLI |
                                                        ARMING_DISABLED_CMS_MENU | ARMING_DISABLED_OSD_MENU | ARMING_DISABLED_ROLLPITCH_NOT_CENTERED |
                                                        ARMING_DISABLED_SERVO_AUTOTRIM | ARMING_DISABLED_OOM | ARMING_DISABLED_INVALID_SETTING |
                                                        ARMING_DISABLED_PWM_OUTPUT_ERROR | ARMING_DISABLED_NO_PREARM | ARMING_DISABLED_DSHOT_BEEPER |

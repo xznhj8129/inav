@@ -58,6 +58,7 @@
 #include "fc/fc_core.h"
 #include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/multifunction.h"
 #include "fc/rc_adjustments.h"
@@ -225,12 +226,21 @@ static void updateArmingStatus(void)
             }
         }
 
-        /* CHECK: RX signal */
-        if (!failsafeIsReceivingRxData()) {
-            ENABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+        /* CHECK: control link - RC in Pilot mode, telemetry heartbeat in Autopilot mode */
+        if (isAutopilotControlMode()) {
+            // Autopilot mode ignores RC channels. Its liveness source is the telemetry link
+            // heartbeat, which does not exist yet, so the aircraft stays unarmable.
+            ENABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
         }
         else {
-            DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            if (!failsafeIsReceivingRxData()) {
+                ENABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+            }
+            else {
+                DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+            }
         }
 
         /* CHECK: Throttle */

@@ -32,6 +32,7 @@
 #include "config/parameter_group_ids.h"
 
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
 #include "fc/settings.h"
@@ -178,6 +179,35 @@ static boxBitmask_t rcModeFlightModeMask(const boxBitmask_t *source)
     return mask;
 }
 
+// In Autopilot mode only navigation modes are activatable. Everything else
+// (manual, angle, airmode, arming switch, ...) is off the table by definition.
+static void rcModeRetainNavModesOnly(boxBitmask_t *mask)
+{
+    static const boxId_e navModeBoxes[] = {
+        BOXNAVALTHOLD,
+        BOXNAVPOSHOLD,
+        BOXNAVRTH,
+        BOXNAVWP,
+        BOXNAVCOURSEHOLD,
+        BOXNAVCRUISE,
+        BOXNAVLAUNCH,
+        BOXGCSNAV,
+    };
+
+    for (unsigned box = 0; box < CHECKBOX_ITEM_COUNT; box++) {
+        bool isNavMode = false;
+        for (unsigned i = 0; i < ARRAYLEN(navModeBoxes); i++) {
+            if (navModeBoxes[i] == (boxId_e)box) {
+                isNavMode = true;
+                break;
+            }
+        }
+        if (!isNavMode) {
+            bitArrayClr(mask->bits, box);
+        }
+    }
+}
+
 static void rcModeUpdateEffectiveActivationMask(void)
 {
     rcModeActivationMask = rcModeRawActivationMask;
@@ -187,19 +217,21 @@ static void rcModeUpdateEffectiveActivationMask(void)
         rcModeActivationOverrideActive = false;
     }
 
-    if (!rcModeActivationOverrideActive) {
-        return;
+    if (rcModeActivationOverrideActive) {
+        const boxBitmask_t currentFlightModeMask = rcModeFlightModeMask(&rcModeRawActivationMask);
+        if (memcmp(&currentFlightModeMask, &rcModeActivationOverrideSnapshot, sizeof(currentFlightModeMask)) != 0) {
+            BITARRAY_CLR_ALL(rcModeActivationOverrideMask.bits);
+            rcModeActivationOverrideActive = false;
+        }
+        else {
+            for (unsigned i = 0; i < ARRAYLEN(rcModeActivationMask.bits); i++) {
+                rcModeActivationMask.bits[i] |= rcModeActivationOverrideMask.bits[i];
+            }
+        }
     }
 
-    const boxBitmask_t currentFlightModeMask = rcModeFlightModeMask(&rcModeRawActivationMask);
-    if (memcmp(&currentFlightModeMask, &rcModeActivationOverrideSnapshot, sizeof(currentFlightModeMask)) != 0) {
-        BITARRAY_CLR_ALL(rcModeActivationOverrideMask.bits);
-        rcModeActivationOverrideActive = false;
-        return;
-    }
-
-    for (unsigned i = 0; i < ARRAYLEN(rcModeActivationMask.bits); i++) {
-        rcModeActivationMask.bits[i] |= rcModeActivationOverrideMask.bits[i];
+    if (isAutopilotControlMode()) {
+        rcModeRetainNavModesOnly(&rcModeActivationMask);
     }
 }
 

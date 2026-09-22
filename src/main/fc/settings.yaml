@@ -39,6 +39,9 @@ tables:
     values: ["PWM", "SBUS", "SBUS_PWM"]
   - name: failsafe_procedure
     values: ["LAND", "DROP", "RTH", "NONE"]
+  - name: control_mode
+    values: ["PILOT", "AUTOPILOT"]
+    enum: controlMode_e
   - name: current_sensor
     values: ["NONE", "ADC", "VIRTUAL", "FAKE", "ESC", "SMARTPORT", "CRSF", "CAN", "INA226"]
     enum: currentSensor_e
@@ -1710,6 +1713,16 @@ groups:
         field: prearmTimeoutMs
         min: 0
         max: 10000
+
+  - name: PG_CONTROL_MODE_CONFIG
+    headers: ["fc/control_mode.h"]
+    type: controlModeConfig_t
+    members:
+      - name: control_mode
+        description: "PILOT: a pilot controls the aircraft through RC channels (default). AUTOPILOT: RC channels are ignored; the aircraft is controlled through telemetry commands and navigation modes only."
+        default_value: PILOT
+        field: controlMode
+        table: control_mode
 
   - name: PG_GENERAL_SETTINGS
     headers: ["config/general_settings.h"]
