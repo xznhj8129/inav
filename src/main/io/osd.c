@@ -846,7 +846,7 @@ static const char * osdArmingDisabledReasonMessage(void)
         case ARMING_DISABLED_FAILSAFE_SYSTEM:
             // See handling of FAILSAFE_RX_LOSS_MONITORING in failsafe.c
             if (failsafePhase() == FAILSAFE_RX_LOSS_MONITORING) {
-                if (failsafeIsReceivingRxData()) {
+                if (failsafeIsReceivingControlLinkData()) {
                     // reminder to disarm to exit FAILSAFE_RX_LOSS_MONITORING once timeout period ends
                     if (IS_RC_MODE_ACTIVE(BOXARM)) {
                         return OSD_MESSAGE_STR(OSD_MSG_TURN_ARM_SW_OFF);

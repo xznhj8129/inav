@@ -2,6 +2,8 @@
 
 #include "common/time.h"
 
+#include "flight/failsafe.h"
+
 #include "mavlink/mavlink_modes.h"
 #include "mavlink/mavlink_routing.h"
 #include "mavlink/mavlink_runtime.h"
@@ -1220,6 +1222,9 @@ bool mavlinkHandleIncomingHeartbeat(void)
 {
     mavlink_heartbeat_t msg;
     mavlink_msg_heartbeat_decode(&mavlinkContext.recvMsg, &msg);
+
+    // An inbound heartbeat is the control-link presence signal for the Autopilot failsafe
+    failsafeNotifyTelemetryLinkActivity(FAILSAFE_TELEM_LINK_SOURCE_MAVLINK);
 
     // A framed HEARTBEAT is the protocol's presence signal. Track it per peer
     // (route table entry) rather than per port, so a steady peer cannot mask a

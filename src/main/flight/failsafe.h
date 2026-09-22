@@ -46,6 +46,9 @@ typedef struct failsafeConfig_s {
 #ifdef USE_GPS_FIX_ESTIMATION
     int16_t failsafe_gps_fix_estimation_delay;  // Time delay before Failsafe triggered when GPX Fix estimation is applied (s)
 #endif
+    uint8_t failsafe_telem_link_enabled;        // Autopilot mode: enable the telemetry-link heartbeat failsafe
+    uint8_t failsafe_telem_link_timeout;        // Autopilot mode: heartbeat staleness timeout (seconds)
+    uint8_t failsafe_telem_link_source;         // failsafeTelemLinkSource_e
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
@@ -119,6 +122,12 @@ typedef enum {
 } failsafeRxLinkState_e;
 
 typedef enum {
+    FAILSAFE_TELEM_LINK_SOURCE_MSP = 0,     // Inbound MSP messages on a physical MSP port
+    FAILSAFE_TELEM_LINK_SOURCE_MAVLINK,     // Inbound MAVLink HEARTBEAT
+    FAILSAFE_TELEM_LINK_SOURCE_ANY,         // Either of the above
+} failsafeTelemLinkSource_e;
+
+typedef enum {
     FAILSAFE_PROCEDURE_AUTO_LANDING = 0,
     FAILSAFE_PROCEDURE_DROP_IT,
     FAILSAFE_PROCEDURE_RTH,
@@ -155,6 +164,8 @@ typedef struct failsafeState_s {
 #ifdef USE_GPS_FIX_ESTIMATION
     timeMs_t wpModeGPSFixEstimationDelayedFailsafeStart;    // waypoint mission delayed failsafe timer start time on GPS fix estimation
 #endif
+    timeMs_t telemLinkActivityAt;           // last telemetry-link heartbeat (Autopilot mode)
+    bool telemLinkSeen;                     // a telemetry-link heartbeat has been seen (Autopilot mode)
     failsafeProcedure_e activeProcedure;
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
@@ -171,6 +182,10 @@ failsafePhase_e failsafePhase(void);
 bool failsafeIsMonitoring(void);
 bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
+
+// Autopilot mode: the active liveness source is the configured telemetry link instead of RC
+void failsafeNotifyTelemetryLinkActivity(failsafeTelemLinkSource_e source);
+bool failsafeIsReceivingControlLinkData(void);
 void failsafeOnRxSuspend(void);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);

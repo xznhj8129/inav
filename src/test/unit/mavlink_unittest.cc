@@ -3460,7 +3460,7 @@ uint32_t flightModeFlags;
 bool cliMode;
 const char *armingDisableFlagNames[] = {
     "GEOZONE", "FS", "ANGLE", "CAL", "OVRLD", "NAV", "COMPASS",
-    "ACC", "ARMSW", "HWFAIL", "BOXFS", "PLACEHOLDER", "RX",
+    "ACC", "ARMSW", "HWFAIL", "BOXFS", "TELEMLINK", "RX",
     "THR", "CLI", "CMS", "OSD", "ROLL/PITCH", "AUTOTRIM", "OOM",
     "SETTINGFAIL", "PWMOUT", "NOPREARM", "DSHOTBEEPER", "LANDED"
 };
@@ -3766,6 +3766,11 @@ bool areSensorsCalibrating(void)
 bool failsafeIsActive(void)
 {
     return false;
+}
+
+void failsafeNotifyTelemetryLinkActivity(failsafeTelemLinkSource_e source)
+{
+    UNUSED(source);
 }
 
 failsafePhase_e failsafePhase(void)

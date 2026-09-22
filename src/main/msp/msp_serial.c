@@ -33,6 +33,8 @@
 #include "drivers/system.h"
 #include "drivers/serial.h"
 
+#include "flight/failsafe.h"
+
 #include "io/serial.h"
 #include "fc/cli.h"
 
@@ -565,6 +567,11 @@ void mspSerialProcessOnePort(mspPort_t * const mspPort, mspEvaluateNonMspData_e 
             }
 
             if (mspPort->c_state == MSP_COMMAND_RECEIVED) {
+                // Inbound MSP traffic on a physical port is a control-link heartbeat candidate.
+                // USB is excluded so bench/configurator sessions do not keep a link alive.
+                if (mspPort->port->identifier != SERIAL_PORT_USB_VCP) {
+                    failsafeNotifyTelemetryLinkActivity(FAILSAFE_TELEM_LINK_SOURCE_MSP);
+                }
                 mspPostProcessFn = mspSerialProcessReceivedCommand(mspPort, mspProcessCommandFn);
                 break; // process one command at a time so as not to block.
             }

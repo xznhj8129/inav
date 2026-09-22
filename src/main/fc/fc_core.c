@@ -228,9 +228,14 @@ static void updateArmingStatus(void)
 
         /* CHECK: control link - RC in Pilot mode, telemetry heartbeat in Autopilot mode */
         if (isAutopilotControlMode()) {
-            // Autopilot mode ignores RC channels. Its liveness source is the telemetry link
-            // heartbeat, which does not exist yet, so the aircraft stays unarmable.
-            ENABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            // Autopilot mode ignores RC channels; its liveness source is the configured
+            // telemetry-link heartbeat.
+            if (failsafeIsReceivingControlLinkData()) {
+                DISABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            }
+            else {
+                ENABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            }
             DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
         }
         else {

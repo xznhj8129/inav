@@ -36,6 +36,7 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/runtime_config.h"
@@ -67,7 +68,7 @@
 
 static failsafeState_t failsafeState;
 
-PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 3);
+PG_REGISTER_WITH_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig, PG_FAILSAFE_CONFIG, 4);
 
 PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
     .failsafe_delay = SETTING_FAILSAFE_DELAY_DEFAULT,                                   // 0.5 sec
@@ -85,6 +86,9 @@ PG_RESET_TEMPLATE(failsafeConfig_t, failsafeConfig,
 #ifdef USE_GPS_FIX_ESTIMATION
     .failsafe_gps_fix_estimation_delay = SETTING_FAILSAFE_GPS_FIX_ESTIMATION_DELAY_DEFAULT, // Time delay before Failsafe activated when GPS Fix estimation is allied
 #endif
+    .failsafe_telem_link_enabled = SETTING_FAILSAFE_TELEM_LINK_ENABLED_DEFAULT,         // Autopilot mode: telemetry-link heartbeat failsafe off by default
+    .failsafe_telem_link_timeout = SETTING_FAILSAFE_TELEM_LINK_TIMEOUT_DEFAULT,         // Autopilot mode: 5 seconds without a heartbeat
+    .failsafe_telem_link_source = SETTING_FAILSAFE_TELEM_LINK_SOURCE_DEFAULT,           // Autopilot mode: MSP activity
 );
 
 typedef enum {
@@ -165,6 +169,8 @@ void failsafeReset(void)
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
     failsafeState.activeProcedure = failsafeConfig()->failsafe_procedure;
     failsafeState.controlling = false;
+    failsafeState.telemLinkActivityAt = 0;
+    failsafeState.telemLinkSeen = false;
 
     failsafeState.lastGoodRcCommand[ROLL] = 0;
     failsafeState.lastGoodRcCommand[PITCH] = 0;
@@ -289,6 +295,41 @@ bool failsafeIsReceivingRxData(void)
     return (failsafeState.rxLinkState == FAILSAFE_RXLINK_UP);
 }
 
+static bool failsafeTelemetryLinkIsUp(void)
+{
+    if (!failsafeConfig()->failsafe_telem_link_enabled) {
+        // No telemetry liveness required; safe operation is the user's responsibility
+        return true;
+    }
+
+    return failsafeState.telemLinkSeen &&
+        (millis() - failsafeState.telemLinkActivityAt) <= (timeMs_t)failsafeConfig()->failsafe_telem_link_timeout * MILLIS_PER_SECOND;
+}
+
+void failsafeNotifyTelemetryLinkActivity(failsafeTelemLinkSource_e source)
+{
+    if (!failsafeConfig()->failsafe_telem_link_enabled) {
+        return;
+    }
+
+    const uint8_t configuredSource = failsafeConfig()->failsafe_telem_link_source;
+    if (configuredSource != FAILSAFE_TELEM_LINK_SOURCE_ANY && configuredSource != source) {
+        return;
+    }
+
+    failsafeState.telemLinkActivityAt = millis();
+    failsafeState.telemLinkSeen = true;
+}
+
+bool failsafeIsReceivingControlLinkData(void)
+{
+    if (isAutopilotControlMode()) {
+        return failsafeTelemetryLinkIsUp();
+    }
+
+    return failsafeIsReceivingRxData();
+}
+
 void failsafeOnRxSuspend(void)
 {
     failsafeState.suspended = true;
@@ -403,13 +444,14 @@ void failsafeUpdateState(void)
         return;
     }
 
-    const bool receivingRxDataAndNotFailsafeMode = failsafeIsReceivingRxData() && !IS_RC_MODE_ACTIVE(BOXFAILSAFE);
+    const bool receivingControlDataAndNotFailsafeMode = failsafeIsReceivingControlLinkData() && !IS_RC_MODE_ACTIVE(BOXFAILSAFE);
     const bool armed = ARMING_FLAG(ARMED);
-    const bool sticksAreMoving = failsafeCheckStickMotion();
+    // In Autopilot there is no pilot; a returning heartbeat alone is the recovery signal
+    const bool sticksAreMoving = isAutopilotControlMode() || failsafeCheckStickMotion();
     beeperMode_e beeperMode = BEEPER_SILENCE;
 
     // Beep RX lost only if we are not seeing data and we have been armed earlier
-    if (!receivingRxDataAndNotFailsafeMode && ARMING_FLAG(WAS_EVER_ARMED)) {
+    if (!receivingControlDataAndNotFailsafeMode && ARMING_FLAG(WAS_EVER_ARMED)) {
         beeperMode = BEEPER_RX_LOST;
     }
 
@@ -431,7 +473,7 @@ void failsafeUpdateState(void)
                         reprocessState = true;
                     } else
 #endif
-                    if (!receivingRxDataAndNotFailsafeMode) {
+                    if (!receivingControlDataAndNotFailsafeMode) {
                         if ((failsafeConfig()->failsafe_throttle_low_delay && (millis() > failsafeState.throttleLowPeriod)) || STATE(NAV_MOTOR_STOP_OR_IDLE)) {
                             // JustDisarm: throttle was LOW for at least 'failsafe_throttle_low_delay' seconds or waiting for launch
                             // Don't disarm at all if `failsafe_throttle_low_delay` is set to zero
@@ -446,7 +488,7 @@ void failsafeUpdateState(void)
                     }
                 } else {
                     // When NOT armed, show rxLinkState of failsafe switch in GUI (failsafe mode)
-                    if (!receivingRxDataAndNotFailsafeMode) {
+                    if (!receivingControlDataAndNotFailsafeMode) {
                         ENABLE_FLIGHT_MODE(FAILSAFE_MODE);
                     } else {
                         DISABLE_FLIGHT_MODE(FAILSAFE_MODE);
@@ -457,7 +499,7 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RX_LOSS_DETECTED:
-                if (receivingRxDataAndNotFailsafeMode) {
+                if (receivingControlDataAndNotFailsafeMode) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                 } else {
                     // Set active failsafe procedure
@@ -493,7 +535,7 @@ void failsafeUpdateState(void)
 
             /* A very simple do-nothing failsafe procedure. The only thing it will do is monitor the receiver state and switch out of FAILSAFE condition */
             case FAILSAFE_RX_LOSS_IDLE:
-                if (receivingRxDataAndNotFailsafeMode && sticksAreMoving) {
+                if (receivingControlDataAndNotFailsafeMode && sticksAreMoving) {
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
                 } else if (failsafeChooseFailsafeProcedure() != FAILSAFE_PROCEDURE_NONE) {  // trigger new failsafe procedure if changed
@@ -511,7 +553,7 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_RETURN_TO_HOME:
-                if (receivingRxDataAndNotFailsafeMode && sticksAreMoving) {
+                if (receivingControlDataAndNotFailsafeMode && sticksAreMoving) {
                     abortForcedRTH();
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
@@ -548,7 +590,7 @@ void failsafeUpdateState(void)
                 break;
 
             case FAILSAFE_LANDING:
-                if (receivingRxDataAndNotFailsafeMode && sticksAreMoving) {
+                if (receivingControlDataAndNotFailsafeMode && sticksAreMoving) {
                     abortForcedEmergLanding();
                     failsafeState.phase = FAILSAFE_RX_LOSS_RECOVERED;
                     reprocessState = true;
@@ -593,7 +635,7 @@ void failsafeUpdateState(void)
 
             case FAILSAFE_RX_LOSS_MONITORING:
                 // Monitoring the rx link to allow rearming when it has become good for > `receivingRxDataPeriodPreset` time.
-                if (receivingRxDataAndNotFailsafeMode) {
+                if (receivingControlDataAndNotFailsafeMode) {
                     if (millis() > failsafeState.receivingRxDataPeriod) {
                         // rx link is good now, when arming via ARM switch, it must be OFF first
                         if (!IS_RC_MODE_ACTIVE(BOXARM)) {

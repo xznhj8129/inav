@@ -432,7 +432,7 @@ static char * osdArmingDisabledReasonMessage(void)
         case ARMING_DISABLED_FAILSAFE_SYSTEM:
             // See handling of FAILSAFE_RX_LOSS_MONITORING in failsafe.c
             if (failsafePhase() == FAILSAFE_RX_LOSS_MONITORING) {
-                if (failsafeIsReceivingRxData()) {
+                if (failsafeIsReceivingControlLinkData()) {
                     // If we're not using sticks, it means the ARM switch
                     // hasn't been off since entering FAILSAFE_RX_LOSS_MONITORING
                     // yet
