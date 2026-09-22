@@ -34,6 +34,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 
@@ -142,7 +143,11 @@ bool mspOverrideIsInFailsafe(void)
 static bool mspFlightAxisOverridesEnabled(void)
 {
     bool enabled;
-    if (rxConfig()->receiverType == RX_TYPE_MSP) {
+    if (isAutopilotControlMode()) {
+        // Autopilot has no override box: the telemetry link is the control path and
+        // the command-freshness check below is the dead-man switch.
+        enabled = true;
+    } else if (rxConfig()->receiverType == RX_TYPE_MSP) {
         enabled = IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE) && rxIsReceivingSignal() && rxAreFlightChannelsValid();
     } else {
         enabled = IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE) && !mspOverrideIsInFailsafe();
