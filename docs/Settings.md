@@ -1358,7 +1358,7 @@ Autopilot mode: trigger the failsafe procedure when the telemetry-link heartbeat
 
 ### failsafe_telem_link_source
 
-Autopilot mode: which inbound link counts as the telemetry-link heartbeat.
+Autopilot mode: which inbound link counts as the telemetry-link heartbeat. MSP: any inbound message on a physical MSP port (USB excluded). MAVLink: an inbound HEARTBEAT from a GCS or onboard controller.
 
 | Allowed Values |  |
 | --- | --- |

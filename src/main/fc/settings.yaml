@@ -987,7 +987,7 @@ groups:
         min: 1
         max: 60
       - name: failsafe_telem_link_source
-        description: "Autopilot mode: which inbound link counts as the telemetry-link heartbeat."
+        description: "Autopilot mode: which inbound link counts as the telemetry-link heartbeat. MSP: any inbound message on a physical MSP port (USB excluded). MAVLink: an inbound HEARTBEAT from a GCS or onboard controller."
         default_value: MSP
         table: failsafe_telem_link_source
 

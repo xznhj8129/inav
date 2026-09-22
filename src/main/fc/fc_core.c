@@ -259,7 +259,7 @@ static void updateArmingStatus(void)
         }
 
         /* CHECK: pitch / roll sticks centered when NAV_LAUNCH_MODE enabled */
-        if (isNavLaunchEnabled()) {
+        if (isNavLaunchAvailable()) {
             if (isRollPitchStickDeflected(CONTROL_DEADBAND)) {
                 ENABLE_ARMING_FLAG(ARMING_DISABLED_ROLLPITCH_NOT_CENTERED);
             } else {
@@ -1004,7 +1004,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = US2S(cycleTime);
 
-    bool fwLaunchIsActive = STATE(AIRPLANE) && isNavLaunchEnabled() && armTime == 0;
+    bool fwLaunchIsActive = STATE(AIRPLANE) && isNavLaunchAvailable() && armTime == 0;
 
     if (ARMING_FLAG(ARMED) && (!STATE(AIRPLANE) || !fwLaunchIsActive || fixedWingLaunchStatus() >= FW_LAUNCH_DETECTED)) {
         flightTime += cycleTime;

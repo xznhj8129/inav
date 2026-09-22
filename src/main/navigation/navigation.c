@@ -6135,7 +6135,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         /* Airplane specific modes */
         if (STATE(AIRPLANE)) {
             // LAUNCH mode has priority over any other NAV mode
-            if (isNavLaunchEnabled()) {     // FIXME: Only available for fixed wing aircrafts now
+            if (isNavLaunchAvailable()) {     // FIXME: Only available for fixed wing aircrafts now
                 if (canActivateLaunchMode) {
                     canActivateLaunchMode = false;
                     return NAV_FSM_EVENT_SWITCH_TO_LAUNCH;
@@ -6297,7 +6297,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         }
     } else {
         // Launch mode can be activated if feature FW_LAUNCH is enabled or BOX is turned on prior to arming (avoid switching to LAUNCH in flight)
-        canActivateLaunchMode = isNavLaunchEnabled() && (!sensors(SENSOR_GPS) || (sensors(SENSOR_GPS) && !isGPSHeadingValid()));
+        canActivateLaunchMode = isNavLaunchAvailable() && (!sensors(SENSOR_GPS) || (sensors(SENSOR_GPS) && !isGPSHeadingValid()));
     }
 
     return NAV_FSM_EVENT_SWITCH_TO_IDLE;
@@ -7061,10 +7061,12 @@ bool navigationRTHAllowsLanding(void)
         (allow == NAV_RTH_ALLOW_LANDING_FS_ONLY && FLIGHT_MODE(FAILSAFE_MODE));
 }
 
-bool isNavLaunchEnabled(void)
+bool isNavLaunchAvailable(void)
 {
-    // FW launch is a pilot-initiated sequence (hand launch / bungee); Autopilot
-    // takeoff comes from telemetry instead.
+    // Launch is configured and available to the pilot. Callers treat this as
+    // "launch is in play" (FSM activation, arming checks, flight-time accounting,
+    // flying detection); in Autopilot it is false everywhere, because takeoff
+    // comes from telemetry instead of a pilot-initiated launch.
     if (isAutopilotControlMode()) {
         return false;
     }

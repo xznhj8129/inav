@@ -165,6 +165,7 @@ typedef struct failsafeState_s {
     timeMs_t wpModeGPSFixEstimationDelayedFailsafeStart;    // waypoint mission delayed failsafe timer start time on GPS fix estimation
 #endif
     timeMs_t telemLinkActivityAt;           // last telemetry-link heartbeat (Autopilot mode)
+    timeMs_t telemLinkUpSince;              // start of the current uninterrupted telemetry-link presence (Autopilot mode)
     bool telemLinkSeen;                     // a telemetry-link heartbeat has been seen (Autopilot mode)
     failsafeProcedure_e activeProcedure;
     failsafePhase_e phase;

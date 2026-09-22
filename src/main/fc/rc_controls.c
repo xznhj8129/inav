@@ -144,10 +144,11 @@ bool throttleStickIsLow(void)
 
 int16_t RP2350_FAST_CODE throttleStickMixedValue(void)
 {
-    // Autopilot has no pilot throttle; nav modes command throttle themselves, and the
-    // neutral value here is the throttle curve's zero point.
+    // Autopilot has no pilot throttle; nav modes command throttle themselves.
+    // Reversible motors use the throttle mid as their neutral (no-thrust) point;
+    // otherwise the throttle curve's zero point is idle.
     if (isAutopilotControlMode()) {
-        return rcLookupThrottle(0);
+        return feature(FEATURE_REVERSIBLE_MOTORS) ? rcLookupThrottleMid() : rcLookupThrottle(0);
     }
 
     int16_t throttleValue;

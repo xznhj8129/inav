@@ -80,6 +80,7 @@
 #include "io/osd/custom_elements.h"
 
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/fc_core.h"
 #include "fc/fc_tasks.h"
@@ -1007,6 +1008,14 @@ static const char * osdFailsafePhaseMessage(void)
 
 static const char * osdFailsafeInfoMessage(void)
 {
+    if (isAutopilotControlMode()) {
+        // No sticks to move; recovery is automatic once the telemetry link returns
+        if (!failsafeIsReceivingControlLinkData() && !FLIGHT_MODE(NAV_FW_AUTOLAND)) {
+            return OSD_MESSAGE_STR(OSD_MSG_NO_TELEM_LINK);
+        }
+        return NULL;
+    }
+
     if (failsafeIsReceivingRxData() && !FLIGHT_MODE(NAV_FW_AUTOLAND)) {
         // User must move sticks to exit FS mode
         return OSD_MESSAGE_STR(OSD_MSG_MOVE_EXIT_FS);

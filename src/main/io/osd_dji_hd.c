@@ -44,6 +44,7 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_msp_box.h"
@@ -586,6 +587,14 @@ static char * osdFailsafePhaseMessage(void)
 
 static char * osdFailsafeInfoMessage(void)
 {
+    if (isAutopilotControlMode()) {
+        // No sticks to move; recovery is automatic once the telemetry link returns
+        if (!failsafeIsReceivingControlLinkData()) {
+            return OSD_MESSAGE_STR("NO TELEM LINK");
+        }
+        return NULL;
+    }
+
     if (failsafeIsReceivingRxData()) {
         // User must move sticks to exit FS mode
         return OSD_MESSAGE_STR("!MOVE STICKS TO EXIT FS!");

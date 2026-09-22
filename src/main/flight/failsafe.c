@@ -169,8 +169,8 @@ void failsafeReset(void)
     failsafeState.rxLinkState = FAILSAFE_RXLINK_DOWN;
     failsafeState.activeProcedure = failsafeConfig()->failsafe_procedure;
     failsafeState.controlling = false;
-    failsafeState.telemLinkActivityAt = 0;
-    failsafeState.telemLinkSeen = false;
+    // telemLinkActivityAt / telemLinkUpSince / telemLinkSeen are watchdog state, not
+    // configuration: a config reload must not look like a control-link loss.
 
     failsafeState.lastGoodRcCommand[ROLL] = 0;
     failsafeState.lastGoodRcCommand[PITCH] = 0;
@@ -302,8 +302,23 @@ static bool failsafeTelemetryLinkIsUp(void)
         return true;
     }
 
-    return failsafeState.telemLinkSeen &&
-        (millis() - failsafeState.telemLinkActivityAt) <= (timeMs_t)failsafeConfig()->failsafe_telem_link_timeout * MILLIS_PER_SECOND;
+    if (!failsafeState.telemLinkSeen) {
+        return false;
+    }
+
+    const timeMs_t now = millis();
+    if ((now - failsafeState.telemLinkActivityAt) > (timeMs_t)failsafeConfig()->failsafe_telem_link_timeout * MILLIS_PER_SECOND) {
+        failsafeState.telemLinkUpSince = 0;
+        return false;
+    }
+
+    if (failsafeState.telemLinkUpSince == 0) {
+        failsafeState.telemLinkUpSince = now;
+    }
+
+    // Like the RC link, recovery needs the link present for the recovery delay so a
+    // heartbeat blip cannot abort an active failsafe procedure.
+    return (now - failsafeState.telemLinkUpSince) >= failsafeState.rxDataRecoveryPeriod;
 }
 
 void failsafeNotifyTelemetryLinkActivity(failsafeTelemLinkSource_e source)

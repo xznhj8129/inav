@@ -1223,8 +1223,11 @@ bool mavlinkHandleIncomingHeartbeat(void)
     mavlink_heartbeat_t msg;
     mavlink_msg_heartbeat_decode(&mavlinkContext.recvMsg, &msg);
 
-    // An inbound heartbeat is the control-link presence signal for the Autopilot failsafe
-    failsafeNotifyTelemetryLinkActivity(FAILSAFE_TELEM_LINK_SOURCE_MAVLINK);
+    // Only control peers keep the link alive: a GCS or an onboard controller.
+    // Other vehicles' heartbeats must not mask a lost control link.
+    if (msg.type == MAV_TYPE_GCS || msg.type == MAV_TYPE_ONBOARD_CONTROLLER) {
+        failsafeNotifyTelemetryLinkActivity(FAILSAFE_TELEM_LINK_SOURCE_MAVLINK);
+    }
 
     // A framed HEARTBEAT is the protocol's presence signal. Track it per peer
     // (route table entry) rather than per port, so a steady peer cannot mask a

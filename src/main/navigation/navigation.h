@@ -859,7 +859,7 @@ navVtolTransitionOsdState_e navigationVtolTransitionOsdState(void);
 
 bool rthClimbStageActiveAndComplete(void);
 
-bool isNavLaunchEnabled(void);
+bool isNavLaunchAvailable(void);
 uint8_t fixedWingLaunchStatus(void);
 const char * fixedWingLaunchStateMessage(void);
 
