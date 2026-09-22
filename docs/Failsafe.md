@@ -1,6 +1,6 @@
 # Failsafe
 
-Failsafe is a state the flight controller is meant to enter when the radio receiver loses the RC link. Any of these of these conditions will trigger it:
+Failsafe is a state the flight controller enters when its control lifeline is lost. Which link that is depends on `control_mode`: the RC link in `PILOT` mode, the telemetry link in `AUTOPILOT` mode (see [Control modes and the failsafe lifeline](#control-modes-and-the-failsafe-lifeline)). In `PILOT` mode, any of these conditions will trigger it:
 
 * Any flight channel (pitch, roll, throttle or yaw) sends no pulses
 * Any channel is outside the valid range between `rx_min_usec` and `rx_max_usec`
@@ -29,7 +29,31 @@ Note that:
 
 * When the failsafe mode is aborted (RC signal restored/failsafe switch set to OFF), the current stick positions will be enforced immediately. Be ready to react quickly.
 
+## Control modes and the failsafe lifeline
+
+`control_mode` selects the control regime and, with it, the one link that is the lifeline for arming and failsafe:
+
+| `control_mode` | Control | Arming and failsafe lifeline |
+|---|---|---|
+| `PILOT` (default) | RC channels drive arming, modes and flight, on any transport (serial receiver, MSP RC, ...) | **RC link.** Loss of valid RC channel data triggers the configured `failsafe_procedure`. The telemetry link is not consulted. |
+| `AUTOPILOT` | RC channels are ignored; the aircraft is controlled through telemetry commands and navigation modes only | **Telemetry link.** Loss of the telemetry heartbeat triggers the configured `failsafe_procedure`. The RC link is not consulted. |
+
+The mode is chosen during configuration. There is deliberately no in-flight crossover between lifelines and no fallback from one to the other, and no mode ever runs without a liveness source: `ARMING_DISABLED_RC_LINK` and `ARMING_DISABLED_TELEM_LINK` are the arming-side equivalents.
+
+### Autopilot mode
+
+In `AUTOPILOT` mode:
+
+* Only navigation modes are available. Stick commands, stick gestures and channel-driven arming or disarming do not exist.
+* The telemetry heartbeat is any inbound MSP message on a physical MSP port (USB sessions do not count) or a MAVLink HEARTBEAT from a GCS or onboard controller. Heartbeats from other vehicles do not keep the link alive.
+* `failsafe_telem_timeout` is the guard time in 0.1 second units (default 50 = 5 seconds) after the last heartbeat before failsafe activates. It works like `failsafe_delay`; 0 removes the guard time. Recovery uses `failsafe_recovery_delay`, the same as the RC link.
+* Arming is blocked until the telemetry link has been seen and is fresh.
+
+`failsafe_procedure` and the rest of the failsafe behaviour are identical in both modes.
+
 ## RX configuration
+
+Only relevant in `PILOT` mode; `AUTOPILOT` has no receiver in the loop.
 
 In order to engage failsafe mode correctly, you must configure your receiver to do one of the following on signal loss:
 
@@ -148,4 +172,10 @@ This parameter defines the amount of pitch angle (in 1/10 deg units) to execute 
 #### `failsafe_fw_yaw_rate`
 
 This parameter defines the amount of yaw rate (in deg per second units) to execute on failsafe for an airplane. Negative = LEFT
+
+### Parameters relevant to **AUTOPILOT** mode
+
+#### `failsafe_telem_timeout`
+
+Guard time in 0.1 second units between the last telemetry heartbeat and failsafe activation. Works like `failsafe_delay`; 0 removes the guard time. Only used in `AUTOPILOT` mode. See [Control modes and the failsafe lifeline](#control-modes-and-the-failsafe-lifeline).
 

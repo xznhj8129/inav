@@ -647,7 +647,7 @@ Blackbox logging rate numerator. Use num/denom settings to decide if a frame sho
 
 ### control_mode
 
-PILOT: a pilot controls the aircraft through RC channels (default). AUTOPILOT: RC channels are ignored; the aircraft is controlled through telemetry commands and navigation modes only.
+PILOT: a pilot controls the aircraft through RC channels; the RC link is the arming and failsafe lifeline (default). AUTOPILOT: RC channels are ignored and only navigation modes are available; the telemetry link is the arming and failsafe lifeline.
 
 | Allowed Values |  |
 | --- | --- |
