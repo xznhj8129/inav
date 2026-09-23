@@ -3630,7 +3630,7 @@ If enabled, motor will stop when throttle is low on this mixer_profile
 
 ### msp_override_channels
 
-Mask of RX channels that may be overridden by MSP `SET_RAW_RC`. Note that this requires the `MSP RC Override` flight mode.
+Mask of RX channels that may be overridden by MSP `SET_RAW_RC`. Note that this requires the `Control Override` flight mode.
 
 | Default | Min | Max |
 | --- | --- | --- |
@@ -3664,7 +3664,7 @@ Speed in fully autonomous modes (RTH, WP) [cm/s]. Used for WP mode when no speci
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 500 | 10 | 2000 |
+| 500 | 10 | 65535 |
 
 ---
 
@@ -4448,7 +4448,7 @@ Maximum speed allowed when processing pilot input for POSHOLD/CRUISE control mod
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 750 | 10 | 2000 |
+| 750 | 10 | 65535 |
 
 ---
 
@@ -4468,7 +4468,7 @@ Maximum speed allowed in fully autonomous modes (RTH, WP) [cm/s] [Multirotor onl
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 1000 | 10 | 2000 |
+| 1000 | 10 | 65535 |
 
 ---
 
