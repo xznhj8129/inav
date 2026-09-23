@@ -18,8 +18,3 @@ bool isAutopilotControlMode(void)
 {
     return controlModeConfig()->controlMode == CONTROL_MODE_AUTOPILOT;
 }
-
-bool controlAllowsManualModes(void)
-{
-    return !isAutopilotControlMode();
-}

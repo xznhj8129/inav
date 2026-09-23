@@ -15,9 +15,9 @@ See also: [Mavlink.md](Mavlink.md), [Settings.md](Settings.md),
 
 ## 1. What Autopilot adds
 
-1. **Pilot vs Autopilot control mode** — one setting, two operating regimes; in Autopilot the telemetry link replaces RC as the lifeline and only NAV modes fly.
+1. **Pilot vs Autopilot control mode** — one setting, two operating regimes; in Autopilot the telemetry link replaces RC as the lifeline.
 2. **Telemetry-link heartbeat failsafe** — an RC-independent liveness source with its own timeout, reusing `failsafe_procedure`.
-3. **Mode availability** — Autopilot permits only NAV flight modes (plus the offboard gate box).
+3. **Unblocked mode selection** — channels and commands may select any flight mode in either control mode; a remote pilot or GCS may be on the controls.
 4. **Command-based mode selection** — `MAV_CMD_DO_SET_MODE` (full reverse ArduPilot table) and `MSP2_INAV_SET_MODE`, with switch-like semantics.
 5. **Offboard setpoints** — flight-axis angle/rate overrides plus a throttle member, gated by CONTROL OVERRIDE with a 200 ms dead-man timer.
 
@@ -31,7 +31,7 @@ See also: [Mavlink.md](Mavlink.md), [Settings.md](Settings.md),
                       PILOT                            AUTOPILOT
   lifeline .......... RC link                          telemetry link
   arming flag ....... RX (RC_LINK)                     TELEMLINK
-  flight modes ...... all boxes                        NAV modes only (+ offboard gate)
+  flight modes ...... all boxes                        all boxes (channels and commands)
   sticks ............ full RC authority                AER decay to centre in 200 ms;
                                                        throttle/aux remain sticky
   stick gestures .... gyro cal, profile, stick-arm     disabled
@@ -110,21 +110,16 @@ Two acceptable sources, no setting to pick one:
 `MSP2_INAV_SET_MODE` takes the **permanent id**; the CLI `aux` command also takes the
 permanent id; MAVLink takes the ArduPilot custom mode.
 
-### 4.2 Autopilot availability
+### 4.2 Availability
 
-```
-             Autopilot mode availability
-  ┌──────────────────────────────────────────────────────────┐
-  │ NAV modes: ALTHOLD POSHOLD RTH WP COURSEHOLD CRUISE      │
-  │            LAUNCH GCSNAV                        allowed  │
-  │ CONTROL OVERRIDE (offboard gate)                 allowed  │
-  │ everything else (ANGLE, HORIZON, MANUAL, BRAKE, │ filtered │
-  │ cameras, user boxes, ...)                       │          │
-  └──────────────────────────────────────────────────────────┘
-```
+There is no control-mode mode-blocking: channels and mode commands may select
+any flight mode in either control mode, because a remote pilot or GCS may be on
+the controls (RC stream, aux writes, offboard setpoints). What still restricts
+selection:
 
-Filtered boxes simply never appear in the effective mode mask — a channel or
-command selecting them does nothing (commands return `DENIED`/error instead).
+- **target availability** — the box must exist in this build (e.g. NAV LAUNCH is absent when the FW launch feature is enabled, so `PLANE_MODE_TAKEOFF` is `DENIED`);
+- **command whitelist** — commands accept flight modes, not auxiliary switches (beeper, cameras, user boxes, ...);
+- **arming safety** (§4.3) still blocks arming while a position-dependent NAV mode is selected.
 
 ### 4.3 Arming safety
 
@@ -172,7 +167,6 @@ A mode command is a **virtual mode switch**:
           navigationSelectModesByCommand()
             · selectable flight-mode box?
             · available on this target?
-            · allowed in the control mode?  (Autopilot: NAV only)
                         │
           fail ─────────┴────────► DENIED / UNSUPPORTED / MSP error
                         │ ok
@@ -193,7 +187,7 @@ A mode command is a **virtual mode switch**:
 | Situation | MAVLink | MSP |
 |---|---|---|
 | mode selected | `ACCEPTED` | ACK |
-| policy/state rejection (manual mode in Autopilot, unavailable box, not selectable) | `DENIED` | error (`!`) |
+| policy/state rejection (unavailable box, not selectable) | `DENIED` | error (`!`) |
 | unknown mode id / no INAV equivalent | `UNSUPPORTED` | error (unknown id) |
 
 Note: MAVLink mode *telemetry* (`HEARTBEAT.custom_mode`) reports the flying/nav
@@ -210,7 +204,7 @@ MSP active modes / the FSM state once it flies, not through the heartbeat.
 
 - in **both** control modes the setpoint commands do nothing unless the box is active;
 - in **Pilot** the RC link must also be healthy;
-- in **Autopilot** the box is exempt from the NAV-only filter, so it can be selected there;
+- in **Autopilot** it is selectable like any other box (channel-driven boxes are unfiltered);
 - select it like any mode box: a mode range on an aux channel (`aux <slot> 50 <aux ch> <start> <end>`) driven by a switch, or by an RC stream, or by writing the channel over `MSP2_INAV_SET_AUX_RC` (CH13–CH32).
 
 ### 6.2 Setpoints

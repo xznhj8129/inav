@@ -36,7 +36,6 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
-#include "fc/control_mode.h"
 #include "fc/fc_msp_box.h"
 #include "fc/multifunction.h"
 #include "fc/rc_controls.h"
@@ -6844,11 +6843,6 @@ bool navigationSelectModesByCommand(const boxBitmask_t *mask)
         }
 
         if (!isSelectableFlightModeBox((boxId_e)box) || !isBoxAvailable((boxId_e)box)) {
-            return false;
-        }
-
-        // Autopilot mode is flown by NAV modes only; manual modes are for a pilot.
-        if (!controlAllowsManualModes() && !isNavModeBox((boxId_e)box)) {
             return false;
         }
     }

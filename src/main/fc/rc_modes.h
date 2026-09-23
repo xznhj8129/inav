@@ -153,8 +153,6 @@ bool isModeActivationConditionPresent(boxId_e modeId);
 void processAirmode(void);
 bool isUsingNavigationModes(void);
 
-// The model's navigation-mode boxes: Autopilot mode allows only these to activate
-bool isNavModeBox(boxId_e box);
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 
 void updateActivatedModes(void);

@@ -17,6 +17,3 @@ typedef struct controlModeConfig_s {
 PG_DECLARE(controlModeConfig_t, controlModeConfig);
 
 bool isAutopilotControlMode(void);
-
-// Manual (pilot-flown) flight modes are available only in Pilot mode
-bool controlAllowsManualModes(void);

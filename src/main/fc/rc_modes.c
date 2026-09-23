@@ -202,31 +202,9 @@ static boxBitmask_t rcModeCommandedReleaseMask(void)
     return mask;
 }
 
-// The model's navigation-mode boxes: flight modes that navigate the aircraft.
-// Autopilot mode allows only these to activate; manual and assist modes are off
-// the table by definition. This is not the same question as which active modes
-// require a healthy position estimate before arming (see navigation.c).
-bool isNavModeBox(boxId_e box)
-{
-    switch (box) {
-        case BOXNAVALTHOLD:
-        case BOXNAVPOSHOLD:
-        case BOXNAVRTH:
-        case BOXNAVWP:
-        case BOXNAVCOURSEHOLD:
-        case BOXNAVCRUISE:
-        case BOXNAVLAUNCH:
-        case BOXGCSNAV:
-            return true;
-
-        default:
-            return false;
-    }
-}
-
 // Flight-mode boxes a telemetry command may select; switches and action boxes
-// (ARM, beeper, cameras...) are not modes. Manual modes are included here and
-// availability is decided by the control mode (see navigation.c).
+// (ARM, beeper, cameras...) are not modes. Target availability is checked by the
+// caller (see navigation.c).
 bool isSelectableFlightModeBox(boxId_e box)
 {
     switch (box) {
@@ -246,17 +224,6 @@ bool isSelectableFlightModeBox(boxId_e box)
 
         default:
             return false;
-    }
-}
-
-static void rcModeRetainNavModesOnly(boxBitmask_t *mask)
-{
-    for (unsigned box = 0; box < CHECKBOX_ITEM_COUNT; box++) {
-        // CONTROL OVERRIDE is the offboard gate, not a flight mode: telemetry
-        // setpoints stay selectable in Autopilot behind it.
-        if (!isNavModeBox((boxId_e)box) && box != BOXMSPRCOVERRIDE) {
-            bitArrayClr(mask->bits, box);
-        }
     }
 }
 
@@ -293,10 +260,6 @@ static void rcModeUpdateEffectiveActivationMask(void)
                 rcModeActivationMask.bits[i] |= rcModeCommandedMask.bits[i];
             }
         }
-    }
-
-    if (!controlAllowsManualModes()) {
-        rcModeRetainNavModesOnly(&rcModeActivationMask);
     }
 }
 
