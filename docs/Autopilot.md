@@ -6,9 +6,7 @@ modes, and adds command surfaces so a GCS or companion computer can select modes
 and, behind an explicit gate, drive attitude/rate/throttle setpoints.
 
 This document covers the operating model, the command and setpoint surfaces,
-the settings and the procedures. Sections that describe behaviour are written
-against the firmware as implemented; anything not listed under
-[Not implemented yet](#not-implemented-yet) does not exist.
+the settings and the procedures.
 
 See also: [Mavlink.md](Mavlink.md), [Settings.md](Settings.md),
 `docs/development/msp/msp_messages.json` (MSP payload source of truth).
@@ -225,10 +223,10 @@ MSP active modes / the FSM state once it flies, not through the heartbeat.
  roll         : I16    angle [deci-deg]  or rate [deg/s, ±2000]
  pitch        : I16    same
  yaw          : I16    same
- throttle     : I16    PWM us, optional (9-byte form only)
+ throttle     : I16    PWM us
 ```
 
-- 7-byte form = legacy, no throttle; 9-byte form appends `throttle` and bit 3 enables it;
+- all five fields are part of the message; mask bit 3 enables the throttle override;
 - send **one** of the two commands (angle XOR rate) per setpoint — mixing them is undefined;
 - must be refreshed within **200 ms (5 Hz)**; expiry clears everything, including throttle;
 - `throttle` is clamped to `idle..max` at the mixer and outranks the programming-framework throttle override.

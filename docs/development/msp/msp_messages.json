@@ -11203,13 +11203,13 @@
                     {
                         "name": "throttleTarget",
                         "ctype": "int16_t",
-                        "desc": "Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer. Read only in the 9-byte form; enabled by mask bit 3.",
+                        "desc": "Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer; enabled by mask bit 3.",
                         "units": "us"
                     }
                 ]
             },
             "reply": null,
-            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. The 7-byte form (mask, roll, pitch, yaw) is still accepted and cannot enable the throttle override; the 9-byte form appends the throttle target. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.",
+            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.",
             "description": "Enables or disables a flight-axis angle override and the throttle override for the selected fields."
         },
         "MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE": {
@@ -11245,13 +11245,13 @@
                     {
                         "name": "throttleTarget",
                         "ctype": "int16_t",
-                        "desc": "Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer. Read only in the 9-byte form; enabled by mask bit 3.",
+                        "desc": "Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer; enabled by mask bit 3.",
                         "units": "us"
                     }
                 ]
             },
             "reply": null,
-            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. The 7-byte form (mask, roll, pitch, yaw) is still accepted and cannot enable the throttle override; the 9-byte form appends the throttle target. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.",
+            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.",
             "description": "Enables or disables a flight-axis rate override and the throttle override for the selected fields."
         },
         "MSP2_INAV_SET_LOCAL_TARGET": {

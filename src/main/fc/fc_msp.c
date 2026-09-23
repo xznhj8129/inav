@@ -2784,39 +2784,29 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
 
 #if defined(USE_RX_MSP) && defined(USE_MSP_RC_OVERRIDE)
     case MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE:
-        if (dataSize < 7) {
+        if (dataSize < 9) {
             return MSP_RESULT_ERROR;
         }
         {
-            uint8_t overrideMask = sbufReadU8(src);
+            const uint8_t overrideMask = sbufReadU8(src);
             const int16_t rollTarget = (int16_t)sbufReadU16(src);
             const int16_t pitchTarget = (int16_t)sbufReadU16(src);
             const int16_t yawTarget = (int16_t)sbufReadU16(src);
-            int16_t throttleTarget = 0;
-            if (dataSize >= 9) {
-                throttleTarget = (int16_t)sbufReadU16(src);
-            } else {
-                overrideMask &= ~0x08;
-            }
+            const int16_t throttleTarget = (int16_t)sbufReadU16(src);
             mspOverrideSetFlightAxisAngleOverride(overrideMask, rollTarget, pitchTarget, yawTarget, throttleTarget);
         }
         break;
 
     case MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE:
-        if (dataSize < 7) {
+        if (dataSize < 9) {
             return MSP_RESULT_ERROR;
         }
         {
-            uint8_t overrideMask = sbufReadU8(src);
+            const uint8_t overrideMask = sbufReadU8(src);
             const int16_t rollTarget = (int16_t)sbufReadU16(src);
             const int16_t pitchTarget = (int16_t)sbufReadU16(src);
             const int16_t yawTarget = (int16_t)sbufReadU16(src);
-            int16_t throttleTarget = 0;
-            if (dataSize >= 9) {
-                throttleTarget = (int16_t)sbufReadU16(src);
-            } else {
-                overrideMask &= ~0x08;
-            }
+            const int16_t throttleTarget = (int16_t)sbufReadU16(src);
             mspOverrideSetFlightAxisRateOverride(overrideMask, rollTarget, pitchTarget, yawTarget, throttleTarget);
         }
         break;
