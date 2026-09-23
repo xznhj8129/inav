@@ -11178,7 +11178,7 @@
                     {
                         "name": "overrideMask",
                         "ctype": "uint8_t",
-                        "desc": "Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis.",
+                        "desc": "Bitmask of desired-state fields: bit 0 Roll, bit 1 Pitch, bit 2 Yaw, bit 3 Throttle. A set bit enables that override, a clear bit disables it.",
                         "units": "Bitmask",
                         "bitmask": true
                     },
@@ -11199,12 +11199,18 @@
                         "ctype": "int16_t",
                         "desc": "Angle target in deci-degrees. Yaw clamped to 0–3600.",
                         "units": "deci-degrees"
+                    },
+                    {
+                        "name": "throttleTarget",
+                        "ctype": "int16_t",
+                        "desc": "Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer. Read only in the 9-byte form; enabled by mask bit 3.",
+                        "units": "us"
                     }
                 ]
             },
             "reply": null,
-            "notes": "Uses the same override path as logic conditions and bypasses stick-derived angle targets.",
-            "description": "Enables or disables a flight-axis angle override for the selected axis."
+            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. The 7-byte form (mask, roll, pitch, yaw) is still accepted and cannot enable the throttle override; the 9-byte form appends the throttle target. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.",
+            "description": "Enables or disables a flight-axis angle override and the throttle override for the selected fields."
         },
         "MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE": {
             "code": 8727,
@@ -11214,7 +11220,7 @@
                     {
                         "name": "overrideMask",
                         "ctype": "uint8_t",
-                        "desc": "Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis.",
+                        "desc": "Bitmask of desired-state fields: bit 0 Roll, bit 1 Pitch, bit 2 Yaw, bit 3 Throttle. A set bit enables that override, a clear bit disables it.",
                         "units": "Bitmask",
                         "bitmask": true
                     },
@@ -11235,12 +11241,18 @@
                         "ctype": "int16_t",
                         "desc": "Rate target, clamped to ±2000",
                         "units": "deg/s"
+                    },
+                    {
+                        "name": "throttleTarget",
+                        "ctype": "int16_t",
+                        "desc": "Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer. Read only in the 9-byte form; enabled by mask bit 3.",
+                        "units": "us"
                     }
                 ]
             },
             "reply": null,
-            "notes": "Expects 7 bytes. Overrides rate targets just before control is applied, bypassing stick-derived setpoints.",
-            "description": "Enables or disables a flight-axis rate override for the selected axis."
+            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. The 7-byte form (mask, roll, pitch, yaw) is still accepted and cannot enable the throttle override; the 9-byte form appends the throttle target. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.",
+            "description": "Enables or disables a flight-axis rate override and the throttle override for the selected fields."
         },
         "MSP2_INAV_SET_LOCAL_TARGET": {
             "code": 8728,

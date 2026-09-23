@@ -252,7 +252,9 @@ bool isSelectableFlightModeBox(boxId_e box)
 static void rcModeRetainNavModesOnly(boxBitmask_t *mask)
 {
     for (unsigned box = 0; box < CHECKBOX_ITEM_COUNT; box++) {
-        if (!isNavModeBox((boxId_e)box)) {
+        // MSP RC OVERRIDE is the offboard gate, not a flight mode: telemetry
+        // setpoints stay selectable in Autopilot behind it.
+        if (!isNavModeBox((boxId_e)box) && box != BOXMSPRCOVERRIDE) {
             bitArrayClr(mask->bits, box);
         }
     }

@@ -56,6 +56,7 @@
 #include "navigation/navigation.h"
 
 #include "rx/rx.h"
+#include "rx/msp_override.h"
 
 #include "sensors/battery.h"
 
@@ -730,6 +731,15 @@ void FAST_CODE mixTable(float dT)
     int16_t throttleMin, throttleMax;
 
     // Find min and max throttle based on condition.
+#if defined(USE_RX_MSP) && defined(USE_MSP_RC_OVERRIDE)
+    int throttleOverrideTarget;
+    if (mspOverrideThrottleActive(&throttleOverrideTarget)) {
+        // A fresh offboard throttle setpoint outranks the automated overrides.
+        throttleRangeMin = throttleIdleValue;
+        throttleRangeMax = getMaxThrottle();
+        mixerThrottleCommand = constrain(throttleOverrideTarget, throttleRangeMin, throttleRangeMax);
+    } else
+#endif
 #ifdef USE_PROGRAMMING_FRAMEWORK
     if (LOGIC_CONDITION_GLOBAL_FLAG(LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_THROTTLE)) {
         throttleRangeMin = throttleIdleValue;

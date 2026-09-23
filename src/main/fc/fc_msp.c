@@ -2788,11 +2788,17 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
             return MSP_RESULT_ERROR;
         }
         {
-            const uint8_t overrideMask = sbufReadU8(src);
+            uint8_t overrideMask = sbufReadU8(src);
             const int16_t rollTarget = (int16_t)sbufReadU16(src);
             const int16_t pitchTarget = (int16_t)sbufReadU16(src);
             const int16_t yawTarget = (int16_t)sbufReadU16(src);
-            mspOverrideSetFlightAxisAngleOverride(overrideMask, rollTarget, pitchTarget, yawTarget);
+            int16_t throttleTarget = 0;
+            if (dataSize >= 9) {
+                throttleTarget = (int16_t)sbufReadU16(src);
+            } else {
+                overrideMask &= ~0x08;
+            }
+            mspOverrideSetFlightAxisAngleOverride(overrideMask, rollTarget, pitchTarget, yawTarget, throttleTarget);
         }
         break;
 
@@ -2801,11 +2807,17 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
             return MSP_RESULT_ERROR;
         }
         {
-            const uint8_t overrideMask = sbufReadU8(src);
+            uint8_t overrideMask = sbufReadU8(src);
             const int16_t rollTarget = (int16_t)sbufReadU16(src);
             const int16_t pitchTarget = (int16_t)sbufReadU16(src);
             const int16_t yawTarget = (int16_t)sbufReadU16(src);
-            mspOverrideSetFlightAxisRateOverride(overrideMask, rollTarget, pitchTarget, yawTarget);
+            int16_t throttleTarget = 0;
+            if (dataSize >= 9) {
+                throttleTarget = (int16_t)sbufReadU16(src);
+            } else {
+                overrideMask &= ~0x08;
+            }
+            mspOverrideSetFlightAxisRateOverride(overrideMask, rollTarget, pitchTarget, yawTarget, throttleTarget);
         }
         break;
 #endif

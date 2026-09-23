@@ -32,6 +32,7 @@ extern "C" {
 
     #include "drivers/serial.h"
 
+    #include "fc/control_mode.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
@@ -329,6 +330,26 @@ TEST(RCModeTest, CommandedModesSupersedeActivationOverride)
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD));
 
+    resetRcModeActivationForTest();
+}
+
+TEST(RCModeTest, AutopilotRetainsMspRcOverrideGate)
+{
+    controlModeConfigMutable()->controlMode = CONTROL_MODE_AUTOPILOT;
+    resetRcModeActivationForTest();
+
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    bitArraySet(mask.bits, BOXMSPRCOVERRIDE);
+    bitArraySet(mask.bits, BOXCAMERA1);
+    rcModeUpdate(&mask);
+
+    // The offboard gate survives the Autopilot NAV-only filter; other non-NAV
+    // boxes still do not.
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE));
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXCAMERA1));
+
+    controlModeConfigMutable()->controlMode = CONTROL_MODE_PILOT;
     resetRcModeActivationForTest();
 }
 

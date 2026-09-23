@@ -77,6 +77,11 @@ typedef struct mspFlightAxisOverride_s {
 
 static mspFlightAxisOverride_t mspFlightAxisOverride[XYZ_AXIS_COUNT];
 
+// Throttle member of the offboard setpoint: same mask mechanism (bit 3) and the
+// same freshness timer as the flight-axis overrides.
+static int mspThrottleOverride = 0;
+static uint8_t mspThrottleOverrideActive = 0;
+
 void mspOverrideInit(void)
 {
     timeMs_t nowMs = millis();
@@ -142,15 +147,18 @@ bool mspOverrideIsInFailsafe(void)
 
 static bool mspFlightAxisOverridesEnabled(void)
 {
-    bool enabled;
-    if (isAutopilotControlMode()) {
-        // Autopilot has no override box: the telemetry link is the control path and
-        // the command-freshness check below is the dead-man switch.
-        enabled = true;
-    } else if (rxConfig()->receiverType == RX_TYPE_MSP) {
-        enabled = IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE) && rxIsReceivingSignal() && rxAreFlightChannelsValid();
-    } else {
-        enabled = IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE) && !mspOverrideIsInFailsafe();
+    // MSP RC OVERRIDE is the offboard gate in both control modes: the overrides
+    // do nothing until it is selected. The command-freshness check below is the
+    // dead-man switch on top of it.
+    bool enabled = IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE);
+
+    if (!isAutopilotControlMode()) {
+        // Pilot keeps the RC-link interlock on top of the mode selection
+        if (rxConfig()->receiverType == RX_TYPE_MSP) {
+            enabled = enabled && rxIsReceivingSignal() && rxAreFlightChannelsValid();
+        } else {
+            enabled = enabled && !mspOverrideIsInFailsafe();
+        }
     }
 
     const timeMs_t nowMs = millis();
@@ -167,6 +175,8 @@ static bool mspFlightAxisOverridesEnabled(void)
             mspFlightAxisOverride[axis].angleTarget = 0;
             mspFlightAxisOverride[axis].rateTarget = 0;
         }
+        mspThrottleOverrideActive = 0;
+        mspThrottleOverride = 0;
         lastAxisOverrideAt = 0;
     }
 
@@ -290,7 +300,7 @@ int16_t mspOverrideGetRawChannelValue(unsigned channelNumber)
     return mspRcChannels[channelNumber].raw;
 }
 
-void mspOverrideSetFlightAxisAngleOverride(uint8_t overrideMask, int16_t roll, int16_t pitch, int16_t yaw)
+void mspOverrideSetFlightAxisAngleOverride(uint8_t overrideMask, int16_t roll, int16_t pitch, int16_t yaw, int16_t throttle)
 {
     lastAxisOverrideAt = millis();
 
@@ -305,9 +315,12 @@ void mspOverrideSetFlightAxisAngleOverride(uint8_t overrideMask, int16_t roll, i
     mspFlightAxisOverride[FD_ROLL].angleTargetActive = (overrideMask & 0x01) ? 1 : 0;
     mspFlightAxisOverride[FD_PITCH].angleTargetActive = (overrideMask & 0x02) ? 1 : 0;
     mspFlightAxisOverride[FD_YAW].angleTargetActive = (overrideMask & 0x04) ? 1 : 0;
+
+    mspThrottleOverrideActive = (overrideMask & 0x08) ? 1 : 0;
+    mspThrottleOverride = throttle;
 }
 
-void mspOverrideSetFlightAxisRateOverride(uint8_t overrideMask, int16_t roll, int16_t pitch, int16_t yaw)
+void mspOverrideSetFlightAxisRateOverride(uint8_t overrideMask, int16_t roll, int16_t pitch, int16_t yaw, int16_t throttle)
 {
     lastAxisOverrideAt = millis();
 
@@ -322,6 +335,23 @@ void mspOverrideSetFlightAxisRateOverride(uint8_t overrideMask, int16_t roll, in
     mspFlightAxisOverride[FD_ROLL].rateTargetActive = (overrideMask & 0x01) ? 1 : 0;
     mspFlightAxisOverride[FD_PITCH].rateTargetActive = (overrideMask & 0x02) ? 1 : 0;
     mspFlightAxisOverride[FD_YAW].rateTargetActive = (overrideMask & 0x04) ? 1 : 0;
+
+    mspThrottleOverrideActive = (overrideMask & 0x08) ? 1 : 0;
+    mspThrottleOverride = throttle;
+}
+
+bool mspOverrideThrottleActive(int *target)
+{
+    if (!mspFlightAxisOverridesEnabled()) {
+        return false;
+    }
+
+    if (!mspThrottleOverrideActive) {
+        return false;
+    }
+
+    *target = mspThrottleOverride;
+    return true;
 }
 
 bool mspOverrideFlightAxisAngleActive(uint8_t axis, int *target)
