@@ -237,7 +237,7 @@ The default ArduPilot-compatible path reports modes through `HEARTBEAT.custom_mo
 - **Multirotor**: STABILIZE(0) -> ANGLE, ALT_HOLD(2) -> NAV ALTHOLD, AUTO(3) -> NAV WP, GUIDED(4) -> NAV POSHOLD + GCS NAV, LOITER(5) -> NAV POSHOLD, RTL(6) -> NAV RTH, LAND(9) -> normal landing, POSHOLD(16) -> NAV POSHOLD, BRAKE(17) -> NAV POSHOLD.
 - **Fixed wing**: MANUAL(0) -> MANUAL, STABILIZE(2) -> HORIZON, FBWA(5) -> ANGLE, FBWB(6) -> NAV ALTHOLD, CRUISE(7) -> NAV CRUISE, AUTO(10) -> NAV WP, RTL(11) -> NAV RTH, LOITER(12) -> NAV POSHOLD, TAKEOFF(13) -> NAV LAUNCH, GUIDED(15) -> NAV POSHOLD + GCS NAV, AUTOLAND(26) -> normal landing.
 
-The same mode selection is available over MSP with `MSP2_INAV_SET_MODE` (see `docs/development/msp/msp_messages.json`).
+The same mode selection is available over MSP with `MSP2_INAV_SET_MODE` (see `docs/development/msp/msp_messages.json`). The control-mode model, the telemetry lifeline and the offboard setpoint layer are described in [Autopilot.md](Autopilot.md).
 
 ## MAVLink missions
 
