@@ -58,6 +58,7 @@ extern "C" {
     #include "msp/msp_protocol.h"
     #include "msp/msp_serial.h"
 
+    #include "mavlink/mavlink_modes.h"
     #include "mavlink/mavlink_runtime.h"
     #include "mavlink/mavlink_streams.h"
     #include "navigation/navigation.h"
@@ -154,6 +155,9 @@ static bool activatePositionHoldResult;
 static uint32_t lastLoiterRadiusOverride;
 static int activateLandingCalls;
 static bool activateLandingResult;
+static int selectModesByCommandCalls;
+static bool selectModesByCommandResult;
+static boxBitmask_t lastSelectedModes;
 static bool canSetHome;
 static navigationFSMStateFlags_t testNavStateFlags;
 static bool testModeActivationConditions[CHECKBOX_ITEM_COUNT];
@@ -358,6 +362,9 @@ static void initMavlinkTestState(void)
     lastLoiterRadiusOverride = 0;
     activateLandingCalls = 0;
     activateLandingResult = true;
+    selectModesByCommandCalls = 0;
+    selectModesByCommandResult = true;
+    memset(&lastSelectedModes, 0, sizeof(lastSelectedModes));
     canSetHome = true;
     testNavStateFlags = (navigationFSMStateFlags_t)0;
     memset(testModeActivationConditions, 0, sizeof(testModeActivationConditions));
@@ -996,9 +1003,43 @@ TEST(MavlinkTelemetryTest, ReturnToLaunchUsesNormalRthModePath)
     EXPECT_EQ(activateRthCalls, 1);
 }
 
-TEST(MavlinkTelemetryTest, DoSetModeRtlRequiresArmedState)
+TEST(MavlinkTelemetryTest, CustomModeSelectionDecodesPerVehicle)
 {
     initMavlinkTestState();
+
+    boxBitmask_t mask;
+
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(PLANE_MODE_MANUAL, &mask), MAVLINK_MODE_SELECT_BOXES);
+    EXPECT_TRUE(bitArrayGet(mask.bits, BOXMANUAL));
+
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(PLANE_MODE_CRUISE, &mask), MAVLINK_MODE_SELECT_BOXES);
+    EXPECT_TRUE(bitArrayGet(mask.bits, BOXNAVCRUISE));
+
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(PLANE_MODE_GUIDED, &mask), MAVLINK_MODE_SELECT_BOXES);
+    EXPECT_TRUE(bitArrayGet(mask.bits, BOXNAVPOSHOLD));
+    EXPECT_TRUE(bitArrayGet(mask.bits, BOXGCSNAV));
+
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(PLANE_MODE_AUTOLAND, &mask), MAVLINK_MODE_SELECT_LANDING);
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(PLANE_MODE_CIRCLE, &mask), MAVLINK_MODE_SELECT_NONE);
+
+    mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_MULTIROTOR;
+
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(COPTER_MODE_ALT_HOLD, &mask), MAVLINK_MODE_SELECT_BOXES);
+    EXPECT_TRUE(bitArrayGet(mask.bits, BOXNAVALTHOLD));
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(COPTER_MODE_LAND, &mask), MAVLINK_MODE_SELECT_LANDING);
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(COPTER_MODE_THROW, &mask), MAVLINK_MODE_SELECT_NONE);
+
+    // Rover mode numbers must not decode through the copter table: rover CIRCLE
+    // is 9, which is copter LAND.
+    mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_ROVER;
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(ROVER_MODE_CIRCLE, &mask), MAVLINK_MODE_SELECT_NONE);
+    EXPECT_EQ(mavlinkSelectModeFromCustomMode(COPTER_MODE_LAND, &mask), MAVLINK_MODE_SELECT_NONE);
+}
+
+TEST(MavlinkTelemetryTest, DoSetModeCopterAltHoldSelectsAltHoldMode)
+{
+    initMavlinkTestState();
+    mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_MULTIROTOR;
 
     mavlink_message_t cmd;
     mavlink_msg_command_long_pack(
@@ -1006,7 +1047,7 @@ TEST(MavlinkTelemetryTest, DoSetModeRtlRequiresArmedState)
         1, testTargetComponent,
         MAV_CMD_DO_SET_MODE,
         0,
-        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, PLANE_MODE_RTL, 0, 0, 0, 0, 0);
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, COPTER_MODE_ALT_HOLD, 0, 0, 0, 0, 0);
 
     pushRxMessage(&cmd);
     handleMAVLinkTelemetry(1000);
@@ -1017,15 +1058,14 @@ TEST(MavlinkTelemetryTest, DoSetModeRtlRequiresArmedState)
     mavlink_msg_command_ack_decode(&ackMsg, &ack);
 
     EXPECT_EQ(ack.command, MAV_CMD_DO_SET_MODE);
-    EXPECT_EQ(ack.result, MAV_RESULT_DENIED);
-    EXPECT_EQ(activateRthCalls, 0);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(selectModesByCommandCalls, 1);
+    EXPECT_TRUE(bitArrayGet(lastSelectedModes.bits, BOXNAVALTHOLD));
 }
 
-TEST(MavlinkTelemetryTest, DoSetModeRtlUsesNormalRthModePath)
+TEST(MavlinkTelemetryTest, DoSetModeRtlSelectsRthMode)
 {
     initMavlinkTestState();
-    ENABLE_ARMING_FLAG(ARMED);
-    forcedRthState = RTH_IN_PROGRESS;
 
     mavlink_message_t cmd;
     mavlink_msg_command_long_pack(
@@ -1045,15 +1085,15 @@ TEST(MavlinkTelemetryTest, DoSetModeRtlUsesNormalRthModePath)
 
     EXPECT_EQ(ack.command, MAV_CMD_DO_SET_MODE);
     EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
-    EXPECT_EQ(activateRthCalls, 1);
+    EXPECT_EQ(selectModesByCommandCalls, 1);
+    EXPECT_TRUE(bitArrayGet(lastSelectedModes.bits, BOXNAVRTH));
+    EXPECT_EQ(activateRthCalls, 0);
 }
 
-TEST(MavlinkTelemetryTest, DoSetModeCopterRtlUsesNormalRthModePath)
+TEST(MavlinkTelemetryTest, DoSetModeCopterRtlSelectsRthMode)
 {
     initMavlinkTestState();
     mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_MULTIROTOR;
-    ENABLE_ARMING_FLAG(ARMED);
-    forcedRthState = RTH_IN_PROGRESS;
 
     mavlink_message_t cmd;
     mavlink_msg_command_long_pack(
@@ -1073,13 +1113,13 @@ TEST(MavlinkTelemetryTest, DoSetModeCopterRtlUsesNormalRthModePath)
 
     EXPECT_EQ(ack.command, MAV_CMD_DO_SET_MODE);
     EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
-    EXPECT_EQ(activateRthCalls, 1);
+    EXPECT_EQ(selectModesByCommandCalls, 1);
+    EXPECT_TRUE(bitArrayGet(lastSelectedModes.bits, BOXNAVRTH));
 }
 
-TEST(MavlinkTelemetryTest, DoSetModeLoiterUsesNormalPositionHoldModePath)
+TEST(MavlinkTelemetryTest, DoSetModeLoiterSelectsPositionHoldMode)
 {
     initMavlinkTestState();
-    ENABLE_ARMING_FLAG(ARMED);
 
     mavlink_message_t cmd;
     mavlink_msg_command_long_pack(
@@ -1099,8 +1139,62 @@ TEST(MavlinkTelemetryTest, DoSetModeLoiterUsesNormalPositionHoldModePath)
 
     EXPECT_EQ(ack.command, MAV_CMD_DO_SET_MODE);
     EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
-    EXPECT_EQ(activateRthCalls, 0);
-    EXPECT_EQ(activatePositionHoldCalls, 1);
+    EXPECT_EQ(selectModesByCommandCalls, 1);
+    EXPECT_TRUE(bitArrayGet(lastSelectedModes.bits, BOXNAVPOSHOLD));
+    EXPECT_EQ(activatePositionHoldCalls, 0);
+}
+
+TEST(MavlinkTelemetryTest, DoSetModeGuidedSelectsGcsNavModes)
+{
+    initMavlinkTestState();
+
+    mavlink_message_t cmd;
+    mavlink_msg_command_long_pack(
+        42, 200, &cmd,
+        1, testTargetComponent,
+        MAV_CMD_DO_SET_MODE,
+        0,
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, PLANE_MODE_GUIDED, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&cmd);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(popTxMessage(&ackMsg));
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_DO_SET_MODE);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_TRUE(bitArrayGet(lastSelectedModes.bits, BOXNAVPOSHOLD));
+    EXPECT_TRUE(bitArrayGet(lastSelectedModes.bits, BOXGCSNAV));
+}
+
+TEST(MavlinkTelemetryTest, DoSetModeCopterLandUsesForcedLanding)
+{
+    initMavlinkTestState();
+    mixerProfilesMutable(0)->mixer_config.platformType = PLATFORM_MULTIROTOR;
+
+    mavlink_message_t cmd;
+    mavlink_msg_command_long_pack(
+        42, 200, &cmd,
+        1, testTargetComponent,
+        MAV_CMD_DO_SET_MODE,
+        0,
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, COPTER_MODE_LAND, 0, 0, 0, 0, 0);
+
+    pushRxMessage(&cmd);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(popTxMessage(&ackMsg));
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.command, MAV_CMD_DO_SET_MODE);
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(activateLandingCalls, 1);
+    EXPECT_EQ(selectModesByCommandCalls, 0);
 }
 
 TEST(MavlinkTelemetryTest, DoSetModeUnsupportedModeStaysUnsupported)
@@ -1114,7 +1208,7 @@ TEST(MavlinkTelemetryTest, DoSetModeUnsupportedModeStaysUnsupported)
         1, testTargetComponent,
         MAV_CMD_DO_SET_MODE,
         0,
-        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, PLANE_MODE_CRUISE, 0, 0, 0, 0, 0);
+        MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, PLANE_MODE_CIRCLE, 0, 0, 0, 0, 0);
 
     pushRxMessage(&cmd);
     handleMAVLinkTelemetry(1000);
@@ -1126,8 +1220,7 @@ TEST(MavlinkTelemetryTest, DoSetModeUnsupportedModeStaysUnsupported)
 
     EXPECT_EQ(ack.command, MAV_CMD_DO_SET_MODE);
     EXPECT_EQ(ack.result, MAV_RESULT_UNSUPPORTED);
-    EXPECT_EQ(activateRthCalls, 0);
-    EXPECT_EQ(activatePositionHoldCalls, 0);
+    EXPECT_EQ(selectModesByCommandCalls, 0);
 }
 
 TEST(MavlinkTelemetryTest, LandUsesNormalForcedLandingPath)
@@ -3830,6 +3923,13 @@ bool activateForcedLanding(void)
 {
     activateLandingCalls++;
     return activateLandingResult;
+}
+
+bool navigationSelectModesByCommand(const boxBitmask_t *mask)
+{
+    selectModesByCommandCalls++;
+    lastSelectedModes = *mask;
+    return selectModesByCommandResult;
 }
 
 bool navCanSetHome(void)

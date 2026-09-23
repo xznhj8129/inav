@@ -48,6 +48,15 @@ static boxBitmask_t rcModeActivationOverrideMask;
 static boxBitmask_t rcModeActivationOverrideSnapshot;
 static bool rcModeActivationOverrideActive;
 
+// Commanded mode selection: set over telemetry (MAV_CMD_DO_SET_MODE /
+// MSP2_INAV_SET_MODE). Unlike the one-shot override it is not cleared by
+// disarming - a mode must be selectable before arming - and it is released
+// when a channel-driven flight-mode selection changes or another command
+// replaces it.
+static boxBitmask_t rcModeCommandedMask;
+static boxBitmask_t rcModeCommandedSnapshot;
+static bool rcModeCommandedActive;
+
 // TODO(alberto): It looks like we can now safely remove this assert, since everything
 // but BB is able to handle more than 32 boxes and all the definitions use
 // CHECKBOX_ITEM_COUNT rather than hardcoded values. Note, however, that BB will only
@@ -179,6 +188,20 @@ static boxBitmask_t rcModeFlightModeMask(const boxBitmask_t *source)
     return mask;
 }
 
+// Release snapshot for a commanded selection: the flight-mode set above plus
+// GCS NAV, which is command-selectable but not part of the one-shot override's
+// release set, so a channel-driven GCS NAV change can release a commanded GUIDED.
+static boxBitmask_t rcModeCommandedReleaseMask(void)
+{
+    boxBitmask_t mask = rcModeFlightModeMask(&rcModeRawActivationMask);
+
+    if (bitArrayGet(rcModeRawActivationMask.bits, BOXGCSNAV)) {
+        bitArraySet(mask.bits, BOXGCSNAV);
+    }
+
+    return mask;
+}
+
 // The model's navigation-mode boxes: flight modes that navigate the aircraft.
 // Autopilot mode allows only these to activate; manual and assist modes are off
 // the table by definition. This is not the same question as which active modes
@@ -186,6 +209,31 @@ static boxBitmask_t rcModeFlightModeMask(const boxBitmask_t *source)
 bool isNavModeBox(boxId_e box)
 {
     switch (box) {
+        case BOXNAVALTHOLD:
+        case BOXNAVPOSHOLD:
+        case BOXNAVRTH:
+        case BOXNAVWP:
+        case BOXNAVCOURSEHOLD:
+        case BOXNAVCRUISE:
+        case BOXNAVLAUNCH:
+        case BOXGCSNAV:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+// Flight-mode boxes a telemetry command may select; switches and action boxes
+// (ARM, beeper, cameras...) are not modes. Manual modes are included here and
+// availability is decided by the control mode (see navigation.c).
+bool isSelectableFlightModeBox(boxId_e box)
+{
+    switch (box) {
+        case BOXANGLE:
+        case BOXHORIZON:
+        case BOXANGLEHOLD:
+        case BOXMANUAL:
         case BOXNAVALTHOLD:
         case BOXNAVPOSHOLD:
         case BOXNAVRTH:
@@ -232,6 +280,19 @@ static void rcModeUpdateEffectiveActivationMask(void)
         }
     }
 
+    if (rcModeCommandedActive) {
+        const boxBitmask_t currentFlightModeMask = rcModeCommandedReleaseMask();
+        if (memcmp(&currentFlightModeMask, &rcModeCommandedSnapshot, sizeof(currentFlightModeMask)) != 0) {
+            BITARRAY_CLR_ALL(rcModeCommandedMask.bits);
+            rcModeCommandedActive = false;
+        }
+        else {
+            for (unsigned i = 0; i < ARRAYLEN(rcModeActivationMask.bits); i++) {
+                rcModeActivationMask.bits[i] |= rcModeCommandedMask.bits[i];
+            }
+        }
+    }
+
     if (!controlAllowsManualModes()) {
         rcModeRetainNavModesOnly(&rcModeActivationMask);
     }
@@ -262,6 +323,26 @@ void rcModeClearActivationOverride(boxId_e boxId)
 {
     bitArrayClr(rcModeActivationOverrideMask.bits, boxId);
     rcModeActivationOverrideActive = BITARRAY_FIND_FIRST_SET(rcModeActivationOverrideMask.bits, 0) >= 0;
+    rcModeUpdateEffectiveActivationMask();
+}
+
+void rcModeSetCommandedModes(const boxBitmask_t *mask)
+{
+    // The newest command wins over a one-shot activation override (RTH/LAND
+    // helpers): that is how a GCS changes its mind mid-flight.
+    BITARRAY_CLR_ALL(rcModeActivationOverrideMask.bits);
+    rcModeActivationOverrideActive = false;
+
+    rcModeCommandedMask = *mask;
+    rcModeCommandedSnapshot = rcModeCommandedReleaseMask();
+    rcModeCommandedActive = true;
+    rcModeUpdateEffectiveActivationMask();
+}
+
+void rcModeClearCommandedModes(void)
+{
+    BITARRAY_CLR_ALL(rcModeCommandedMask.bits);
+    rcModeCommandedActive = false;
     rcModeUpdateEffectiveActivationMask();
 }
 

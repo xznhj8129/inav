@@ -36,6 +36,8 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
+#include "fc/fc_msp_box.h"
 #include "fc/multifunction.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
@@ -6829,6 +6831,31 @@ bool activatePositionHoldMode(void)
         navProcessFSMEvents(selectNavEventFromBoxModeInput());
     }
     return false;
+}
+
+/*-----------------------------------------------------------
+ * Mode selection by command
+ *-----------------------------------------------------------*/
+bool navigationSelectModesByCommand(const boxBitmask_t *mask)
+{
+    for (unsigned box = 0; box < CHECKBOX_ITEM_COUNT; box++) {
+        if (!bitArrayGet(mask->bits, box)) {
+            continue;
+        }
+
+        if (!isSelectableFlightModeBox((boxId_e)box) || !isBoxAvailable((boxId_e)box)) {
+            return false;
+        }
+
+        // Autopilot mode is flown by NAV modes only; manual modes are for a pilot.
+        if (!controlAllowsManualModes() && !isNavModeBox((boxId_e)box)) {
+            return false;
+        }
+    }
+
+    rcModeSetCommandedModes(mask);
+    navProcessFSMEvents(selectNavEventFromBoxModeInput());
+    return true;
 }
 
 void activateForcedRTH(void)

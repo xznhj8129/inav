@@ -171,7 +171,7 @@ set_property(SOURCE ina226_unittest.cc PROPERTY definitions USE_INA226 USE_I2C U
 set_property(SOURCE mavlink_unittest.cc PROPERTY depends
     "fc/fc_mavlink.c" "mavlink/mavlink_command.c" "mavlink/mavlink_guided.c" "mavlink/mavlink_mission.c" "mavlink/mavlink_modes.c" "mavlink/mavlink_ports.c"
     "mavlink/mavlink_routing.c" "mavlink/mavlink_runtime.c" "mavlink/mavlink_streams.c" "telemetry/mavlink.c"
-    "common/crc.c" "common/maths.c" "common/streambuf.c" "common/string_light.c" "msp/msp_serial.c")
+    "common/bitarray.c" "common/crc.c" "common/maths.c" "common/streambuf.c" "common/string_light.c" "msp/msp_serial.c")
 # mavlink_helpers.c has no sibling header in src/main (its header is the
 # vendored lib/main/MAVLink/mavlink_helpers.h), so it goes in extra_sources
 # to skip the depends .c -> .h transform.

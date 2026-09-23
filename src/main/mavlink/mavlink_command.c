@@ -88,29 +88,25 @@ static bool handleIncoming_COMMAND(
                     return true;
                 }
 
-                const bool fixedWing = mavlinkIsFixedWingVehicle();
-                const uint8_t rthMode = fixedWing ? PLANE_MODE_RTL : COPTER_MODE_RTL;
-                const bool posHoldMode = fixedWing ?
-                    (customMode == PLANE_MODE_LOITER) :
-                    (customMode == COPTER_MODE_LOITER || customMode == COPTER_MODE_POSHOLD || customMode == COPTER_MODE_BRAKE);
+                boxBitmask_t mask;
+                switch (mavlinkSelectModeFromCustomMode(customMode, &mask)) {
+                    case MAVLINK_MODE_SELECT_BOXES:
+                        // The mode is selected like a channel switch position:
+                        // accepted while disarmed, the navigation FSM decides
+                        // when it flies.
+                        mavlinkSendCommandAck(command, navigationSelectModesByCommand(&mask) ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+                        return true;
 
-                if (customMode != rthMode && !posHoldMode) {
-                    mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
-                    return true;
+                    // LAND / AUTOLAND are not selectable INAV flight modes:
+                    // they run the normal landing path, like MAV_CMD_NAV_LAND.
+                    case MAVLINK_MODE_SELECT_LANDING:
+                        mavlinkSendCommandAck(command, activateForcedLanding() ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
+                        return true;
+
+                    default:
+                        mavlinkSendCommandAck(command, MAV_RESULT_UNSUPPORTED, ackTargetSystem, ackTargetComponent);
+                        return true;
                 }
-
-                if (!ARMING_FLAG(ARMED)) {
-                    mavlinkSendCommandAck(command, MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
-                    return true;
-                }
-
-                if (customMode == rthMode) {
-                    mavlinkSendCommandAck(command, activateRTHMode() ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
-                    return true;
-                }
-
-                mavlinkSendCommandAck(command, activatePositionHoldMode() ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);
-                return true;
             }
         case MAV_CMD_NAV_LAND:
             mavlinkSendCommandAck(command, activateForcedLanding() ? MAV_RESULT_ACCEPTED : MAV_RESULT_DENIED, ackTargetSystem, ackTargetComponent);

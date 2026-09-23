@@ -153,6 +153,17 @@ const box_t *findBoxByPermanentId(uint8_t permenantId)
     return NULL;
 }
 
+bool isBoxAvailable(boxId_e boxId)
+{
+    for (uint8_t index = 0; index < activeBoxIdCount; index++) {
+        if (activeBoxIds[index] == (uint8_t)boxId) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool serializeBoxNamesReply(sbuf_t *dst)
 {
     // First run of the loop - calculate total length of the reply

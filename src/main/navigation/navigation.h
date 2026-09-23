@@ -27,6 +27,8 @@
 
 #include "config/feature.h"
 
+#include "fc/rc_modes.h"
+
 #include "flight/failsafe.h"
 
 #include "io/gps.h"
@@ -824,6 +826,10 @@ bool activateRTHMode(void);
 
 /* Commanded normal position hold mode */
 bool activatePositionHoldMode(void);
+
+/* Commanded mode selection over telemetry; the navigation FSM decides when the
+   selected mode becomes the active flight mode */
+bool navigationSelectModesByCommand(const boxBitmask_t *mask);
 
 /* Failsafe-forced RTH mode */
 void activateForcedRTH(void);

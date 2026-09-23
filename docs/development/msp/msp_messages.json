@@ -11503,6 +11503,23 @@
             "notes": "Returns error if the aircraft is not armed, `NAV_WP_MODE` is not active, or the index is outside the valid mission range (`startWpIndex` to `startWpIndex + waypointCount - 1`). On success, sets `posControl.activeWaypointIndex` to the requested index and fires `NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_JUMP`, transitioning the navigation FSM back to `NAV_STATE_WAYPOINT_PRE_ACTION` so the flight controller re-initialises navigation for the new target.",
             "description": "Jumps to a specific waypoint during an active waypoint mission, causing the aircraft to immediately begin navigating toward the new target waypoint."
         },
+        "MSP2_INAV_SET_MODE": {
+            "code": 8738,
+            "mspv": 2,
+            "request": {
+                "payload": [
+                    {
+                        "name": "permanent_id",
+                        "ctype": "uint8_t",
+                        "desc": "Flight-mode box permanent ID from MSP_BOXIDS, e.g. NAV RTH=10, NAV POSHOLD=11, NAV WP=28",
+                        "units": "-"
+                    }
+                ]
+            },
+            "reply": null,
+            "notes": "Selects a flight mode the way a channel mode switch would: the selection survives disarm, so a mode can be chosen before arming, and it is released when a channel-driven flight-mode selection changes or another command replaces it. The navigation FSM decides when the selected mode becomes active. In Autopilot control mode only navigation modes are accepted; manual modes are rejected. Returns error for unknown, unavailable or non-mode box IDs, and for any mode not selectable by command. A position-dependent navigation mode (RTH, WP, POSHOLD, COURSEHOLD, CRUISE, FW ALTHOLD) selected before arming triggers the existing navigation arming safety (ARMING_DISABLED_NAVIGATION_UNSAFE); arm first, or select GCS NAV / NAV LAUNCH to keep arming available. The selection is remembered across arm/disarm, so a position-dependent mode left selected when the aircraft disarms blocks the next arm until a different selection replaces it; GCS NAV (permanent ID 31) is the reliable clear.",
+            "description": "Selects a flight mode by box permanent ID, replacing channel-based mode selection for headless/GCS operation."
+        },
         "MSP2_INAV_SET_CRUISE_HEADING": {
             "code": 8739,
             "mspv": 2,

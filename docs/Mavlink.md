@@ -186,7 +186,7 @@ INAV implements a selective but useful subset of the MAVLink Command protocol. U
 
 - `MAV_CMD_COMPONENT_ARM_DISARM`: arms through the normal INAV arming checks or disarms with `DISARM_SWITCH`. The ACK is accepted only when the requested armed state is reached.
 - `MAV_CMD_NAV_RETURN_TO_LAUNCH`: enters the normal INAV RTH mode path while armed by adding a temporary `BOXNAVRTH` mode source to the normal RC mode selector. RTH altitude, safehome, landing, and fixed-wing autoland behavior remain controlled by the existing INAV configuration. This does not set the failsafe/geozone forced-RTH latch; a later pilot RC flight-mode change or disarm clears the temporary source.
-- `MAV_CMD_DO_SET_MODE`: supports the ArduPilot-style RTL/RTH custom-mode request and routes it to the same normal RTH mode path as `MAV_CMD_NAV_RETURN_TO_LAUNCH`. It also accepts the ArduPilot Loiter/PosHold pause modes (`PLANE_MODE_LOITER`, `COPTER_MODE_LOITER`, `COPTER_MODE_POSHOLD`, `COPTER_MODE_BRAKE`) and enters normal INAV PosHold at the current position and altitude. Other mode changes remain unsupported.
+- `MAV_CMD_DO_SET_MODE`: mode selection using the reverse ArduPilot custom-mode table for the vehicle type (see [Mode selection (MAVLink -> INAV)](#mode-selection-mavlink---inav)). A mode request is accepted while disarmed, survives arm/disarm, and is released when a channel-driven flight-mode selection changes or another command replaces it; in Autopilot control mode only NAV modes are accepted. `COPTER_MODE_LAND` and `PLANE_MODE_AUTOLAND` are not selectable modes and take the normal landing path used by `MAV_CMD_NAV_LAND`; `GUIDED` selects PosHold together with GCS NAV. Mode IDs without an INAV equivalent (for example `CIRCLE`) are `UNSUPPORTED`. Note the interaction with INAV's existing navigation arming safety: a position-dependent NAV mode (RTH, WP, POSHOLD, COURSEHOLD, CRUISE, FW ALTHOLD) selected before arming blocks arming with `ARMING_DISABLED_NAVIGATION_UNSAFE`, so arm first and select the NAV mode afterwards, or select an exempt mode (GCS NAV, NAV LAUNCH) while on the ground. Because the selection is remembered across arm/disarm, a position-dependent mode left selected when the aircraft disarms blocks the next arm until a different selection replaces it; clear it with `MSP2_INAV_SET_MODE` GCS NAV (permanent ID 31) before re-arming. Rovers and boats are not supported by `MAV_CMD_DO_SET_MODE` and receive `UNSUPPORTED`.
 - `MAV_CMD_NAV_LAND`: while armed with usable navigation estimates, creates a transient LAND waypoint at the current position and enters the same normal landing path used by a mission `NAV_WP_ACTION_LAND`. It does not use emergency landing and does not modify the uploaded mission. Command location fields are ignored; mission items retain their supplied landing position.
 - `MAV_CMD_DO_SET_HOME`: writes the existing INAV waypoint `0` home through `setWaypoint(0, ...)`. `param1 = 1` uses the current GNSS position; `param1 = 0` uses the supplied global location. The existing WP#0 gates still apply: armed state, usable position estimate, valid GPS origin, and GCS-assisted navigation enabled.
 - `MAV_CMD_DO_REPOSITION`: sets the Follow Me / GCS-nav waypoint when GCS nav is valid. Accepts `MAV_FRAME_GLOBAL`, `MAV_FRAME_GLOBAL_INT`, `MAV_FRAME_GLOBAL_RELATIVE_ALT`, and `MAV_FRAME_GLOBAL_RELATIVE_ALT_INT`; otherwise `UNSUPPORTED`. `param3` is the optional fixed-wing PosHold loiter-radius override in meters; `0` clears the temporary override back to `nav_fw_loiter_radius`, and `NaN` leaves it unchanged. `param4`, when finite and in the range `0`–`360`, sets a target heading for the reposition point; other values leave the heading unset.
@@ -229,6 +229,15 @@ The default ArduPilot-compatible path reports modes through `HEARTBEAT.custom_mo
   - LAUNCH -> **TAKEOFF**
   - FAILSAFE -> **RTL** (RTH / other phases) or **AUTOLAND** (landing phase)
   - Any other unmapped mode falls back to **MANUAL**
+
+### Mode selection (MAVLink -> INAV)
+
+`MAV_CMD_DO_SET_MODE` accepts the custom-mode IDs below; `param1` must carry `MAV_MODE_FLAG_CUSTOM_MODE_ENABLED`. Manual modes are selectable in Pilot control mode, NAV modes in both; Autopilot control mode rejects manual modes.
+
+- **Multirotor**: STABILIZE(0) -> ANGLE, ALT_HOLD(2) -> NAV ALTHOLD, AUTO(3) -> NAV WP, GUIDED(4) -> NAV POSHOLD + GCS NAV, LOITER(5) -> NAV POSHOLD, RTL(6) -> NAV RTH, LAND(9) -> normal landing, POSHOLD(16) -> NAV POSHOLD, BRAKE(17) -> NAV POSHOLD.
+- **Fixed wing**: MANUAL(0) -> MANUAL, STABILIZE(2) -> HORIZON, FBWA(5) -> ANGLE, FBWB(6) -> NAV ALTHOLD, CRUISE(7) -> NAV CRUISE, AUTO(10) -> NAV WP, RTL(11) -> NAV RTH, LOITER(12) -> NAV POSHOLD, TAKEOFF(13) -> NAV LAUNCH, GUIDED(15) -> NAV POSHOLD + GCS NAV, AUTOLAND(26) -> normal landing.
+
+The same mode selection is available over MSP with `MSP2_INAV_SET_MODE` (see `docs/development/msp/msp_messages.json`).
 
 ## MAVLink missions
 
