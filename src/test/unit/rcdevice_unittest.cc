@@ -333,7 +333,7 @@ TEST(RCModeTest, CommandedModesSupersedeActivationOverride)
     resetRcModeActivationForTest();
 }
 
-TEST(RCModeTest, AutopilotRetainsMspRcOverrideGate)
+TEST(RCModeTest, AutopilotKeepsAllBoxes)
 {
     controlModeConfigMutable()->controlMode = CONTROL_MODE_AUTOPILOT;
     resetRcModeActivationForTest();
@@ -342,12 +342,15 @@ TEST(RCModeTest, AutopilotRetainsMspRcOverrideGate)
     memset(&mask, 0, sizeof(mask));
     bitArraySet(mask.bits, BOXMSPRCOVERRIDE);
     bitArraySet(mask.bits, BOXCAMERA1);
+    bitArraySet(mask.bits, BOXANGLE);
     rcModeUpdate(&mask);
 
-    // The offboard gate survives the Autopilot NAV-only filter; other non-NAV
-    // boxes still do not.
+    // Autopilot does not filter boxes: a remote pilot or GCS may use the full
+    // set, including the offboard gate and manual modes. Only command-based
+    // selection stays NAV-only (navigationSelectModesByCommand).
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE));
-    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXCAMERA1));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXCAMERA1));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXANGLE));
 
     controlModeConfigMutable()->controlMode = CONTROL_MODE_PILOT;
     resetRcModeActivationForTest();
