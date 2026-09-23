@@ -2838,7 +2838,7 @@ groups:
         default_value: 500
         field: general.auto_speed
         min: 10
-        max: 2000
+        max: 65535
       - name: nav_min_ground_speed
         description: "Minimum ground speed for navigation flight modes [m/s]. Currently, this only affects fixed wing. Default 7 m/s."
         default_value: 7
@@ -2850,13 +2850,13 @@ groups:
         default_value: 1000
         field: general.max_auto_speed
         min: 10
-        max: 2000
+        max: 65535
       - name: nav_manual_speed
         description: "Maximum speed allowed when processing pilot input for POSHOLD/CRUISE control mode [cm/s] [Multirotor only]"
         default_value: 750
         field: general.max_manual_speed
         min: 10
-        max: 2000
+        max: 65535
       - name: nav_land_minalt_vspd
         description: "Vertical descent velocity under nav_land_slowdown_minalt during the RTH landing phase. [cm/s]"
         default_value: 50

@@ -299,29 +299,3 @@ CLI example: `set control_mode = AUTOPILOT` + `save`.
  4. stop streaming  → setpoints expire, gate stays; the selected mode resumes
     link dies        → telemetry failsafe
 ```
-
-### 8.3 Testing
-
-Host unit tests and SITL cover mode selection, the control-mode gating and the
-offboard gate; flight behaviour needs a simulator with an armed vehicle (X-Plane
-works; the headless SITL cannot arm because fake-sensor calibration never
-completes). Start the sim airborne for mode tests, since there is no headless
-takeoff yet (§10).
-
----
-
-## 9. Verification and limitations
-
-- Exercised: mode selection across both command surfaces and control modes, channel release, target availability parity, the offboard gate selectable in Autopilot, the 9-byte setpoint form accepted (SITL, Autopilot and Pilot), full host unit suite.
-- Not verified: arming end-to-end, mode application in flight, the offboard gating effect and throttle application (no bench readback), FW launch in Autopilot.
-- MAVLink mode telemetry reports the flying/nav state, not an idle selection.
-
----
-
-## 10. Not implemented yet
-
-- **MC auto-launch** and `MAV_CMD_NAV_TAKEOFF` — currently an `UNSUPPORTED` stub. FW launch is throw/bungee-oriented and needs the throttle stick, so there is no headless wheels-up takeoff.
-- **MAVLink `SET_ATTITUDE_TARGET` / `MANUAL_CONTROL`** — unhandled; stick-semantics GCS control is an open question.
-- **Autopilot default mode** — with no mode selected, an airborne Autopilot vehicle falls to IDLE/rate; the planned default is MC POSHOLD / FW CRUISE, gated on flight detection.
-- **Configurator mode-availability work** — hides non-NAV modes in Autopilot, not started.
-- **`USE_MAVLINK_STANDARD_MODES`** — never compiled in; `AVAILABLE_MODES`/`CURRENT_MODE` do not exist.
