@@ -99,7 +99,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT + 1] = {
     { .boxId = BOXUSER3,            .boxName = "USER3",             .permanentId = BOX_PERMANENT_ID_USER3 }, // 57
     { .boxId = BOXUSER4,            .boxName = "USER4",             .permanentId = BOX_PERMANENT_ID_USER4 }, // 58
     { .boxId = BOXLOITERDIRCHN,     .boxName = "LOITER CHANGE",     .permanentId = 49 },
-    { .boxId = BOXMSPRCOVERRIDE,    .boxName = "MSP RC OVERRIDE",   .permanentId = 50 },
+    { .boxId = BOXMSPRCOVERRIDE,    .boxName = "CONTROL OVERRIDE",  .permanentId = 50 },
     { .boxId = BOXPREARM,           .boxName = "PREARM",            .permanentId = 51 },
     { .boxId = BOXTURTLE,           .boxName = "TURTLE",            .permanentId = 52 },
     { .boxId = BOXNAVCRUISE,        .boxName = "NAV CRUISE",        .permanentId = 53 },

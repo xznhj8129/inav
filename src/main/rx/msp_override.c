@@ -147,7 +147,7 @@ bool mspOverrideIsInFailsafe(void)
 
 static bool mspFlightAxisOverridesEnabled(void)
 {
-    // MSP RC OVERRIDE is the offboard gate in both control modes: the overrides
+    // CONTROL OVERRIDE is the offboard gate in both control modes: the overrides
     // do nothing until it is selected. The command-freshness check below is the
     // dead-man switch on top of it.
     bool enabled = IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE);

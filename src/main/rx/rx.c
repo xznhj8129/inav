@@ -547,7 +547,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
         for (int i = overlayStart; i < 32; i++) {
             if (mspAuxOverlay[i] > 0) {
 #if defined(USE_RX_MSP) && defined(USE_MSP_RC_OVERRIDE)
-                // Skip channels controlled by MSP RC Override when active
+                // Skip channels controlled by Control Override when active
                 if (IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE) && (rxConfig()->mspOverrideChannels & (1U << i))) {
                     continue;
                 }

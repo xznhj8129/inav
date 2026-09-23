@@ -19,7 +19,7 @@ See also: [Mavlink.md](Mavlink.md), [Settings.md](Settings.md),
 2. **Telemetry-link heartbeat failsafe** — an RC-independent liveness source with its own timeout, reusing `failsafe_procedure`.
 3. **Mode availability** — Autopilot permits only NAV flight modes (plus the offboard gate box).
 4. **Command-based mode selection** — `MAV_CMD_DO_SET_MODE` (full reverse ArduPilot table) and `MSP2_INAV_SET_MODE`, with switch-like semantics.
-5. **Offboard setpoints** — flight-axis angle/rate overrides plus a throttle member, gated by MSP RC OVERRIDE with a 200 ms dead-man timer.
+5. **Offboard setpoints** — flight-axis angle/rate overrides plus a throttle member, gated by CONTROL OVERRIDE with a 200 ms dead-man timer.
 
 ---
 
@@ -38,7 +38,7 @@ See also: [Mavlink.md](Mavlink.md), [Settings.md](Settings.md),
   prearm switch ..... active                           ignored
   arm-box disarm .... active (reversible motors)       unavailable
   direct control .... channels; MSP overrides gated    channels; offboard setpoints behind
-                      by MSP RC OVERRIDE               MSP RC OVERRIDE
+                      by CONTROL OVERRIDE               CONTROL OVERRIDE
 ```
 
 **Channel model in Autopilot.** Channels are real, not zeroed:
@@ -105,7 +105,7 @@ Two acceptable sources, no setting to pick one:
 | NAV COURSE HOLD | 35 | 45 | — (GUIDED pairing) |
 | NAV CRUISE | 44 | 53 | FW CRUISE=7 / — |
 | ANGLE HOLD | 55 | 64 | — (reports as STABILIZE) |
-| MSP RC OVERRIDE (offboard gate) | 41 | 50 | — |
+| CONTROL OVERRIDE (offboard gate) | 41 | 50 | — |
 
 `MSP2_INAV_SET_MODE` takes the **permanent id**; the CLI `aux` command also takes the
 permanent id; MAVLink takes the ArduPilot custom mode.
@@ -117,7 +117,7 @@ permanent id; MAVLink takes the ArduPilot custom mode.
   ┌──────────────────────────────────────────────────────────┐
   │ NAV modes: ALTHOLD POSHOLD RTH WP COURSEHOLD CRUISE      │
   │            LAUNCH GCSNAV                        allowed  │
-  │ MSP RC OVERRIDE (offboard gate)                 allowed  │
+  │ CONTROL OVERRIDE (offboard gate)                 allowed  │
   │ everything else (ANGLE, HORIZON, MANUAL, BRAKE, │ filtered │
   │ cameras, user boxes, ...)                       │          │
   └──────────────────────────────────────────────────────────┘
@@ -206,7 +206,7 @@ MSP active modes / the FSM state once it flies, not through the heartbeat.
 
 ### 6.1 The gate
 
-**MSP RC OVERRIDE** (`BOXMSPRCOVERRIDE`, permanent id 50) is the offboard gate:
+**CONTROL OVERRIDE** (`BOXMSPRCOVERRIDE`, permanent id 50) is the offboard gate:
 
 - in **both** control modes the setpoint commands do nothing unless the box is active;
 - in **Pilot** the RC link must also be healthy;

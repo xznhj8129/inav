@@ -11209,7 +11209,7 @@
                 ]
             },
             "reply": null,
-            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.",
+            "notes": "Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.",
             "description": "Enables or disables a flight-axis angle override and the throttle override for the selected fields."
         },
         "MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE": {
@@ -11251,7 +11251,7 @@
                 ]
             },
             "reply": null,
-            "notes": "Offboard setpoint: active only while MSP RC OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.",
+            "notes": "Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.",
             "description": "Enables or disables a flight-axis rate override and the throttle override for the selected fields."
         },
         "MSP2_INAV_SET_LOCAL_TARGET": {
@@ -11622,7 +11622,7 @@
             },
             "reply": null,
             "variable_len": true,
-            "notes": "CH1-CH12 (index 0-11) are protected and will return `MSP_RESULT_ERROR`. Payload size must be 2-49 bytes. Constraint: `startChannel + channelCount <= 32`. Values persist until overwritten; no timeout. Applied as a post-RX overlay in `calculateRxChannelsAndUpdateFailsafe()` after MSP RC Override but before failsafe. Does not require `USE_RX_MSP` or MSP-RC-OVERRIDE flight mode. Does not affect failsafe detection. When MSP is the primary RX provider, channels covered by `MSP_SET_RAW_RC` are automatically skipped. Channels in the `mspOverrideChannels` bitmask are skipped when MSP RC Override mode is active. Recommended to send with `MSP_FLAG_DONT_REPLY` (flags=0x01) to save bandwidth on telemetry passthrough links. 16-bit mode requires even number of data bytes and values are clamped to 750-2250us.",
+            "notes": "CH1-CH12 (index 0-11) are protected and will return `MSP_RESULT_ERROR`. Payload size must be 2-49 bytes. Constraint: `startChannel + channelCount <= 32`. Values persist until overwritten; no timeout. Applied as a post-RX overlay in `calculateRxChannelsAndUpdateFailsafe()` after Control Override but before failsafe. Does not require `USE_RX_MSP` or Control Override flight mode. Does not affect failsafe detection. When MSP is the primary RX provider, channels covered by `MSP_SET_RAW_RC` are automatically skipped. Channels in the `mspOverrideChannels` bitmask are skipped when Control Override mode is active. Recommended to send with `MSP_FLAG_DONT_REPLY` (flags=0x01) to save bandwidth on telemetry passthrough links. 16-bit mode requires even number of data bytes and values are clamped to 750-2250us.",
             "description": "Bandwidth-efficient auxiliary RC channel update. Sets CH13-CH32 with configurable resolution (2/4/8/16-bit) without affecting primary flight controls. Designed for extending channel count beyond native RC link capacity via MSP passthrough."
         },
         "MSP2_INAV_WIND": {
