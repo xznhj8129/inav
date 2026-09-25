@@ -362,7 +362,11 @@ void updateEstimatedGPSFix(void)
 
 void gpsProcessNewDriverData(void)
 {
+    // The heartbeat is toggled on gpsSol, not gpsSolDRV: keep it across the copy,
+    // or it never changes and the IMU never sees new GPS data.
+    const bool heartbeat = gpsSol.flags.gpsHeartbeat;
     gpsSol = gpsSolDRV;
+    gpsSol.flags.gpsHeartbeat = heartbeat;
 
 #if defined(USE_GPS_FIX_ESTIMATION) && !defined(GPS_NULL_PORT_UNIT_TEST)
     processDisableGPSFix();
