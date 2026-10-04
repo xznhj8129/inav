@@ -158,6 +158,6 @@
 
 #define MSP2_INAV_WIND                          0x2231
 
-#define MSP2_INAV_NAV_ROI                       0x2232
-#define MSP2_INAV_SET_NAV_ROI                   0x2233
-#define MSP2_INAV_GOTO_ROI                      0x2234
+#define MSP2_INAV_NAV_ROI                       0x2236
+#define MSP2_INAV_SET_NAV_ROI                   0x2237
+#define MSP2_INAV_GOTO_ROI                      0x2238

@@ -461,9 +461,9 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 [8744 - MSP2_INAV_TIMESYNC](#msp2_inav_timesync)  
 [8752 - MSP2_INAV_SET_AUX_RC](#msp2_inav_set_aux_rc)  
 [8753 - MSP2_INAV_WIND](#msp2_inav_wind)  
-[8754 - MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)  
-[8755 - MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)  
-[8756 - MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)  
+[8758 - MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)  
+[8759 - MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)  
+[8760 - MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)  
 [12288 - MSP2_BETAFLIGHT_BIND](#msp2_betaflight_bind)  
 [12289 - MSP2_RX_BIND](#msp2_rx_bind)  
 
@@ -4881,7 +4881,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 
 **Notes:** Requires `USE_WIND_ESTIMATOR`; returns zeroes when wind estimation is not compiled in or not yet valid. Check bit 0 of `flags` before using speed/angle values.
 
-## <a id="msp2_inav_nav_roi"></a>`MSP2_INAV_NAV_ROI (8754 / 0x2232)`
+## <a id="msp2_inav_nav_roi"></a>`MSP2_INAV_NAV_ROI (8758 / 0x2236)`
 **Description:** Gets the active navigation ROI.  
 
 **Request Payload:** **None**  
@@ -4900,7 +4900,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 
 **Notes:** Returns the active navigation ROI slot.
 
-## <a id="msp2_inav_set_nav_roi"></a>`MSP2_INAV_SET_NAV_ROI (8755 / 0x2233)`
+## <a id="msp2_inav_set_nav_roi"></a>`MSP2_INAV_SET_NAV_ROI (8759 / 0x2237)`
 **Description:** Sets or clears the active navigation ROI.  
   
 **Request Payload:**
@@ -4919,7 +4919,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 
 **Notes:** Expects exactly 19 bytes.
 
-## <a id="msp2_inav_goto_roi"></a>`MSP2_INAV_GOTO_ROI (8756 / 0x2234)`
+## <a id="msp2_inav_goto_roi"></a>`MSP2_INAV_GOTO_ROI (8760 / 0x2238)`
 **Description:** Commands navigation to move guided desired position to the active ROI.  
 
 **Request Payload:** **None**  
