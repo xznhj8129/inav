@@ -55,7 +55,7 @@ MSP_BOXIDS = 119
 MSP_SET_RAW_RC = 200
 MSP2_INAV_STATUS = 0x2000
 MSP2_INAV_GET_LINK_STATS = 0x2103
-MSP2_INAV_SET_RX_LINK = 0x2232
+MSP2_INAV_SET_RX_LINK = 0x2235
 MSP_SIMULATOR = 0x201F
 
 # Plain SITL never finishes accelerometer calibration; HITL mode marks it calibrated
