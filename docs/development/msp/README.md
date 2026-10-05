@@ -474,6 +474,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 [8754 - MSP2_INAV_MAG_UNALIGNED](#msp2_inav_mag_unaligned)  
 [8755 - MSP2_INAV_ESC_SRXL2_STATUS](#msp2_inav_esc_srxl2_status)  
 [8756 - MSP2_INAV_ESC_SRXL2_CALIBRATE](#msp2_inav_esc_srxl2_calibrate)  
+[8757 - MSP2_INAV_SET_RX_LINK](#msp2_inav_set_rx_link)  
 [12288 - MSP2_BETAFLIGHT_BIND](#msp2_betaflight_bind)  
 [12289 - MSP2_RX_BIND](#msp2_rx_bind)  
 
@@ -5044,6 +5045,18 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 **Reply Payload:** **None**  
 
 **Notes:** Requires USE_MOTOR_SRXL2 and at least one request byte. Accepted commands: 0 abort, 1 automatic start, 4 manual high, 5 manual low. Driver safety checks can reject start requests; read MSP2_INAV_ESC_SRXL2_STATUS for the reason. Other command values return an MSP error. Remove propellers before calibration.
+
+## <a id="msp2_inav_set_rx_link"></a>`MSP2_INAV_SET_RX_LINK (8757 / 0x2235)`
+**Description:** Requests a dual RX handover to the given link.  
+  
+**Request Payload:**
+|Field|C Type|Size (Bytes)|Description|
+|---|---|---|---|
+| `link` | `uint8_t` | 1 | RX link to hand over to (rxLink_e): 0 RX1, 1 RX2. |
+
+**Reply Payload:** **None**  
+
+**Notes:** Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
 
 ## <a id="msp2_betaflight_bind"></a>`MSP2_BETAFLIGHT_BIND (12288 / 0x3000)`
 **Description:** Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).  

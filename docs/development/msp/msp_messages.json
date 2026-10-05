@@ -12023,6 +12023,23 @@
             "reply": null,
             "notes": "Requires USE_MOTOR_SRXL2 and at least one request byte. Accepted commands: 0 abort, 1 automatic start, 4 manual high, 5 manual low. Driver safety checks can reject start requests; read MSP2_INAV_ESC_SRXL2_STATUS for the reason. Other command values return an MSP error. Remove propellers before calibration.",
             "description": "Controls SRXL2 ESC throttle-range calibration."
+        },
+        "MSP2_INAV_SET_RX_LINK": {
+            "code": 8757,
+            "mspv": 2,
+            "request": {
+                "payload": [
+                    {
+                        "name": "link",
+                        "ctype": "uint8_t",
+                        "desc": "RX link to hand over to (rxLink_e): 0 RX1, 1 RX2.",
+                        "units": ""
+                    }
+                ]
+            },
+            "reply": null,
+            "notes": "Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.",
+            "description": "Requests a dual RX handover to the given link."
         }
     }
 }
