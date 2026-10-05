@@ -3490,6 +3490,7 @@ groups:
         max: 2
         default_value: 2
       - name: mavlink_port1_serial
+        condition: USE_TELEMETRY_MAVLINK
         field: mavlink[0].serial_port
         description: "Serial port carrying MAVLink port 1, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
         type: int8_t
@@ -3525,6 +3526,7 @@ groups:
         type: bool
         default_value: OFF
       - name: mavlink_port2_serial
+        condition: USE_TELEMETRY_MAVLINK
         field: mavlink[1].serial_port
         description: "Serial port carrying MAVLink port 2, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
         type: int8_t
@@ -3552,6 +3554,7 @@ groups:
         type: bool
         default_value: OFF
       - name: mavlink_port3_serial
+        condition: USE_TELEMETRY_MAVLINK
         field: mavlink[2].serial_port
         description: "Serial port carrying MAVLink port 3, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
         type: int8_t
@@ -3579,6 +3582,7 @@ groups:
         type: bool
         default_value: OFF
       - name: mavlink_port4_serial
+        condition: USE_TELEMETRY_MAVLINK
         field: mavlink[3].serial_port
         description: "Serial port carrying MAVLink port 4, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
         type: int8_t
