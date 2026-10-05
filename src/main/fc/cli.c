@@ -237,7 +237,8 @@ static const char *debugModeNames[DEBUG_COUNT] = {
     "VTOL_MC_PROTECT",
     "TERRAIN_NAV",
     "ESC",
-    "FW_TURN"
+    "FW_TURN",
+    "MAG"
 };
 
 /* Sensor names (used in lookup tables for *_hardware settings and in status
@@ -4309,6 +4310,11 @@ static void cliStatus(char *cmdline)
     }
 #endif
 
+#if defined(USE_GEOZONE)
+    if ((armingFlags & ARMING_DISABLED_GEOZONE) && geozoneIsConfigInvalid()) {
+        cliPrintErrorLinef("Geozone vertices do not match the zone definitions, no zone is active");
+    }
+#endif
 
 #else
     cliPrintLinef("Arming disabled flags: 0x%lx", armingFlags & ARMING_DISABLED_ALL_FLAGS);

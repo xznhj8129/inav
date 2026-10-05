@@ -137,17 +137,17 @@ typedef enum {
     GEOZONE_MESSAGE_STATE_POS_HOLD
 } geozoneMessageState_e;
 
-enum fenceAction_e {
+typedef enum {
     GEOFENCE_ACTION_NONE,
     GEOFENCE_ACTION_AVOID,
     GEOFENCE_ACTION_POS_HOLD,
     GEOFENCE_ACTION_RTH,
-};
+} fenceAction_e;
 
-enum noWayHomeAction {
+typedef enum {
     NO_WAY_HOME_ACTION_RTH,
     NO_WAY_HOME_ACTION_EMRG_LAND,
-};
+} noWayHomeAction;
 
 #define GEOZONE_SHAPE_CIRCULAR 0
 #define GEOZONE_SHAPE_POLYGON  1
@@ -219,6 +219,7 @@ void geozoneReset(int8_t idx);
 void geozoneResetVertices(int8_t zoneId, int16_t idx);
 void geozoneUpdate(timeUs_t curentTimeUs);
 bool geozoneIsBlockingArming(void);
+bool geozoneIsConfigInvalid(void);
 void geozoneAdvanceRthAvoidWaypoint(void);
 int8_t geozoneCheckForNFZAtCourse(bool isRTH);
 bool geoZoneIsLastRthWaypoint(void);
