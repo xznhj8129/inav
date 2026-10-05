@@ -415,7 +415,16 @@ static void initMavlinkTestState(bool secondPort = false)
     posControl.wpReachedSeq = 0;
     posControl.wpReachedNotificationPending = false;
 
-    telemetryConfigMutable()->mavlink[0].serial_port = SERIAL_PORT_USART1;  // matches the stub below
+    // The ports the stubs below serve. Ports are bound by identifier, so the
+    // test owns their identities rather than a discovery-order stub.
+    testPortConfig.functionMask = FUNCTION_TELEMETRY_MAVLINK;
+    testPortConfig.identifier = SERIAL_PORT_USART1;
+    testPortConfig.telemetry_baudrateIndex = BAUD_115200;
+    testPortConfig2.functionMask = FUNCTION_TELEMETRY_MAVLINK;
+    testPortConfig2.identifier = SERIAL_PORT_USART2;
+    testPortConfig2.telemetry_baudrateIndex = BAUD_115200;
+    telemetryConfigMutable()->mavlink[0].serial_port = SERIAL_PORT_USART1;
+    telemetryConfigMutable()->mavlink[1].serial_port = secondPort ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE;
     telemetryConfigMutable()->mavlink_common.sysid = 1;
     telemetryConfigMutable()->mavlink_common.autopilot_type = MAVLINK_AUTOPILOT_ARDUPILOT;
     telemetryConfigMutable()->mavlink_common.version = 2;
@@ -3919,14 +3928,13 @@ bool platformTypeConfigured(flyingPlatformType_e platformType)
 
 serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifier)
 {
-    if (identifier != SERIAL_PORT_USART1) {
-        return NULL;
+    if (identifier == testPortConfig.identifier) {
+        return &testPortConfig;
     }
-
-    testPortConfig.functionMask |= FUNCTION_TELEMETRY_MAVLINK;
-    testPortConfig.identifier = SERIAL_PORT_USART1;
-    testPortConfig.telemetry_baudrateIndex = BAUD_115200;
-    return &testPortConfig;
+    if (identifier == testPortConfig2.identifier && testSecondPortEnabled) {
+        return &testPortConfig2;
+    }
+    return NULL;
 }
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)
