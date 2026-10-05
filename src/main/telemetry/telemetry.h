@@ -64,6 +64,7 @@ typedef enum {
 } smartportFuelUnit_e;
 
 typedef struct mavlinkTelemetryPortConfig_s {
+    int8_t serial_port;             // serial port this MAVLink port is bound to. -1 (SERIAL_PORT_NONE) = slot unused.
     uint8_t extended_status_rate;
     uint8_t rc_channels_rate;
     uint8_t position_rate;

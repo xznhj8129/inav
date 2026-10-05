@@ -3542,6 +3542,14 @@ groups:
         min: 1
         max: 2
         default_value: 2
+      - name: mavlink_port1_serial
+        condition: USE_TELEMETRY_MAVLINK
+        field: mavlink[0].serial_port
+        description: "Serial port carrying MAVLink port 1, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port1_min_txbuffer
         condition: USE_TELEMETRY_MAVLINK
         field: mavlink[0].min_txbuff
@@ -3570,6 +3578,14 @@ groups:
         description: "Enable MAVLink high-latency mode on port 1"
         type: bool
         default_value: OFF
+      - name: mavlink_port2_serial
+        condition: USE_TELEMETRY_MAVLINK
+        field: mavlink[1].serial_port
+        description: "Serial port carrying MAVLink port 2, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port2_min_txbuffer
         condition: USE_TELEMETRY_MAVLINK
         field: mavlink[1].min_txbuff
@@ -3590,6 +3606,14 @@ groups:
         description: "Enable MAVLink high-latency mode on port 2"
         type: bool
         default_value: OFF
+      - name: mavlink_port3_serial
+        condition: USE_TELEMETRY_MAVLINK
+        field: mavlink[2].serial_port
+        description: "Serial port carrying MAVLink port 3, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port3_min_txbuffer
         condition: USE_TELEMETRY_MAVLINK
         field: mavlink[2].min_txbuff
@@ -3610,6 +3634,14 @@ groups:
         description: "Enable MAVLink high-latency mode on port 3"
         type: bool
         default_value: OFF
+      - name: mavlink_port4_serial
+        condition: USE_TELEMETRY_MAVLINK
+        field: mavlink[3].serial_port
+        description: "Serial port carrying MAVLink port 4, using the same port numbering as the `serial` command. -1 leaves the port unused. Ports are bound explicitly; nothing is assigned by port order."
+        type: int8_t
+        min: -1
+        max: 31
+        default_value: -1
       - name: mavlink_port4_min_txbuffer
         condition: USE_TELEMETRY_MAVLINK
         field: mavlink[3].min_txbuff

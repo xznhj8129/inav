@@ -56,7 +56,7 @@
 #include "telemetry/ghst.h"
 
 
-PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 12);
+PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 13);
 
 PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .telemetry_switch = SETTING_TELEMETRY_SWITCH_DEFAULT,
@@ -99,6 +99,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             .extra1_rate = SETTING_MAVLINK_PORT1_EXTRA1_RATE_DEFAULT,
             .extra2_rate = SETTING_MAVLINK_PORT1_EXTRA2_RATE_DEFAULT,
             .extra3_rate = SETTING_MAVLINK_PORT1_EXTRA3_RATE_DEFAULT,
+            .serial_port = SETTING_MAVLINK_PORT1_SERIAL_DEFAULT,
             .min_txbuff = SETTING_MAVLINK_PORT1_MIN_TXBUFFER_DEFAULT,
             .radio_type = SETTING_MAVLINK_PORT1_RADIO_TYPE_DEFAULT,
             .high_latency = SETTING_MAVLINK_PORT1_HIGH_LATENCY_DEFAULT
@@ -110,6 +111,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             .extra1_rate = 0,
             .extra2_rate = 0,
             .extra3_rate = 0,
+            .serial_port = SETTING_MAVLINK_PORT2_SERIAL_DEFAULT,
             .min_txbuff = SETTING_MAVLINK_PORT2_MIN_TXBUFFER_DEFAULT,
             .radio_type = SETTING_MAVLINK_PORT2_RADIO_TYPE_DEFAULT,
             .high_latency = SETTING_MAVLINK_PORT2_HIGH_LATENCY_DEFAULT
@@ -121,6 +123,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             .extra1_rate = 0,
             .extra2_rate = 0,
             .extra3_rate = 0,
+            .serial_port = SETTING_MAVLINK_PORT3_SERIAL_DEFAULT,
             .min_txbuff = SETTING_MAVLINK_PORT3_MIN_TXBUFFER_DEFAULT,
             .radio_type = SETTING_MAVLINK_PORT3_RADIO_TYPE_DEFAULT,
             .high_latency = SETTING_MAVLINK_PORT3_HIGH_LATENCY_DEFAULT
@@ -132,6 +135,7 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
             .extra1_rate = 0,
             .extra2_rate = 0,
             .extra3_rate = 0,
+            .serial_port = SETTING_MAVLINK_PORT4_SERIAL_DEFAULT,
             .min_txbuff = SETTING_MAVLINK_PORT4_MIN_TXBUFFER_DEFAULT,
             .radio_type = SETTING_MAVLINK_PORT4_RADIO_TYPE_DEFAULT,
             .high_latency = SETTING_MAVLINK_PORT4_HIGH_LATENCY_DEFAULT

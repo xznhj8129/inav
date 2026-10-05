@@ -14,7 +14,9 @@ mavlinkContext_t mavlinkContext;
 
 const mavlinkTelemetryPortConfig_t *mavlinkGetPortConfig(uint8_t portIndex)
 {
-    return &telemetryConfig()->mavlink[portIndex];
+    // Runtime ports are packed; each remembers which settings group configured it.
+    const uint8_t configIndex = portIndex < mavPortCount ? mavPortStates[portIndex].configIndex : portIndex;
+    return &telemetryConfig()->mavlink[configIndex];
 }
 
 const mavlinkTelemetryCommonConfig_t *mavlinkGetCommonConfig(void)
@@ -92,17 +94,41 @@ void mavlinkRuntimeInit(void)
     mavSystemId = 1;
     mavComponentId = MAV_COMP_ID_AUTOPILOT1;
 
-    const serialPortConfig_t *serialPortConfig = findSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
-    while (serialPortConfig && mavPortCount < MAX_MAVLINK_PORTS) {
+    // Each mavlink_portN_* settings group names the serial port it belongs to. Nothing
+    // is derived from discovery order, so enabling MAVLink on another port cannot move
+    // an existing port's settings onto different hardware.
+    for (uint8_t configIndex = 0; configIndex < MAX_MAVLINK_PORTS; configIndex++) {
+        const serialPortIdentifier_e identifier =
+            (serialPortIdentifier_e)telemetryConfig()->mavlink[configIndex].serial_port;
+        if (identifier == SERIAL_PORT_NONE) {
+            continue;   // slot deliberately unused
+        }
+
+        const serialPortConfig_t *serialPortConfig = serialFindPortConfiguration(identifier);
+        if (!serialPortConfig || !(serialPortConfig->functionMask & FUNCTION_TELEMETRY_MAVLINK)) {
+            continue;   // names a port that is not carrying MAVLink
+        }
+
+        bool alreadyClaimed = false;
+        for (uint8_t i = 0; i < mavPortCount; i++) {
+            if (mavPortStates[i].portConfig == serialPortConfig) {
+                alreadyClaimed = true;
+                break;
+            }
+        }
+        if (alreadyClaimed) {
+            continue;   // two slots naming one serial port; the first one wins
+        }
+
         mavlinkPortRuntime_t *state = &mavPortStates[mavPortCount];
+        state->configIndex = configIndex;
         state->portConfig = serialPortConfig;
         state->portSharing = determinePortSharing(serialPortConfig, FUNCTION_TELEMETRY_MAVLINK);
         state->txbuffFree = 100;
-        state->highLatencyEnabled = mavlinkGetPortConfig(mavPortCount)->high_latency;
+        state->highLatencyEnabled = telemetryConfig()->mavlink[configIndex].high_latency;
         configureMAVLinkStreamRates(mavPortCount);
 
         mavPortCount++;
-        serialPortConfig = findNextSerialPortConfig(FUNCTION_TELEMETRY_MAVLINK);
     }
 }
 

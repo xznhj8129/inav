@@ -293,8 +293,10 @@ void configureMAVLinkStreamRates(uint8_t portIndex)
         [MAV_DATA_STREAM_HEARTBEAT] = 1
     };
 
-    const uint8_t *selectedRates = (portIndex == 0) ? mavPrimaryRates : mavSecondaryRates;
     mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+    // Full stream rates belong to the MAV1 settings group (config slot 0), whichever
+    // runtime port that turned out to be. Every other port is heartbeat-only.
+    const uint8_t *selectedRates = (state->configIndex == 0) ? mavPrimaryRates : mavSecondaryRates;
     const timeUs_t currentTimeUs = micros();
 
     for (uint8_t stream = 0; stream < MAVLINK_STREAM_COUNT; stream++) {
