@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mspapi2"
+version = "0.1.1"
+description = "MultiWii Serial Protocol API, codec, and multi-client server"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "xznhj8129" }]
+requires-python = ">=3.9"
+dependencies = ["pyserial"]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Monitoring",
+]
+
+# The codec and API work without pydantic; mspapi2.models needs it.
+[project.optional-dependencies]
+models = ["pydantic>=2"]
+
+[project.urls]
+Homepage = "https://github.com/xznhj8129/msp-sdk"
+
+[project.scripts]
+mspapi2-shell = "mspapi2.msp_shell:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"mspapi2.generated" = ["*.py"]
+"mspapi2.models" = ["*.py"]
