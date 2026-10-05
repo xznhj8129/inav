@@ -383,6 +383,9 @@ typedef enum {
     OSD_GPS_EXTRA_STATS,
     OSD_AUTO_SPEED,  // 170
     OSD_TERRAIN_AGL, // 171,
+    OSD_ACTIVE_RX_LINK,
+    OSD_RX1_LINK_STATS,
+    OSD_RX2_LINK_STATS,
     OSD_ITEM_COUNT // MUST BE LAST
 } osd_items_e;
 

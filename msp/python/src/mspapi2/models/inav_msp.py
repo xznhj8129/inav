@@ -3809,6 +3809,16 @@ class MSP2_INAV_ESC_SRXL2_CALIBRATE_request_t(BaseModel):
     phase: uint8 = Field(description='Requested calibration action (srxl2CalPhase_e): 0, 1, 4 or 5.')
 
 
+MSP2_INAV_SET_RX_LINK: Final[int] = 8757
+
+class MSP2_INAV_SET_RX_LINK_request_t(BaseModel):
+    """Requests a dual RX handover to the given link."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    link: uint8 = Field(description='RX link to hand over to (rxLink_e): 0 RX1, 1 RX2.')
+
+
 MSP2_INAV_NAV_ROI: Final[int] = 8758
 
 class MSP2_INAV_NAV_ROI_reply_t(BaseModel):
@@ -4149,6 +4159,7 @@ MESSAGES: Final[dict[int, tuple]] = {
     MSP2_INAV_MAG_UNALIGNED: (None, MSP2_INAV_MAG_UNALIGNED_reply_t),
     MSP2_INAV_ESC_SRXL2_STATUS: (None, MSP2_INAV_ESC_SRXL2_STATUS_reply_t),
     MSP2_INAV_ESC_SRXL2_CALIBRATE: (MSP2_INAV_ESC_SRXL2_CALIBRATE_request_t, None),
+    MSP2_INAV_SET_RX_LINK: (MSP2_INAV_SET_RX_LINK_request_t, None),
     MSP2_INAV_NAV_ROI: (None, MSP2_INAV_NAV_ROI_reply_t),
     MSP2_INAV_SET_NAV_ROI: (MSP2_INAV_SET_NAV_ROI_request_t, None),
     MSP2_INAV_GOTO_ROI: (None, None),

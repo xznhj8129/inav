@@ -9720,6 +9720,21 @@ messages:
           description: 'Requested calibration action (srxl2CalPhase_e): 0, 1, 4 or 5.'
     reply: null
 
+  MSP2_INAV_SET_RX_LINK:
+    id: 8757
+    inav_version:
+      since: "10.0"
+    mspv: 2
+    group: inav
+    description: Requests a dual RX handover to the given link.
+    notes: Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
+    request:
+      fields:
+        link:
+          type: uint8
+          description: 'RX link to hand over to (rxLink_e): 0 RX1, 1 RX2.'
+    reply: null
+
   MSP2_INAV_NAV_ROI:
     id: 8758
     inav_version:

@@ -334,6 +334,7 @@ extern "C" {
     float getEstimatedHorizontalWindSpeed(uint16_t *angle) { (void)angle; return 0.0f; }
 
     rxLinkStatistics_t rxLinkStatistics;
+    bool rxRequestLinkHandover(rxLink_e link, rxLinkSwitchReason_e reason) { (void)link; (void)reason; return false; }
 
     bool mspOverrideFlightAxisAngleActive(uint8_t axis, int *target) { (void)axis; (void)target; return false; }
     bool mspOverrideFlightAxisRateActive(uint8_t axis, int *target) { (void)axis; (void)target; return false; }

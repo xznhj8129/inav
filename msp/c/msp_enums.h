@@ -1,7 +1,7 @@
 #pragma once
 // Generated from the MSP YAML schema by msp/generator/gen_c.py (enums.yaml). Do not edit by hand.
 //
-// 59 of 405 enums are referenced by a payload; only those are emitted.
+// 59 of 409 enums are referenced by a payload; only those are emitted.
 
 #include <stdint.h>
 
@@ -496,7 +496,8 @@ typedef enum {
     LOGIC_CONDITION_DISABLE_AUTOSPEED_AIRSPEED = 61,
     LOGIC_CONDITION_ACTIVATE_RTH = 62,
     LOGIC_CONDITION_ACTIVATE_LANDING = 63,
-    LOGIC_CONDITION_LAST = 64,
+    LOGIC_CONDITION_RX_HANDOVER = 64,
+    LOGIC_CONDITION_LAST = 65,
 } logicOperation_e;
 
 // From inav/src/main/sensors/compass.h
@@ -843,7 +844,7 @@ typedef enum {
     FUNCTION_RCDEVICE = 1024,
     FUNCTION_VTX_SMARTAUDIO = 2048,
     FUNCTION_VTX_TRAMP = 4096,
-    FUNCTION_UNUSED_1 = 8192,
+    FUNCTION_RX_SERIAL_SECONDARY = 8192,
     FUNCTION_OPTICAL_FLOW = 16384,
     FUNCTION_LOG = 32768,
     FUNCTION_RANGEFINDER = 65536,

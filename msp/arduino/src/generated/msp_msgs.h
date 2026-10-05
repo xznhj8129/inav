@@ -2212,7 +2212,7 @@ typedef struct MSP_PACKED {
         uint16_t itemPosition;  // Packed X/Y position (`osdLayoutsConfig()->item_pos[layoutIndex][item]`) | packed coords
     } items[OSD_ITEM_COUNT];  // repeat: OSD_ITEM_COUNT
 } msp2InavOsdLayouts_dataSize_eq_1Reply_t;
-MSP_STATIC_ASSERT(sizeof(msp2InavOsdLayouts_dataSize_eq_1Reply_t) == 344, msp2InavOsdLayouts_dataSize_eq_1Reply_t_size);
+MSP_STATIC_ASSERT(sizeof(msp2InavOsdLayouts_dataSize_eq_1Reply_t) == 350, msp2InavOsdLayouts_dataSize_eq_1Reply_t_size);
 
 // MSP2_INAV_OSD_LAYOUTS (MSPv2) id=8210
 // Retrieves OSD layout metadata or item positions for specific layouts/items.
@@ -3365,6 +3365,14 @@ typedef struct MSP_PACKED {
     uint8_t phase;  // Requested calibration action (srxl2CalPhase_e): 0, 1, 4 or 5.
 } msp2InavEscSrxl2CalibrateRequest_t;
 MSP_STATIC_ASSERT(sizeof(msp2InavEscSrxl2CalibrateRequest_t) == 1, msp2InavEscSrxl2CalibrateRequest_t_size);
+
+// MSP2_INAV_SET_RX_LINK (MSPv2) id=8757
+// Requests a dual RX handover to the given link.
+// Notes: Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
+typedef struct MSP_PACKED {
+    uint8_t link;  // RX link to hand over to (rxLink_e): 0 RX1, 1 RX2.
+} msp2InavSetRxLinkRequest_t;
+MSP_STATIC_ASSERT(sizeof(msp2InavSetRxLinkRequest_t) == 1, msp2InavSetRxLinkRequest_t_size);
 
 // MSP2_INAV_NAV_ROI (MSPv2) id=8758
 // Gets the active navigation ROI.

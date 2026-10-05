@@ -59,7 +59,7 @@
 #  define OSD_CHAR_VISIBLE_BYTES 54
 #endif
 #ifndef OSD_ITEM_COUNT
-#  define OSD_ITEM_COUNT 172
+#  define OSD_ITEM_COUNT 175
 #endif
 #ifndef PID_ITEM_COUNT
 #  define PID_ITEM_COUNT 12

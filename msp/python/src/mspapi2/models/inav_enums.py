@@ -2886,7 +2886,8 @@ class logicOperation_e(IntEnum):
     LOGIC_CONDITION_DISABLE_AUTOSPEED_AIRSPEED = 61
     LOGIC_CONDITION_ACTIVATE_RTH = 62
     LOGIC_CONDITION_ACTIVATE_LANDING = 63
-    LOGIC_CONDITION_LAST = 64
+    LOGIC_CONDITION_RX_HANDOVER = 64
+    LOGIC_CONDITION_LAST = 65
 
 
 class logicROIOperands_e(IntEnum):
@@ -4151,7 +4152,10 @@ class osd_items_e(IntEnum):
     OSD_GPS_EXTRA_STATS = 169
     OSD_AUTO_SPEED = 170
     OSD_TERRAIN_AGL = 171
-    OSD_ITEM_COUNT = 172
+    OSD_ACTIVE_RX_LINK = 172
+    OSD_RX1_LINK_STATS = 173
+    OSD_RX2_LINK_STATS = 174
+    OSD_ITEM_COUNT = 175
 
 
 class osd_sidebar_arrow_e(IntEnum):
@@ -4635,6 +4639,17 @@ class rthTrackbackMode_e(IntEnum):
     RTH_TRACKBACK_FS = 2
 
 
+class rxDualStatus_e(IntEnum):
+    """From inav/src/main/rx/rx.h"""
+
+    RX_DUAL_STATUS_DISABLED = 0
+    RX_DUAL_STATUS_OK = 1
+    RX_DUAL_STATUS_RX1_NOT_CONFIGURED = 2
+    RX_DUAL_STATUS_RX2_NOT_CONFIGURED = 3
+    RX_DUAL_STATUS_UNSUPPORTED_PAIR = 4
+    RX_DUAL_STATUS_INIT_FAILED = 5
+
+
 class rxFrameState_e(IntEnum):
     """From inav/src/main/rx/rx.h"""
 
@@ -4643,6 +4658,40 @@ class rxFrameState_e(IntEnum):
     RX_FRAME_FAILSAFE = 2
     RX_FRAME_PROCESSING_REQUIRED = 4
     RX_FRAME_DROPPED = 8
+
+
+class rxLinkStatisticsField_e(IntEnum):
+    """From inav/src/main/rx/rx.h"""
+
+    RX_LINK_STATS_UPLINK_RSSI = 1
+    RX_LINK_STATS_UPLINK_LQ = 2
+    RX_LINK_STATS_DOWNLINK_LQ = 4
+    RX_LINK_STATS_UPLINK_SNR = 8
+    RX_LINK_STATS_RF_MODE = 16
+    RX_LINK_STATS_UPLINK_TX_POWER = 32
+    RX_LINK_STATS_DOWNLINK_TX_POWER = 64
+    RX_LINK_STATS_ACTIVE_ANTENNA = 128
+    RX_LINK_STATS_BAND = 256
+    RX_LINK_STATS_MODE = 512
+
+
+class rxLinkSwitchReason_e(IntEnum):
+    """From inav/src/main/rx/rx.h"""
+
+    RX_LINK_SWITCH_BOOT = 0
+    RX_LINK_SWITCH_LINK_LOSS = 1
+    RX_LINK_SWITCH_HANDOVER_LOGIC = 2
+    RX_LINK_SWITCH_HANDOVER_MSP = 3
+    RX_LINK_SWITCH_HANDOVER_API = 4
+    RX_LINK_SWITCH_RX1_PREARM = 5
+
+
+class rxLink_e(IntEnum):
+    """From inav/src/main/rx/rx.h"""
+
+    RX_LINK_PRIMARY = 0
+    RX_LINK_SECONDARY = 1
+    RX_LINK_COUNT = 2
 
 
 class rxReceiverType_e(IntEnum):
@@ -4821,7 +4870,7 @@ class serialPortFunction_e(IntEnum):
     FUNCTION_RCDEVICE = 1024
     FUNCTION_VTX_SMARTAUDIO = 2048
     FUNCTION_VTX_TRAMP = 4096
-    FUNCTION_UNUSED_1 = 8192
+    FUNCTION_RX_SERIAL_SECONDARY = 8192
     FUNCTION_OPTICAL_FLOW = 16384
     FUNCTION_LOG = 32768
     FUNCTION_RANGEFINDER = 65536

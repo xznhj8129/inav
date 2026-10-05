@@ -112,9 +112,7 @@ void mavlinkRuntimeCheckState(void)
         mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
 
         bool newTelemetryEnabledValue = telemetryDetermineEnabledState(state->portSharing);
-        if ((state->portConfig->functionMask & FUNCTION_RX_SERIAL) &&
-            rxConfig()->receiverType == RX_TYPE_SERIAL &&
-            rxConfig()->serialrx_provider == SERIALRX_MAVLINK) {
+        if (mavlinkRxLinkForPortFunctionMask(state->portConfig->functionMask) >= 0) {
             newTelemetryEnabledValue = true;
         }
 
@@ -296,12 +294,19 @@ static bool isMAVLinkTelemetryHalfDuplexBackoff(uint8_t portIndex, timeUs_t curr
 {
     const mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
 
-    return state->portConfig &&
-        (state->portConfig->functionMask & FUNCTION_RX_SERIAL) &&
-        rxConfig()->receiverType == RX_TYPE_SERIAL &&
-        rxConfig()->serialrx_provider == SERIALRX_MAVLINK &&
-        tristateWithDefaultOffIsActive(rxConfig()->halfDuplex) &&
-        ((currentTimeUs - state->lastRxFrameUs) < TELEMETRY_MAVLINK_DELAY);
+    if (!state->portConfig) {
+        return false;
+    }
+
+    bool halfDuplex = false;
+    const int8_t link = mavlinkRxLinkForPortFunctionMask(state->portConfig->functionMask);
+    if (link == RX_LINK_PRIMARY) {
+        halfDuplex = tristateWithDefaultOffIsActive(rxConfig()->halfDuplex);
+    } else if (link == RX_LINK_SECONDARY) {
+        halfDuplex = tristateWithDefaultOffIsActive(rxConfig()->halfDuplexSecondary);
+    }
+
+    return halfDuplex && ((currentTimeUs - state->lastRxFrameUs) < TELEMETRY_MAVLINK_DELAY);
 }
 
 void mavlinkRuntimeHandle(timeUs_t currentTimeUs)

@@ -133,6 +133,7 @@
 #define MSP2_INAV_MAG_UNALIGNED                0x2232
 #define MSP2_INAV_ESC_SRXL2_STATUS             0x2233
 #define MSP2_INAV_ESC_SRXL2_CALIBRATE          0x2234
+#define MSP2_INAV_SET_RX_LINK                  0x2235
 #define MSP2_INAV_NAV_ROI                      0x2236
 #define MSP2_INAV_SET_NAV_ROI                  0x2237
 #define MSP2_INAV_GOTO_ROI                     0x2238

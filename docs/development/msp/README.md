@@ -6,7 +6,7 @@
 
 Enum reference: [`enums.md`](enums.md). See also [`format.md`](format.md) and [`msp-message-routing-architecture.md`](msp-message-routing-architecture.md).
 
-285 messages.
+286 messages.
 
 ## Contents
 
@@ -290,6 +290,7 @@ Enum reference: [`enums.md`](enums.md). See also [`format.md`](format.md) and [`
 - [MSP2_INAV_MAG_UNALIGNED](#msp2_inav_mag_unaligned)
 - [MSP2_INAV_ESC_SRXL2_STATUS](#msp2_inav_esc_srxl2_status)
 - [MSP2_INAV_ESC_SRXL2_CALIBRATE](#msp2_inav_esc_srxl2_calibrate)
+- [MSP2_INAV_SET_RX_LINK](#msp2_inav_set_rx_link)
 - [MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)
 - [MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)
 - [MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)
@@ -6761,6 +6762,25 @@ Controls SRXL2 ESC throttle-range calibration.
 | Field | Type | Enum / flags | Description |
 |---|---|---|---|
 | phase | `uint8` |   | Requested calibration action (srxl2CalPhase_e): 0, 1, 4 or 5. |
+
+*reply:* none
+
+---
+## MSP2_INAV_SET_RX_LINK
+
+id `0x2235` (8757) · MSPv2 · group `inav`
+
+since INAV 10.0
+
+Requests a dual RX handover to the given link.
+
+> Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
+
+*request:*
+
+| Field | Type | Enum / flags | Description |
+|---|---|---|---|
+| link | `uint8` |   | RX link to hand over to (rxLink_e): 0 RX1, 1 RX2. |
 
 *reply:* none
 
