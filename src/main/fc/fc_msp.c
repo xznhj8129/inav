@@ -954,51 +954,50 @@ static bool mspFcProcessOutCommand(uint16_t cmdMSP, sbuf_t *dst, mspPostProcessF
 
     case MSP2_INAV_GET_LINK_STATS:
         {
-            // Preserve the original active-link prefix for older clients.
+            // The first three fields are the original active-link reply, all an
+            // older client reads. Dual RX appends its header and one record per link.
             msp2InavGetLinkStatsReply_t reply = {
                 .uplinkRSSI_dBm = -rxLinkStatistics.uplinkRSSI,
                 .uplinkLQ = rxLinkStatistics.uplinkLQ,
                 .uplinkSNR = rxLinkStatistics.uplinkSNR,
+                .extensionVersion = 1,
+                .activeLink = rxGetActiveLink(),
+                .initializedLinkMask = rxGetInitializedLinkMask(),
+                .validLinkMask = rxGetValidLinkMask(),
+                .dualRxStatus = rxGetDualRxStatus(),
+                .lastSwitchReason = rxGetLastSwitchReason(),
+                .lastSwitchTimeMs = rxGetLastSwitchTimeMs(),
             };
-            mspWriteReply(dst, &reply);
-
-            // Dual RX extension v1. The normalized quality tracker is always
-            // reported when a driver provides it. Protocol-specific fields are
-            // independently qualified by statsValidMask.
-            sbufWriteU8(dst, 1); // extension version
-            sbufWriteU8(dst, rxGetActiveLink());
-            uint8_t configuredMask = 0;
-            uint8_t statsValidMask = 0;
             for (int link = 0; link < RX_LINK_COUNT; link++) {
                 if (rxIsLinkConfigured((rxLink_e)link)) {
-                    configuredMask |= 1U << link;
+                    reply.configuredLinkMask |= 1U << link;
                 }
                 if (rxLinkStatisticsAreValid((rxLink_e)link)) {
-                    statsValidMask |= 1U << link;
+                    reply.statsValidLinkMask |= 1U << link;
                 }
             }
-            sbufWriteU8(dst, configuredMask);
-            sbufWriteU8(dst, rxGetInitializedLinkMask());
-            sbufWriteU8(dst, rxGetValidLinkMask());
-            sbufWriteU8(dst, statsValidMask);
-            sbufWriteU8(dst, rxGetDualRxStatus());
-            sbufWriteU8(dst, rxGetLastSwitchReason());
-            sbufWriteU32(dst, rxGetLastSwitchTimeMs());
+            mspWriteReplyBytes(dst, &reply, sizeof(reply));
+
+            // The normalized quality tracker is always reported when a driver
+            // provides it; protocol-specific fields are qualified by statsValidFields.
             for (int link = 0; link < RX_LINK_COUNT; link++) {
                 const rxLink_e rxLink = (rxLink_e)link;
                 const rxLinkStatistics_t *statistics = rxGetLinkStatistics(rxLink);
-                sbufWriteU16(dst, rxGetLinkStatisticsValidFields(rxLink));
-                sbufWriteU16(dst, rxGetLinkQuality(rxLink));
-                sbufWriteU16(dst, (uint16_t)statistics->uplinkRSSI);
-                sbufWriteU8(dst, statistics->uplinkLQ);
-                sbufWriteU8(dst, (uint8_t)statistics->uplinkSNR);
-                sbufWriteU8(dst, statistics->downlinkLQ);
-                sbufWriteU8(dst, statistics->rfMode);
-                sbufWriteU16(dst, statistics->uplinkTXPower);
-                sbufWriteU16(dst, statistics->downlinkTXPower);
-                sbufWriteU8(dst, statistics->activeAntenna);
-                sbufWriteData(dst, statistics->band, sizeof(statistics->band));
-                sbufWriteData(dst, statistics->mode, sizeof(statistics->mode));
+                __typeof__(reply.links[0]) record = {
+                    .statsValidFields = rxGetLinkStatisticsValidFields(rxLink),
+                    .linkQuality = rxGetLinkQuality(rxLink),
+                    .uplinkRSSI = statistics->uplinkRSSI,
+                    .uplinkLQ = statistics->uplinkLQ,
+                    .uplinkSNR = statistics->uplinkSNR,
+                    .downlinkLQ = statistics->downlinkLQ,
+                    .rfMode = statistics->rfMode,
+                    .uplinkTXPower = statistics->uplinkTXPower,
+                    .downlinkTXPower = statistics->downlinkTXPower,
+                    .activeAntenna = statistics->activeAntenna,
+                };
+                memcpy(record.band, statistics->band, sizeof(record.band));
+                memcpy(record.mode, statistics->mode, sizeof(record.mode));
+                sbufWriteData(dst, &record, sizeof(record));
             }
         }
         break;
@@ -1477,17 +1476,16 @@ static bool mspFcProcessOutCommand(uint16_t cmdMSP, sbuf_t *dst, mspPostProcessF
                 .rxMinUsec = rxConfig()->rx_min_usec,
                 .rxMaxUsec = rxConfig()->rx_max_usec,
                 .receiverType = rxConfig()->receiverType,
+                // Dual RX extension, after the legacy 24 bytes so clients that stop
+                // at receiverType still work
+                .dualRxEnabled = rxConfig()->dualRxEnabled,
+                .receiverTypeSecondary = rxConfig()->receiverTypeSecondary,
+                .serialRxProviderSecondary = rxConfig()->serialrx_provider_secondary,
+                .serialRxInvertedSecondary = rxConfig()->serialrx_inverted_secondary,
+                .halfDuplexSecondary = rxConfig()->halfDuplexSecondary,
+                .sbusSyncIntervalSecondary = rxConfig()->sbusSyncIntervalSecondary,
             };
             mspWriteReply(dst, &reply);
-
-            // INAV Dual RX extension. Appended after the legacy 24-byte payload so
-            // existing clients that stop at receiverType remain compatible.
-            sbufWriteU8(dst, rxConfig()->dualRxEnabled);
-            sbufWriteU8(dst, rxConfig()->receiverTypeSecondary);
-            sbufWriteU8(dst, rxConfig()->serialrx_provider_secondary);
-            sbufWriteU8(dst, rxConfig()->serialrx_inverted_secondary);
-            sbufWriteU8(dst, rxConfig()->halfDuplexSecondary);
-            sbufWriteU16(dst, rxConfig()->sbusSyncIntervalSecondary);
         }
         break;
 
@@ -3779,7 +3777,9 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
     case MSP_SET_RX_CONFIG:
         {
             mspSetRxConfigRequest_t pkt;
-            if (!mspReadRequest(src, &pkt, dataSize)) {
+            // 24-byte base; the Dual RX tail is all or nothing
+            const size_t baseSize = offsetof(mspSetRxConfigRequest_t, dualRxEnabled);
+            if (!mspReadRequestBytes(src, &pkt, baseSize, dataSize)) {
                 return MSP_RESULT_ERROR;
             }
             rxConfigMutable()->serialrx_provider = pkt.serialRxProvider;
@@ -3792,13 +3792,13 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
             rxConfigMutable()->rx_max_usec = pkt.rxMaxUsec;
             rxConfigMutable()->receiverType = pkt.receiverType;
 
-            if (dataSize >= 31) {
-                rxConfigMutable()->dualRxEnabled = sbufReadU8(src);
-                rxConfigMutable()->receiverTypeSecondary = sbufReadU8(src);
-                rxConfigMutable()->serialrx_provider_secondary = sbufReadU8(src);
-                rxConfigMutable()->serialrx_inverted_secondary = sbufReadU8(src);
-                rxConfigMutable()->halfDuplexSecondary = sbufReadU8(src);
-                rxConfigMutable()->sbusSyncIntervalSecondary = sbufReadU16(src);
+            if (mspReadOptionalBytes(src, &pkt.dualRxEnabled, sizeof(pkt) - baseSize)) {
+                rxConfigMutable()->dualRxEnabled = pkt.dualRxEnabled;
+                rxConfigMutable()->receiverTypeSecondary = pkt.receiverTypeSecondary;
+                rxConfigMutable()->serialrx_provider_secondary = pkt.serialRxProviderSecondary;
+                rxConfigMutable()->serialrx_inverted_secondary = pkt.serialRxInvertedSecondary;
+                rxConfigMutable()->halfDuplexSecondary = pkt.halfDuplexSecondary;
+                rxConfigMutable()->sbusSyncIntervalSecondary = pkt.sbusSyncIntervalSecondary;
             }
         }
         break;
@@ -4411,10 +4411,11 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
 #endif
     case MSP2_BETAFLIGHT_BIND:
         {
-            if (dataSize > 1) {
+            msp2BetaflightBindRequest_t pkt;
+            if (dataSize > (int)sizeof(pkt)) {
                 return MSP_RESULT_ERROR;
             }
-            const rxLink_e bindLink = dataSize == 1 ? (rxLink_e)sbufReadU8(src) : rxGetActiveLink();
+            const rxLink_e bindLink = mspReadOptional(src, &pkt.link) ? (rxLink_e)pkt.link : rxGetActiveLink();
             if ((unsigned)bindLink >= RX_LINK_COUNT || !rxIsLinkConfigured(bindLink)) {
                 return MSP_RESULT_ERROR;
             }

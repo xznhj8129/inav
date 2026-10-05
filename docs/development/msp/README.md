@@ -1061,6 +1061,12 @@ Retrieves receiver configuration settings. Some fields are Betaflight compatibil
 | reserved3 | `uint8` |   | Reserved/Padding. Always 0 |
 | bfCompatFpvCamAngle | `uint8` |   | BF compatibility. Always 0 |
 | receiverType | `uint8` | `rxReceiverType_e`  | Enum `rxReceiverType_e` Receiver type (Parallel PWM, PPM, Serial) ('rxConfig()->receiverType') |
+| dualRxEnabled | `optional uint8` |   | Dual RX extension. Reports `rxConfig()->dualRxEnabled` (0/1). |
+| receiverTypeSecondary | `optional uint8` | `rxReceiverType_e`  | Dual RX extension. Reports `rxConfig()->receiverTypeSecondary`. |
+| serialRxProviderSecondary | `optional uint8` | `rxSerialReceiverType_e`  | Dual RX extension. Reports `rxConfig()->serialrx_provider_secondary`. |
+| serialRxInvertedSecondary | `optional uint8` |   | Dual RX extension. Reports `rxConfig()->serialrx_inverted_secondary`. |
+| halfDuplexSecondary | `optional uint8` |   | Dual RX extension. Reports `rxConfig()->halfDuplexSecondary` (tristate). |
+| sbusSyncIntervalSecondary | `optional uint16` |  us | Dual RX extension. Reports `rxConfig()->sbusSyncIntervalSecondary`. |
 
 ---
 ## MSP_SET_RX_CONFIG
@@ -1092,6 +1098,12 @@ Sets receiver configuration settings.
 | reserved3 | `uint8` |   | Ignored |
 | bfCompatFpvCamAngle | `uint8` |   | Ignored |
 | receiverType | `uint8` | `rxReceiverType_e`  | Enum `rxReceiverType_e` Sets `rxConfigMutable()->receiverType`. |
+| dualRxEnabled | `optional uint8` |   | Dual RX extension. Sets `rxConfig()->dualRxEnabled` (0/1). |
+| receiverTypeSecondary | `optional uint8` | `rxReceiverType_e`  | Dual RX extension. Sets `rxConfig()->receiverTypeSecondary`. |
+| serialRxProviderSecondary | `optional uint8` | `rxSerialReceiverType_e`  | Dual RX extension. Sets `rxConfig()->serialrx_provider_secondary`. |
+| serialRxInvertedSecondary | `optional uint8` |   | Dual RX extension. Sets `rxConfig()->serialrx_inverted_secondary`. |
+| halfDuplexSecondary | `optional uint8` |   | Dual RX extension. Sets `rxConfig()->halfDuplexSecondary` (tristate). |
+| sbusSyncIntervalSecondary | `optional uint16` |  us | Dual RX extension. Sets `rxConfig()->sbusSyncIntervalSecondary`. |
 
 *reply:* none
 
@@ -6047,7 +6059,7 @@ since INAV 9.0
 
 Provides uplink RC link statistics for monitoring on a GCS.
 
-> Useful for GCS monitoring of the active RC link quality and signal margin.
+> Useful for GCS monitoring of the active RC link quality and signal margin. The first three fields describe the active link and are all an older client reads. Firmware with Dual RX appends a header and one record per RX link (RX1 first).
 
 *request:* none
 
@@ -6058,6 +6070,28 @@ Provides uplink RC link statistics for monitoring on a GCS.
 | uplinkRSSI_dBm | `uint8` |  -dBm | Uplink RSSI in dBm, sent as a positive magnitude (`getRSSI()`). For example, 70 means -70dBm. |
 | uplinkLQ | `uint8` |  % | Uplink Link Quality (`rxLinkStatistics.uplinkLQ`) |
 | uplinkSNR | `int8` |  dB | Uplink Signal-to-Noise Ratio (`rxLinkStatistics.uplinkSNR`) |
+| extensionVersion | `optional uint8` |   | Dual RX extension version, currently 1. Absent from firmware without Dual RX. |
+| activeLink | `optional uint8` | `rxLink_e`  | Link currently in control (`rxGetActiveLink()`). |
+| configuredLinkMask | `optional uint8` | `bitmask`  | Bitmask: bit N set when RX link N is configured (`rxIsLinkConfigured()`). |
+| initializedLinkMask | `optional uint8` | `bitmask`  | Bitmask: bit N set when RX link N is initialized (`rxGetInitializedLinkMask()`). |
+| validLinkMask | `optional uint8` | `bitmask`  | Bitmask: bit N set when RX link N is valid (`rxGetValidLinkMask()`). |
+| statsValidLinkMask | `optional uint8` | `bitmask`  | Bitmask: bit N set when RX link N has valid link statistics (`rxLinkStatisticsAreValid()`). |
+| dualRxStatus | `optional uint8` | `rxDualStatus_e`  | Dual RX configuration status (`rxGetDualRxStatus()`). |
+| lastSwitchReason | `optional uint8` | `rxLinkSwitchReason_e`  | Why the active link last changed (`rxGetLastSwitchReason()`). |
+| lastSwitchTimeMs | `optional uint32` |  ms | Time of the last link change (`rxGetLastSwitchTimeMs()`). |
+| links[] | *repeat: until_end* | | |
+|  statsValidFields | `uint16` | `bitmask`  | Bitmask of `rxLinkStatisticsField_e`: which of the protocol-specific fields below are valid for this link. |
+|  linkQuality | `uint16` |   | Normalized link quality from the driver's tracker (`rxGetLinkQuality()`), reported whenever the driver provides it. |
+|  uplinkRSSI | `int16` |  dBm | Uplink RSSI. |
+|  uplinkLQ | `uint8` |  % | Uplink link quality. |
+|  uplinkSNR | `int8` |  dB | Uplink SNR. |
+|  downlinkLQ | `uint8` |  % | Downlink link quality. |
+|  rfMode | `uint8` |   | RF mode. |
+|  uplinkTXPower | `uint16` |  mW | Uplink TX power. |
+|  downlinkTXPower | `uint16` |  mW | Downlink TX power. |
+|  activeAntenna | `uint8` |   | Active antenna. |
+|  band | `char[4]` |   | Band label. |
+|  mode | `char[6]` |   | Mode label. |
 
 ---
 ## MSP2_INAV_OUTPUT_MAPPING_EXT2
@@ -6860,9 +6894,13 @@ since INAV 8.0
 
 Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).
 
-> Requires `rxConfig()->receiverType == RX_TYPE_SERIAL`. Requires `USE_SERIALRX_CRSF` or `USE_SERIALRX_SRXL2`. Calls `crsfBind()` or `srxl2Bind()` respectively. Returns error if receiver type or provider is not supported for binding.
+> The bound link's receiver type must be `RX_TYPE_SERIAL`. Requires `USE_SERIALRX_CRSF` or `USE_SERIALRX_SRXL2`. Calls `crsfBindLink()` or `srxl2Bind()` respectively. Returns error if the link is not configured, or its receiver type or provider is not supported for binding.
 
-*request:* none
+*request:*
+
+| Field | Type | Enum / flags | Description |
+|---|---|---|---|
+| link | `optional uint8` | `rxLink_e`  | Dual RX link to bind. Absent binds the active link. |
 
 *reply:* none
 

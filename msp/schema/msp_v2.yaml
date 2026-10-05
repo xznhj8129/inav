@@ -1300,6 +1300,33 @@ messages:
           enum: rxReceiverType_e
           description: Enum `rxReceiverType_e` Receiver type (Parallel PWM, PPM, Serial) ('rxConfig()->receiverType')
 
+        dualRxEnabled:
+          type: optional uint8
+          description: Dual RX extension. Reports `rxConfig()->dualRxEnabled` (0/1).
+
+        receiverTypeSecondary:
+          type: optional uint8
+          enum: rxReceiverType_e
+          description: Dual RX extension. Reports `rxConfig()->receiverTypeSecondary`.
+
+        serialRxProviderSecondary:
+          type: optional uint8
+          enum: rxSerialReceiverType_e
+          description: Dual RX extension. Reports `rxConfig()->serialrx_provider_secondary`.
+
+        serialRxInvertedSecondary:
+          type: optional uint8
+          description: Dual RX extension. Reports `rxConfig()->serialrx_inverted_secondary`.
+
+        halfDuplexSecondary:
+          type: optional uint8
+          description: Dual RX extension. Reports `rxConfig()->halfDuplexSecondary` (tristate).
+
+        sbusSyncIntervalSecondary:
+          type: optional uint16
+          unit: us
+          description: Dual RX extension. Reports `rxConfig()->sbusSyncIntervalSecondary`.
+
   MSP_SET_RX_CONFIG:
     id: 45
     inav_version:
@@ -1377,6 +1404,33 @@ messages:
           type: uint8
           enum: rxReceiverType_e
           description: Enum `rxReceiverType_e` Sets `rxConfigMutable()->receiverType`.
+
+        dualRxEnabled:
+          type: optional uint8
+          description: Dual RX extension. Sets `rxConfig()->dualRxEnabled` (0/1).
+
+        receiverTypeSecondary:
+          type: optional uint8
+          enum: rxReceiverType_e
+          description: Dual RX extension. Sets `rxConfig()->receiverTypeSecondary`.
+
+        serialRxProviderSecondary:
+          type: optional uint8
+          enum: rxSerialReceiverType_e
+          description: Dual RX extension. Sets `rxConfig()->serialrx_provider_secondary`.
+
+        serialRxInvertedSecondary:
+          type: optional uint8
+          description: Dual RX extension. Sets `rxConfig()->serialrx_inverted_secondary`.
+
+        halfDuplexSecondary:
+          type: optional uint8
+          description: Dual RX extension. Sets `rxConfig()->halfDuplexSecondary` (tristate).
+
+        sbusSyncIntervalSecondary:
+          type: optional uint16
+          unit: us
+          description: Dual RX extension. Sets `rxConfig()->sbusSyncIntervalSecondary`.
     reply: null
 
   MSP_LED_COLORS:
@@ -8742,7 +8796,7 @@ messages:
     mspv: 2
     group: inav
     description: Provides uplink RC link statistics for monitoring on a GCS.
-    notes: Useful for GCS monitoring of the active RC link quality and signal margin.
+    notes: 'Useful for GCS monitoring of the active RC link quality and signal margin. The first three fields describe the active link and are all an older client reads. Firmware with Dual RX appends a header and one record per RX link (RX1 first).'
     request: null
     reply:
       fields:
@@ -8760,6 +8814,97 @@ messages:
           type: int8
           unit: dB
           description: Uplink Signal-to-Noise Ratio (`rxLinkStatistics.uplinkSNR`)
+
+        extensionVersion:
+          type: optional uint8
+          description: Dual RX extension version, currently 1. Absent from firmware without Dual RX.
+
+        activeLink:
+          type: optional uint8
+          enum: rxLink_e
+          description: Link currently in control (`rxGetActiveLink()`).
+
+        configuredLinkMask:
+          type: optional uint8
+          bitmask: true
+          description: 'Bitmask: bit N set when RX link N is configured (`rxIsLinkConfigured()`).'
+
+        initializedLinkMask:
+          type: optional uint8
+          bitmask: true
+          description: 'Bitmask: bit N set when RX link N is initialized (`rxGetInitializedLinkMask()`).'
+
+        validLinkMask:
+          type: optional uint8
+          bitmask: true
+          description: 'Bitmask: bit N set when RX link N is valid (`rxGetValidLinkMask()`).'
+
+        statsValidLinkMask:
+          type: optional uint8
+          bitmask: true
+          description: 'Bitmask: bit N set when RX link N has valid link statistics (`rxLinkStatisticsAreValid()`).'
+
+        dualRxStatus:
+          type: optional uint8
+          enum: rxDualStatus_e
+          description: Dual RX configuration status (`rxGetDualRxStatus()`).
+
+        lastSwitchReason:
+          type: optional uint8
+          enum: rxLinkSwitchReason_e
+          description: Why the active link last changed (`rxGetLastSwitchReason()`).
+
+        lastSwitchTimeMs:
+          type: optional uint32
+          unit: ms
+          description: Time of the last link change (`rxGetLastSwitchTimeMs()`).
+
+        links:
+          repeat: until_end
+          fields:
+            statsValidFields:
+              type: uint16
+              bitmask: true
+              description: 'Bitmask of `rxLinkStatisticsField_e`: which of the protocol-specific fields below are valid for this link.'
+            linkQuality:
+              type: uint16
+              description: Normalized link quality from the driver's tracker (`rxGetLinkQuality()`), reported whenever the driver provides it.
+            uplinkRSSI:
+              type: int16
+              unit: dBm
+              description: Uplink RSSI.
+            uplinkLQ:
+              type: uint8
+              unit: '%'
+              description: Uplink link quality.
+            uplinkSNR:
+              type: int8
+              unit: dB
+              description: Uplink SNR.
+            downlinkLQ:
+              type: uint8
+              unit: '%'
+              description: Downlink link quality.
+            rfMode:
+              type: uint8
+              description: RF mode.
+            uplinkTXPower:
+              type: uint16
+              unit: mW
+              description: Uplink TX power.
+            downlinkTXPower:
+              type: uint16
+              unit: mW
+              description: Downlink TX power.
+            activeAntenna:
+              type: uint8
+              description: Active antenna.
+            band:
+              type: char[4]
+              description: Band label.
+            mode:
+              type: char[6]
+              description: Mode label.
 
   MSP2_INAV_OUTPUT_MAPPING_EXT2:
     id: 8461
@@ -9847,8 +9992,13 @@ messages:
     mspv: 2
     group: common
     description: Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).
-    notes: Requires `rxConfig()->receiverType == RX_TYPE_SERIAL`. Requires `USE_SERIALRX_CRSF` or `USE_SERIALRX_SRXL2`. Calls `crsfBind()` or `srxl2Bind()` respectively. Returns error if receiver type or provider is not supported for binding.
-    request: null
+    notes: The bound link's receiver type must be `RX_TYPE_SERIAL`. Requires `USE_SERIALRX_CRSF` or `USE_SERIALRX_SRXL2`. Calls `crsfBindLink()` or `srxl2Bind()` respectively. Returns error if the link is not configured, or its receiver type or provider is not supported for binding.
+    request:
+      fields:
+        link:
+          type: optional uint8
+          enum: rxLink_e
+          description: Dual RX link to bind. Absent binds the active link.
     reply: null
 
   MSP2_RX_BIND:

@@ -68,7 +68,7 @@ constants:
     value: 54
   OSD_ITEM_COUNT:
     type: uint8
-    value: 175
+    value: 176
   PID_ITEM_COUNT:
     type: uint8
     value: 12

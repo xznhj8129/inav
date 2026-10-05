@@ -4152,10 +4152,10 @@ class osd_items_e(IntEnum):
     OSD_GPS_EXTRA_STATS = 169
     OSD_AUTO_SPEED = 170
     OSD_TERRAIN_AGL = 171
-    OSD_ACTIVE_RX_LINK = 172
-    OSD_RX1_LINK_STATS = 173
-    OSD_RX2_LINK_STATS = 174
-    OSD_ITEM_COUNT = 175
+    OSD_ACTIVE_RX_LINK = 173
+    OSD_RX1_LINK_STATS = 174
+    OSD_RX2_LINK_STATS = 175
+    OSD_ITEM_COUNT = 176
 
 
 class osd_sidebar_arrow_e(IntEnum):

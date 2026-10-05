@@ -1,7 +1,7 @@
 #pragma once
 // Generated from the MSP YAML schema by msp/generator/gen_c.py (enums.yaml). Do not edit by hand.
 //
-// 59 of 409 enums are referenced by a payload; only those are emitted.
+// 62 of 409 enums are referenced by a payload; only those are emitted.
 
 #include <stdint.h>
 
@@ -775,6 +775,33 @@ typedef enum {
     RSSI_SOURCE_RX_PROTOCOL = 4,
     RSSI_SOURCE_MSP = 5,
 } rssiSource_e;
+
+// From inav/src/main/rx/rx.h
+typedef enum {
+    RX_DUAL_STATUS_DISABLED = 0,
+    RX_DUAL_STATUS_OK = 1,
+    RX_DUAL_STATUS_RX1_NOT_CONFIGURED = 2,
+    RX_DUAL_STATUS_RX2_NOT_CONFIGURED = 3,
+    RX_DUAL_STATUS_UNSUPPORTED_PAIR = 4,
+    RX_DUAL_STATUS_INIT_FAILED = 5,
+} rxDualStatus_e;
+
+// From inav/src/main/rx/rx.h
+typedef enum {
+    RX_LINK_SWITCH_BOOT = 0,
+    RX_LINK_SWITCH_LINK_LOSS = 1,
+    RX_LINK_SWITCH_HANDOVER_LOGIC = 2,
+    RX_LINK_SWITCH_HANDOVER_MSP = 3,
+    RX_LINK_SWITCH_HANDOVER_API = 4,
+    RX_LINK_SWITCH_RX1_PREARM = 5,
+} rxLinkSwitchReason_e;
+
+// From inav/src/main/rx/rx.h
+typedef enum {
+    RX_LINK_PRIMARY = 0,
+    RX_LINK_SECONDARY = 1,
+    RX_LINK_COUNT = 2,
+} rxLink_e;
 
 // From inav/src/main/rx/rx.h
 typedef enum {

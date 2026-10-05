@@ -429,8 +429,13 @@ typedef struct MSP_PACKED {
     uint8_t reserved3;  // Reserved/Padding. Always 0 | always 0
     uint8_t bfCompatFpvCamAngle;  // BF compatibility. Always 0 | always 0
     uint8_t receiverType;  // Enum `rxReceiverType_e` Receiver type (Parallel PWM, PPM, Serial) ('rxConfig()->receiverType')
+    uint8_t dualRxEnabled;  // Dual RX extension. Reports `rxConfig()->dualRxEnabled` (0/1). | OPTIONAL: may be absent from a shorter payload
+    uint8_t receiverTypeSecondary;  // Dual RX extension. Reports `rxConfig()->receiverTypeSecondary`. | enum rxReceiverType_e | OPTIONAL: may be absent from a shorter payload
+    uint8_t serialRxProviderSecondary;  // Dual RX extension. Reports `rxConfig()->serialrx_provider_secondary`. | enum rxSerialReceiverType_e | OPTIONAL: may be absent from a shorter payload
+    uint8_t serialRxInvertedSecondary;  // Dual RX extension. Reports `rxConfig()->serialrx_inverted_secondary`. | OPTIONAL: may be absent from a shorter payload
+    uint8_t halfDuplexSecondary;  // Dual RX extension. Reports `rxConfig()->halfDuplexSecondary` (tristate). | OPTIONAL: may be absent from a shorter payload
+    uint16_t sbusSyncIntervalSecondary;  // Dual RX extension. Reports `rxConfig()->sbusSyncIntervalSecondary`. | us | OPTIONAL: may be absent from a shorter payload
 } mspRxConfigReply_t;
-MSP_STATIC_ASSERT(sizeof(mspRxConfigReply_t) == 24, mspRxConfigReply_t_size);
 
 // MSP_SET_RX_CONFIG (MSPv1) id=45
 // Sets receiver configuration settings.
@@ -451,8 +456,13 @@ typedef struct MSP_PACKED {
     uint8_t reserved3;  // Ignored
     uint8_t bfCompatFpvCamAngle;  // Ignored
     uint8_t receiverType;  // Enum `rxReceiverType_e` Sets `rxConfigMutable()->receiverType`.
+    uint8_t dualRxEnabled;  // Dual RX extension. Sets `rxConfig()->dualRxEnabled` (0/1). | OPTIONAL: may be absent from a shorter payload
+    uint8_t receiverTypeSecondary;  // Dual RX extension. Sets `rxConfig()->receiverTypeSecondary`. | enum rxReceiverType_e | OPTIONAL: may be absent from a shorter payload
+    uint8_t serialRxProviderSecondary;  // Dual RX extension. Sets `rxConfig()->serialrx_provider_secondary`. | enum rxSerialReceiverType_e | OPTIONAL: may be absent from a shorter payload
+    uint8_t serialRxInvertedSecondary;  // Dual RX extension. Sets `rxConfig()->serialrx_inverted_secondary`. | OPTIONAL: may be absent from a shorter payload
+    uint8_t halfDuplexSecondary;  // Dual RX extension. Sets `rxConfig()->halfDuplexSecondary` (tristate). | OPTIONAL: may be absent from a shorter payload
+    uint16_t sbusSyncIntervalSecondary;  // Dual RX extension. Sets `rxConfig()->sbusSyncIntervalSecondary`. | us | OPTIONAL: may be absent from a shorter payload
 } mspSetRxConfigRequest_t;
-MSP_STATIC_ASSERT(sizeof(mspSetRxConfigRequest_t) == 24, mspSetRxConfigRequest_t_size);
 
 // MSP_LED_COLORS (MSPv1) id=46
 // Retrieves the HSV color definitions for configurable LED colors.
@@ -2212,7 +2222,7 @@ typedef struct MSP_PACKED {
         uint16_t itemPosition;  // Packed X/Y position (`osdLayoutsConfig()->item_pos[layoutIndex][item]`) | packed coords
     } items[OSD_ITEM_COUNT];  // repeat: OSD_ITEM_COUNT
 } msp2InavOsdLayouts_dataSize_eq_1Reply_t;
-MSP_STATIC_ASSERT(sizeof(msp2InavOsdLayouts_dataSize_eq_1Reply_t) == 350, msp2InavOsdLayouts_dataSize_eq_1Reply_t_size);
+MSP_STATIC_ASSERT(sizeof(msp2InavOsdLayouts_dataSize_eq_1Reply_t) == 352, msp2InavOsdLayouts_dataSize_eq_1Reply_t_size);
 
 // MSP2_INAV_OSD_LAYOUTS (MSPv2) id=8210
 // Retrieves OSD layout metadata or item positions for specific layouts/items.
@@ -2990,13 +3000,36 @@ MSP_STATIC_ASSERT(sizeof(msp2InavSetCustomOsdElementsRequest_t) == 28, msp2InavS
 
 // MSP2_INAV_GET_LINK_STATS (MSPv2) id=8451
 // Provides uplink RC link statistics for monitoring on a GCS.
-// Notes: Useful for GCS monitoring of the active RC link quality and signal margin.
+// Notes: Useful for GCS monitoring of the active RC link quality and signal margin. The first three fields describe the active link and are all an older client reads. Firmware with Dual RX appends a header and one record per RX link (RX1 first).
 typedef struct MSP_PACKED {
     uint8_t uplinkRSSI_dBm;  // Uplink RSSI in dBm, sent as a positive magnitude (`getRSSI()`). For example, 70 means -70dBm. | -dBm
     uint8_t uplinkLQ;  // Uplink Link Quality (`rxLinkStatistics.uplinkLQ`) | %
     int8_t uplinkSNR;  // Uplink Signal-to-Noise Ratio (`rxLinkStatistics.uplinkSNR`) | dB
+    uint8_t extensionVersion;  // Dual RX extension version, currently 1. Absent from firmware without Dual RX. | OPTIONAL: may be absent from a shorter payload
+    uint8_t activeLink;  // Link currently in control (`rxGetActiveLink()`). | enum rxLink_e | OPTIONAL: may be absent from a shorter payload
+    uint8_t configuredLinkMask;  // Bitmask: bit N set when RX link N is configured (`rxIsLinkConfigured()`). | bitmask | OPTIONAL: may be absent from a shorter payload
+    uint8_t initializedLinkMask;  // Bitmask: bit N set when RX link N is initialized (`rxGetInitializedLinkMask()`). | bitmask | OPTIONAL: may be absent from a shorter payload
+    uint8_t validLinkMask;  // Bitmask: bit N set when RX link N is valid (`rxGetValidLinkMask()`). | bitmask | OPTIONAL: may be absent from a shorter payload
+    uint8_t statsValidLinkMask;  // Bitmask: bit N set when RX link N has valid link statistics (`rxLinkStatisticsAreValid()`). | bitmask | OPTIONAL: may be absent from a shorter payload
+    uint8_t dualRxStatus;  // Dual RX configuration status (`rxGetDualRxStatus()`). | enum rxDualStatus_e | OPTIONAL: may be absent from a shorter payload
+    uint8_t lastSwitchReason;  // Why the active link last changed (`rxGetLastSwitchReason()`). | enum rxLinkSwitchReason_e | OPTIONAL: may be absent from a shorter payload
+    uint32_t lastSwitchTimeMs;  // Time of the last link change (`rxGetLastSwitchTimeMs()`). | ms | OPTIONAL: may be absent from a shorter payload
+    struct MSP_PACKED {
+        uint16_t statsValidFields;  // Bitmask of `rxLinkStatisticsField_e`: which of the protocol-specific fields below are valid for this link. | bitmask
+        uint16_t linkQuality;  // Normalized link quality from the driver's tracker (`rxGetLinkQuality()`), reported whenever the driver provides it.
+        int16_t uplinkRSSI;  // Uplink RSSI. | dBm
+        uint8_t uplinkLQ;  // Uplink link quality. | %
+        int8_t uplinkSNR;  // Uplink SNR. | dB
+        uint8_t downlinkLQ;  // Downlink link quality. | %
+        uint8_t rfMode;  // RF mode.
+        uint16_t uplinkTXPower;  // Uplink TX power. | mW
+        uint16_t downlinkTXPower;  // Downlink TX power. | mW
+        uint8_t activeAntenna;  // Active antenna.
+        char band[4];  // Band label.
+        char mode[6];  // Mode label.
+    } links[];  // repeat: until_end
 } msp2InavGetLinkStatsReply_t;
-MSP_STATIC_ASSERT(sizeof(msp2InavGetLinkStatsReply_t) == 3, msp2InavGetLinkStatsReply_t_size);
+// variable length: sizeof(msp2InavGetLinkStatsReply_t) is the fixed header only
 
 // MSP2_INAV_OUTPUT_MAPPING_EXT2 (MSPv2) id=8461
 // Retrieves the full extended output mapping configuration (timer ID, full 32-bit usage flags, and pin label). Supersedes `MSP2_INAV_OUTPUT_MAPPING_EXT`.
@@ -3403,6 +3436,13 @@ typedef struct MSP_PACKED {
     uint8_t flag;  // Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1)
 } msp2InavSetNavRoiRequest_t;
 MSP_STATIC_ASSERT(sizeof(msp2InavSetNavRoiRequest_t) == 19, msp2InavSetNavRoiRequest_t_size);
+
+// MSP2_BETAFLIGHT_BIND (MSPv2) id=12288
+// Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).
+// Notes: The bound link's receiver type must be `RX_TYPE_SERIAL`. Requires `USE_SERIALRX_CRSF` or `USE_SERIALRX_SRXL2`. Calls `crsfBindLink()` or `srxl2Bind()` respectively. Returns error if the link is not configured, or its receiver type or provider is not supported for binding.
+typedef struct MSP_PACKED {
+    uint8_t link;  // Dual RX link to bind. Absent binds the active link. | enum rxLink_e | OPTIONAL: may be absent from a shorter payload
+} msp2BetaflightBindRequest_t;
 
 // MSP2_RX_BIND (MSPv2) id=12289
 // Initiates binding for MSP receivers (mLRS).

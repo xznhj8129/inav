@@ -510,6 +510,12 @@ class MSP_RX_CONFIG_reply_t(BaseModel):
     reserved3: uint8 = Field(description='Reserved/Padding. Always 0')
     bfCompatFpvCamAngle: uint8 = Field(description='BF compatibility. Always 0')
     receiverType: uint8 = Field(description="Enum `rxReceiverType_e` Receiver type (Parallel PWM, PPM, Serial) ('rxConfig()->receiverType')")
+    dualRxEnabled: uint8 | None = Field(default=None, description='Dual RX extension. Reports `rxConfig()->dualRxEnabled` (0/1).')
+    receiverTypeSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Reports `rxConfig()->receiverTypeSecondary`.')
+    serialRxProviderSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Reports `rxConfig()->serialrx_provider_secondary`.')
+    serialRxInvertedSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Reports `rxConfig()->serialrx_inverted_secondary`.')
+    halfDuplexSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Reports `rxConfig()->halfDuplexSecondary` (tristate).')
+    sbusSyncIntervalSecondary: uint16 | None = Field(default=None, description='Dual RX extension. Reports `rxConfig()->sbusSyncIntervalSecondary`. [us]')
 
 
 MSP_SET_RX_CONFIG: Final[int] = 45
@@ -534,6 +540,12 @@ class MSP_SET_RX_CONFIG_request_t(BaseModel):
     reserved3: uint8 = Field(description='Ignored')
     bfCompatFpvCamAngle: uint8 = Field(description='Ignored')
     receiverType: uint8 = Field(description='Enum `rxReceiverType_e` Sets `rxConfigMutable()->receiverType`.')
+    dualRxEnabled: uint8 | None = Field(default=None, description='Dual RX extension. Sets `rxConfig()->dualRxEnabled` (0/1).')
+    receiverTypeSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Sets `rxConfig()->receiverTypeSecondary`.')
+    serialRxProviderSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Sets `rxConfig()->serialrx_provider_secondary`.')
+    serialRxInvertedSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Sets `rxConfig()->serialrx_inverted_secondary`.')
+    halfDuplexSecondary: uint8 | None = Field(default=None, description='Dual RX extension. Sets `rxConfig()->halfDuplexSecondary` (tristate).')
+    sbusSyncIntervalSecondary: uint16 | None = Field(default=None, description='Dual RX extension. Sets `rxConfig()->sbusSyncIntervalSecondary`. [us]')
 
 
 MSP_LED_COLORS: Final[int] = 46
@@ -3415,6 +3427,23 @@ class MSP2_INAV_SET_CUSTOM_OSD_ELEMENTS_request_t(BaseModel):
 
 MSP2_INAV_GET_LINK_STATS: Final[int] = 8451
 
+class MSP2_INAV_GET_LINK_STATS_reply_tlinksItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    statsValidFields: uint16 = Field(description='Bitmask of `rxLinkStatisticsField_e`: which of the protocol-specific fields below are valid for this link.')
+    linkQuality: uint16 = Field(description="Normalized link quality from the driver's tracker (`rxGetLinkQuality()`), reported whenever the driver provides it.")
+    uplinkRSSI: int16 = Field(description='Uplink RSSI. [dBm]')
+    uplinkLQ: uint8 = Field(description='Uplink link quality. [%]')
+    uplinkSNR: int8 = Field(description='Uplink SNR. [dB]')
+    downlinkLQ: uint8 = Field(description='Downlink link quality. [%]')
+    rfMode: uint8 = Field(description='RF mode.')
+    uplinkTXPower: uint16 = Field(description='Uplink TX power. [mW]')
+    downlinkTXPower: uint16 = Field(description='Downlink TX power. [mW]')
+    activeAntenna: uint8 = Field(description='Active antenna.')
+    band: str = Field(max_length=4, description='Band label.')
+    mode: str = Field(max_length=6, description='Mode label.')
+
+
 class MSP2_INAV_GET_LINK_STATS_reply_t(BaseModel):
     """Provides uplink RC link statistics for monitoring on a GCS."""
 
@@ -3423,6 +3452,16 @@ class MSP2_INAV_GET_LINK_STATS_reply_t(BaseModel):
     uplinkRSSI_dBm: uint8 = Field(description='Uplink RSSI in dBm, sent as a positive magnitude (`getRSSI()`). For example, 70 means -70dBm. [-dBm]')
     uplinkLQ: uint8 = Field(description='Uplink Link Quality (`rxLinkStatistics.uplinkLQ`) [%]')
     uplinkSNR: int8 = Field(description='Uplink Signal-to-Noise Ratio (`rxLinkStatistics.uplinkSNR`) [dB]')
+    extensionVersion: uint8 | None = Field(default=None, description='Dual RX extension version, currently 1. Absent from firmware without Dual RX.')
+    activeLink: uint8 | None = Field(default=None, description='Link currently in control (`rxGetActiveLink()`).')
+    configuredLinkMask: uint8 | None = Field(default=None, description='Bitmask: bit N set when RX link N is configured (`rxIsLinkConfigured()`).')
+    initializedLinkMask: uint8 | None = Field(default=None, description='Bitmask: bit N set when RX link N is initialized (`rxGetInitializedLinkMask()`).')
+    validLinkMask: uint8 | None = Field(default=None, description='Bitmask: bit N set when RX link N is valid (`rxGetValidLinkMask()`).')
+    statsValidLinkMask: uint8 | None = Field(default=None, description='Bitmask: bit N set when RX link N has valid link statistics (`rxLinkStatisticsAreValid()`).')
+    dualRxStatus: uint8 | None = Field(default=None, description='Dual RX configuration status (`rxGetDualRxStatus()`).')
+    lastSwitchReason: uint8 | None = Field(default=None, description='Why the active link last changed (`rxGetLastSwitchReason()`).')
+    lastSwitchTimeMs: uint32 | None = Field(default=None, description='Time of the last link change (`rxGetLastSwitchTimeMs()`). [ms]')
+    links: list[MSP2_INAV_GET_LINK_STATS_reply_tlinksItem]
 
 
 MSP2_INAV_OUTPUT_MAPPING_EXT2: Final[int] = 8461
@@ -3857,6 +3896,14 @@ MSP2_INAV_GOTO_ROI: Final[int] = 8760
 
 MSP2_BETAFLIGHT_BIND: Final[int] = 12288
 
+class MSP2_BETAFLIGHT_BIND_request_t(BaseModel):
+    """Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    link: uint8 | None = Field(default=None, description='Dual RX link to bind. Absent binds the active link.')
+
+
 MSP2_RX_BIND: Final[int] = 12289
 
 class MSP2_RX_BIND_request_t(BaseModel):
@@ -4163,6 +4210,6 @@ MESSAGES: Final[dict[int, tuple]] = {
     MSP2_INAV_NAV_ROI: (None, MSP2_INAV_NAV_ROI_reply_t),
     MSP2_INAV_SET_NAV_ROI: (MSP2_INAV_SET_NAV_ROI_request_t, None),
     MSP2_INAV_GOTO_ROI: (None, None),
-    MSP2_BETAFLIGHT_BIND: (None, None),
+    MSP2_BETAFLIGHT_BIND: (MSP2_BETAFLIGHT_BIND_request_t, None),
     MSP2_RX_BIND: (MSP2_RX_BIND_request_t, MSP2_RX_BIND_reply_t),
 }
