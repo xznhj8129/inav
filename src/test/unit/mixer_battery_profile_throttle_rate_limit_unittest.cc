@@ -140,6 +140,7 @@ extern "C" {
     bool isFixedwingAutoSpeedActive(void) { return false; }
     bool navigationIsExecutingAnEmergencyLanding(void) { return false; }
     int16_t rxGetChannelValue(unsigned channelNumber) { (void)channelNumber; return 1500; }
+    bool mspOverrideThrottleActive(int *target) { (void)target; return false; }
 
     float getThrottleScale(float globalThrottleScale) { return globalThrottleScale; }
 
