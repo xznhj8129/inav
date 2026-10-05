@@ -3809,6 +3809,42 @@ class MSP2_INAV_ESC_SRXL2_CALIBRATE_request_t(BaseModel):
     phase: uint8 = Field(description='Requested calibration action (srxl2CalPhase_e): 0, 1, 4 or 5.')
 
 
+MSP2_INAV_NAV_ROI: Final[int] = 8758
+
+class MSP2_INAV_NAV_ROI_reply_t(BaseModel):
+    """Gets the active navigation ROI."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    lat: int32 = Field(description='ROI latitude (`posControl.roi.lat`) [1e-7 deg]')
+    lon: int32 = Field(description='ROI longitude (`posControl.roi.lon`) [1e-7 deg]')
+    alt: int32 = Field(description='ROI altitude (`posControl.roi.alt`) [cm]')
+    p1: int16 = Field(description='ROI parameter 1 (`posControl.roi.p1`)')
+    p2: int16 = Field(description='ROI parameter 2 (`posControl.roi.p2`)')
+    alt_datum: uint8 = Field(description='ROI altitude datum bitfield (`posControl.roi.alt_datum`)')
+    action: uint8 = Field(description='ROI action field (`posControl.roi.action`)')
+    flag: uint8 = Field(description='ROI state flag (`posControl.roi.flag`): 0 empty, 1 volatile, 2 persistent')
+
+
+MSP2_INAV_SET_NAV_ROI: Final[int] = 8759
+
+class MSP2_INAV_SET_NAV_ROI_request_t(BaseModel):
+    """Sets or clears the active navigation ROI."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    lat: int32 = Field(description='ROI latitude [1e-7 deg]')
+    lon: int32 = Field(description='ROI longitude [1e-7 deg]')
+    alt: int32 = Field(description='ROI altitude [cm]')
+    p1: int16 = Field(description='ROI parameter 1')
+    p2: int16 = Field(description='ROI parameter 2')
+    alt_datum: uint8 = Field(description='ROI altitude datum bitfield')
+    action: uint8 = Field(description='ROI action field')
+    flag: uint8 = Field(description='Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1)')
+
+
+MSP2_INAV_GOTO_ROI: Final[int] = 8760
+
 MSP2_BETAFLIGHT_BIND: Final[int] = 12288
 
 MSP2_RX_BIND: Final[int] = 12289
@@ -4113,6 +4149,9 @@ MESSAGES: Final[dict[int, tuple]] = {
     MSP2_INAV_MAG_UNALIGNED: (None, MSP2_INAV_MAG_UNALIGNED_reply_t),
     MSP2_INAV_ESC_SRXL2_STATUS: (None, MSP2_INAV_ESC_SRXL2_STATUS_reply_t),
     MSP2_INAV_ESC_SRXL2_CALIBRATE: (MSP2_INAV_ESC_SRXL2_CALIBRATE_request_t, None),
+    MSP2_INAV_NAV_ROI: (None, MSP2_INAV_NAV_ROI_reply_t),
+    MSP2_INAV_SET_NAV_ROI: (MSP2_INAV_SET_NAV_ROI_request_t, None),
+    MSP2_INAV_GOTO_ROI: (None, None),
     MSP2_BETAFLIGHT_BIND: (None, None),
     MSP2_RX_BIND: (MSP2_RX_BIND_request_t, MSP2_RX_BIND_reply_t),
 }

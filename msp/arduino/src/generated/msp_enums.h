@@ -1,7 +1,7 @@
 #pragma once
 // Generated from the MSP YAML schema by msp/generator/gen_c.py (enums.yaml). Do not edit by hand.
 //
-// 59 of 404 enums are referenced by a payload; only those are emitted.
+// 59 of 405 enums are referenced by a payload; only those are emitted.
 
 #include <stdint.h>
 
@@ -426,7 +426,8 @@ typedef enum {
     LOGIC_CONDITION_OPERAND_TYPE_GVAR = 5,
     LOGIC_CONDITION_OPERAND_TYPE_PID = 6,
     LOGIC_CONDITION_OPERAND_TYPE_WAYPOINTS = 7,
-    LOGIC_CONDITION_OPERAND_TYPE_LAST = 8,
+    LOGIC_CONDITION_OPERAND_TYPE_ROI = 8,
+    LOGIC_CONDITION_OPERAND_TYPE_LAST = 9,
 } logicOperandType_e;
 
 // From inav/src/main/programming/logic_condition.h

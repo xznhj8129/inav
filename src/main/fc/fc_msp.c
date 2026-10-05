@@ -482,6 +482,9 @@ static void mspSerializeServoMixer(sbuf_t *dst, const servoMixer_t *m)
     sbufWriteData(dst, &record, sizeof(record));
 }
 
+static void mspFcNavROIOutCommand(sbuf_t *dst);
+static mspResult_e mspFcNavROIInCommand(sbuf_t *src);
+
 /*
  * Returns true if the command was processd, false otherwise.
  * May set mspPostProcessFunc to a function to be called once the command has been processed
@@ -881,6 +884,10 @@ static bool mspFcProcessOutCommand(uint16_t cmdMSP, sbuf_t *dst, mspPostProcessF
             msp2InavTimesyncReply_t reply = { .timeNs = (uint64_t)micros() * 1000ULL };
             mspWriteReply(dst, &reply);
         }
+        break;
+
+    case MSP2_INAV_NAV_ROI:
+        mspFcNavROIOutCommand(dst);
         break;
 
     case MSP_SONAR_ALTITUDE:
@@ -2462,6 +2469,51 @@ static mspResult_e mspFcLogicConditionCommand(sbuf_t *dst, sbuf_t *src) {
     return MSP_RESULT_ACK;
 }
 
+static void mspFcNavROIOutCommand(sbuf_t *dst)
+{
+    navROI_t roi;
+    navGetROI(&roi);
+    msp2InavNavRoiReply_t reply = {
+        .lat = roi.lat,
+        .lon = roi.lon,
+        .alt = roi.alt,
+        .p1 = roi.p1,
+        .p2 = roi.p2,
+        .alt_datum = roi.alt_datum,
+        .action = roi.action,
+        .flag = roi.flag,
+    };
+    mspWriteReply(dst, &reply);
+}
+
+static mspResult_e mspFcNavROIInCommand(sbuf_t *src)
+{
+    const int dataSize = sbufBytesRemaining(src);
+    msp2InavSetNavRoiRequest_t pkt;
+    // Exactly the struct: a longer payload is a different message, not a padded one
+    if (dataSize != (int)sizeof(pkt) || !mspReadRequest(src, &pkt, dataSize)) {
+        return MSP_RESULT_ERROR;
+    }
+
+    navROI_t roi;
+    roi.lat = pkt.lat;
+    roi.lon = pkt.lon;
+    roi.alt = pkt.alt;
+    roi.p1 = pkt.p1;
+    roi.p2 = pkt.p2;
+    roi.alt_datum = pkt.alt_datum;
+    roi.action = pkt.action;
+    roi.flag = pkt.flag;
+
+    if (roi.flag == 0) {
+        navClearROI();
+    } else {
+        navSetROI(&roi);
+    }
+
+    return MSP_RESULT_ACK;
+}
+
 static void mspFcWaypointOutCommand(sbuf_t *dst, sbuf_t *src)
 {
     const uint8_t msp_wp_no = sbufReadU8(src);    // get the wp number
@@ -3026,6 +3078,13 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
         }
         break;
 #endif
+
+    case MSP2_INAV_SET_NAV_ROI:
+        return mspFcNavROIInCommand(src);
+
+    case MSP2_INAV_GOTO_ROI:
+        return navGotoROI() ? MSP_RESULT_ACK : MSP_RESULT_ERROR;
+
     case MSP2_COMMON_SET_MOTOR_MIXER:
         {
             msp2CommonSetMotorMixerRequest_t pkt;

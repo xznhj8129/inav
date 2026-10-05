@@ -3366,6 +3366,36 @@ typedef struct MSP_PACKED {
 } msp2InavEscSrxl2CalibrateRequest_t;
 MSP_STATIC_ASSERT(sizeof(msp2InavEscSrxl2CalibrateRequest_t) == 1, msp2InavEscSrxl2CalibrateRequest_t_size);
 
+// MSP2_INAV_NAV_ROI (MSPv2) id=8758
+// Gets the active navigation ROI.
+// Notes: Returns the active navigation ROI slot.
+typedef struct MSP_PACKED {
+    int32_t lat;  // ROI latitude (`posControl.roi.lat`) | 1e-7 deg
+    int32_t lon;  // ROI longitude (`posControl.roi.lon`) | 1e-7 deg
+    int32_t alt;  // ROI altitude (`posControl.roi.alt`) | cm
+    int16_t p1;  // ROI parameter 1 (`posControl.roi.p1`)
+    int16_t p2;  // ROI parameter 2 (`posControl.roi.p2`)
+    uint8_t alt_datum;  // ROI altitude datum bitfield (`posControl.roi.alt_datum`) | bitmask
+    uint8_t action;  // ROI action field (`posControl.roi.action`)
+    uint8_t flag;  // ROI state flag (`posControl.roi.flag`): 0 empty, 1 volatile, 2 persistent
+} msp2InavNavRoiReply_t;
+MSP_STATIC_ASSERT(sizeof(msp2InavNavRoiReply_t) == 19, msp2InavNavRoiReply_t_size);
+
+// MSP2_INAV_SET_NAV_ROI (MSPv2) id=8759
+// Sets or clears the active navigation ROI.
+// Notes: Expects exactly 19 bytes.
+typedef struct MSP_PACKED {
+    int32_t lat;  // ROI latitude | 1e-7 deg
+    int32_t lon;  // ROI longitude | 1e-7 deg
+    int32_t alt;  // ROI altitude | cm
+    int16_t p1;  // ROI parameter 1
+    int16_t p2;  // ROI parameter 2
+    uint8_t alt_datum;  // ROI altitude datum bitfield | bitmask
+    uint8_t action;  // ROI action field
+    uint8_t flag;  // Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1)
+} msp2InavSetNavRoiRequest_t;
+MSP_STATIC_ASSERT(sizeof(msp2InavSetNavRoiRequest_t) == 19, msp2InavSetNavRoiRequest_t_size);
+
 // MSP2_RX_BIND (MSPv2) id=12289
 // Initiates binding for MSP receivers (mLRS).
 // Notes: Requires a receiver using MSP as the protocol, sends MSP2_RX_BIND to the receiver.

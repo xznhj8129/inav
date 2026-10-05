@@ -2,7 +2,7 @@
 
 Harvested from INAV C source into `msp/schema/enums.yaml` by `msp/generator/harvest_enums.py`; rendered by `gen_docs.py`. Do not edit by hand.
 
-404 enums.
+405 enums.
 
 ---
 ## `ADCDevice`
@@ -3216,7 +3216,8 @@ Harvested from INAV C source into `msp/schema/enums.yaml` by `msp/generator/harv
 | `LOGIC_CONDITION_OPERAND_TYPE_GVAR` | 5 | |
 | `LOGIC_CONDITION_OPERAND_TYPE_PID` | 6 | |
 | `LOGIC_CONDITION_OPERAND_TYPE_WAYPOINTS` | 7 | |
-| `LOGIC_CONDITION_OPERAND_TYPE_LAST` | 8 | |
+| `LOGIC_CONDITION_OPERAND_TYPE_ROI` | 8 | |
+| `LOGIC_CONDITION_OPERAND_TYPE_LAST` | 9 | |
 
 ---
 ## `logicOperation_e`
@@ -3291,6 +3292,23 @@ Harvested from INAV C source into `msp/schema/enums.yaml` by `msp/generator/harv
 | `LOGIC_CONDITION_LAST` | 64 | |
 
 ---
+## `logicROIOperands_e`
+> From inav/src/main/programming/logic_condition.h
+
+| Member | Value | Condition |
+|---|---:|---|
+| `LOGIC_CONDITION_OPERAND_ROI_ACTIVE` | 0 | |
+| `LOGIC_CONDITION_OPERAND_ROI_DISTANCE` | 1 | |
+| `LOGIC_CONDITION_OPERAND_ROI_GROUND_DISTANCE` | 2 | |
+| `LOGIC_CONDITION_OPERAND_ROI_ALTITUDE` | 3 | |
+| `LOGIC_CONDITION_OPERAND_ROI_BEARING` | 4 | |
+| `LOGIC_CONDITION_OPERAND_ROI_ELEVATION` | 5 | |
+| `LOGIC_CONDITION_OPERAND_ROI_PARAM1` | 6 | |
+| `LOGIC_CONDITION_OPERAND_ROI_PARAM2` | 7 | |
+| `LOGIC_CONDITION_OPERAND_ROI_ALT_DATUM` | 8 | |
+| `LOGIC_CONDITION_OPERAND_ROI_ACTION` | 9 | |
+
+---
 ## `logicWaypointOperands_e`
 > From inav/src/main/programming/logic_condition.h
 
@@ -3310,6 +3328,8 @@ Harvested from INAV C source into `msp/schema/enums.yaml` by `msp/generator/harv
 | `LOGIC_CONDITION_OPERAND_WAYPOINTS_USER2_ACTION_NEXT_WP` | 11 | |
 | `LOGIC_CONDITION_OPERAND_WAYPOINTS_USER3_ACTION_NEXT_WP` | 12 | |
 | `LOGIC_CONDITION_OPERAND_WAYPOINTS_USER4_ACTION_NEXT_WP` | 13 | |
+| `LOGIC_CONDITION_OPERAND_WAYPOINTS_BEARING` | 14 | |
+| `LOGIC_CONDITION_OPERAND_WAYPOINTS_ELEVATION` | 15 | |
 
 ---
 ## `lsm6dxxRegister_e`

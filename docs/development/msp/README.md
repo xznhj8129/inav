@@ -6,7 +6,7 @@
 
 Enum reference: [`enums.md`](enums.md). See also [`format.md`](format.md) and [`msp-message-routing-architecture.md`](msp-message-routing-architecture.md).
 
-282 messages.
+285 messages.
 
 ## Contents
 
@@ -290,6 +290,9 @@ Enum reference: [`enums.md`](enums.md). See also [`format.md`](format.md) and [`
 - [MSP2_INAV_MAG_UNALIGNED](#msp2_inav_mag_unaligned)
 - [MSP2_INAV_ESC_SRXL2_STATUS](#msp2_inav_esc_srxl2_status)
 - [MSP2_INAV_ESC_SRXL2_CALIBRATE](#msp2_inav_esc_srxl2_calibrate)
+- [MSP2_INAV_NAV_ROI](#msp2_inav_nav_roi)
+- [MSP2_INAV_SET_NAV_ROI](#msp2_inav_set_nav_roi)
+- [MSP2_INAV_GOTO_ROI](#msp2_inav_goto_roi)
 - [MSP2_BETAFLIGHT_BIND](#msp2_betaflight_bind)
 - [MSP2_RX_BIND](#msp2_rx_bind)
 
@@ -6758,6 +6761,73 @@ Controls SRXL2 ESC throttle-range calibration.
 | Field | Type | Enum / flags | Description |
 |---|---|---|---|
 | phase | `uint8` |   | Requested calibration action (srxl2CalPhase_e): 0, 1, 4 or 5. |
+
+*reply:* none
+
+---
+## MSP2_INAV_NAV_ROI
+
+id `0x2236` (8758) · MSPv2 · group `inav`
+
+since INAV 10.0
+
+Gets the active navigation ROI.
+
+> Returns the active navigation ROI slot.
+
+*request:* none
+
+*reply:*
+
+| Field | Type | Enum / flags | Description |
+|---|---|---|---|
+| lat | `int32` |  1e-7 deg | ROI latitude (`posControl.roi.lat`) |
+| lon | `int32` |  1e-7 deg | ROI longitude (`posControl.roi.lon`) |
+| alt | `int32` |  cm | ROI altitude (`posControl.roi.alt`) |
+| p1 | `int16` |   | ROI parameter 1 (`posControl.roi.p1`) |
+| p2 | `int16` |   | ROI parameter 2 (`posControl.roi.p2`) |
+| alt_datum | `uint8` | `bitmask`  | ROI altitude datum bitfield (`posControl.roi.alt_datum`) |
+| action | `uint8` |   | ROI action field (`posControl.roi.action`) |
+| flag | `uint8` |   | ROI state flag (`posControl.roi.flag`): 0 empty, 1 volatile, 2 persistent |
+
+---
+## MSP2_INAV_SET_NAV_ROI
+
+id `0x2237` (8759) · MSPv2 · group `inav`
+
+since INAV 10.0
+
+Sets or clears the active navigation ROI.
+
+> Expects exactly 19 bytes.
+
+*request:*
+
+| Field | Type | Enum / flags | Description |
+|---|---|---|---|
+| lat | `int32` |  1e-7 deg | ROI latitude |
+| lon | `int32` |  1e-7 deg | ROI longitude |
+| alt | `int32` |  cm | ROI altitude |
+| p1 | `int16` |   | ROI parameter 1 |
+| p2 | `int16` |   | ROI parameter 2 |
+| alt_datum | `uint8` | `bitmask`  | ROI altitude datum bitfield |
+| action | `uint8` |   | ROI action field |
+| flag | `uint8` |   | Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1) |
+
+*reply:* none
+
+---
+## MSP2_INAV_GOTO_ROI
+
+id `0x2238` (8760) · MSPv2 · group `inav`
+
+since INAV 10.0
+
+Commands navigation to move guided desired position to the active ROI.
+
+> Calls `navGotoROI()`. Returns error if ROI is not set or guided mode preconditions are not met.
+
+*request:* none
 
 *reply:* none
 

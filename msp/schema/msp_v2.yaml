@@ -9720,6 +9720,111 @@ messages:
           description: 'Requested calibration action (srxl2CalPhase_e): 0, 1, 4 or 5.'
     reply: null
 
+  MSP2_INAV_NAV_ROI:
+    id: 8758
+    inav_version:
+      since: "10.0"
+    mspv: 2
+    group: inav
+    description: Gets the active navigation ROI.
+    notes: Returns the active navigation ROI slot.
+    request: null
+    reply:
+      fields:
+        lat:
+          type: int32
+          unit: 1e-7 deg
+          description: ROI latitude (`posControl.roi.lat`)
+
+        lon:
+          type: int32
+          unit: 1e-7 deg
+          description: ROI longitude (`posControl.roi.lon`)
+
+        alt:
+          type: int32
+          unit: cm
+          description: ROI altitude (`posControl.roi.alt`)
+
+        p1:
+          type: int16
+          description: ROI parameter 1 (`posControl.roi.p1`)
+
+        p2:
+          type: int16
+          description: ROI parameter 2 (`posControl.roi.p2`)
+
+        alt_datum:
+          type: uint8
+          bitmask: true
+          description: ROI altitude datum bitfield (`posControl.roi.alt_datum`)
+
+        action:
+          type: uint8
+          description: ROI action field (`posControl.roi.action`)
+
+        flag:
+          type: uint8
+          description: 'ROI state flag (`posControl.roi.flag`): 0 empty, 1 volatile, 2 persistent'
+
+  MSP2_INAV_SET_NAV_ROI:
+    id: 8759
+    inav_version:
+      since: "10.0"
+    mspv: 2
+    group: inav
+    description: Sets or clears the active navigation ROI.
+    notes: Expects exactly 19 bytes.
+    request:
+      fields:
+        lat:
+          type: int32
+          unit: 1e-7 deg
+          description: ROI latitude
+
+        lon:
+          type: int32
+          unit: 1e-7 deg
+          description: ROI longitude
+
+        alt:
+          type: int32
+          unit: cm
+          description: ROI altitude
+
+        p1:
+          type: int16
+          description: ROI parameter 1
+
+        p2:
+          type: int16
+          description: ROI parameter 2
+
+        alt_datum:
+          type: uint8
+          bitmask: true
+          description: ROI altitude datum bitfield
+
+        action:
+          type: uint8
+          description: ROI action field
+
+        flag:
+          type: uint8
+          description: 'Control flag: 0 clears ROI, non-zero stores ROI as volatile (`flag` forced to 1)'
+    reply: null
+
+  MSP2_INAV_GOTO_ROI:
+    id: 8760
+    inav_version:
+      since: "10.0"
+    mspv: 2
+    group: inav
+    description: Commands navigation to move guided desired position to the active ROI.
+    notes: Calls `navGotoROI()`. Returns error if ROI is not set or guided mode preconditions are not met.
+    request: null
+    reply: null
+
   MSP2_BETAFLIGHT_BIND:
     id: 12288
     inav_version:
