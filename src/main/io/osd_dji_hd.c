@@ -44,6 +44,7 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/fc_msp.h"
 #include "fc/fc_msp_box.h"
@@ -432,7 +433,7 @@ static char * osdArmingDisabledReasonMessage(void)
         case ARMING_DISABLED_FAILSAFE_SYSTEM:
             // See handling of FAILSAFE_RX_LOSS_MONITORING in failsafe.c
             if (failsafePhase() == FAILSAFE_RX_LOSS_MONITORING) {
-                if (failsafeIsReceivingRxData()) {
+                if (failsafeIsReceivingControlLinkData()) {
                     // If we're not using sticks, it means the ARM switch
                     // hasn't been off since entering FAILSAFE_RX_LOSS_MONITORING
                     // yet
@@ -499,6 +500,8 @@ static char * osdArmingDisabledReasonMessage(void)
             return OSD_MESSAGE_STR("FAILSAFE ENABLED");
         case ARMING_DISABLED_RC_LINK:
             return OSD_MESSAGE_STR("NO RC LINK");
+        case ARMING_DISABLED_TELEM_LINK:
+            return OSD_MESSAGE_STR("NO TELEM LINK");
         case ARMING_DISABLED_THROTTLE:
             return OSD_MESSAGE_STR("THROTTLE!");
         case ARMING_DISABLED_ROLLPITCH_NOT_CENTERED:
@@ -589,6 +592,14 @@ static char * osdFailsafePhaseMessage(void)
 
 static char * osdFailsafeInfoMessage(void)
 {
+    if (isAutopilotControlMode()) {
+        // No sticks to move; recovery is automatic once the telemetry link returns
+        if (!failsafeIsReceivingControlLinkData()) {
+            return OSD_MESSAGE_STR("NO TELEM LINK");
+        }
+        return NULL;
+    }
+
     if (failsafeIsReceivingRxData()) {
         // User must move sticks to exit FS mode
         return OSD_MESSAGE_STR("!MOVE STICKS TO EXIT FS!");

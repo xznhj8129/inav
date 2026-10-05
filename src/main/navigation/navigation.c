@@ -36,6 +36,7 @@
 
 #include "fc/fc_core.h"
 #include "fc/config.h"
+#include "fc/fc_msp_box.h"
 #include "fc/multifunction.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
@@ -6139,7 +6140,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         /* Airplane specific modes */
         if (STATE(AIRPLANE)) {
             // LAUNCH mode has priority over any other NAV mode
-            if (isNavLaunchEnabled()) {     // FIXME: Only available for fixed wing aircrafts now
+            if (isNavLaunchAvailable()) {     // FIXME: Only available for fixed wing aircrafts now
                 if (canActivateLaunchMode) {
                     canActivateLaunchMode = false;
                     return NAV_FSM_EVENT_SWITCH_TO_LAUNCH;
@@ -6301,7 +6302,7 @@ static navigationFSMEvent_t selectNavEventFromBoxModeInput(void)
         }
     } else {
         // Launch mode can be activated if feature FW_LAUNCH is enabled or BOX is turned on prior to arming (avoid switching to LAUNCH in flight)
-        canActivateLaunchMode = isNavLaunchEnabled() && (!sensors(SENSOR_GPS) || (sensors(SENSOR_GPS) && !isGPSHeadingValid()));
+        canActivateLaunchMode = isNavLaunchAvailable() && (!sensors(SENSOR_GPS) || (sensors(SENSOR_GPS) && !isGPSHeadingValid()));
     }
 
     return NAV_FSM_EVENT_SWITCH_TO_IDLE;
@@ -6380,7 +6381,11 @@ bool navigationPositionEstimateIsHealthy(void)
 
 navArmingBlocker_e navigationIsBlockingArming(bool *usedBypass)
 {
-    const bool navBoxModesEnabled = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVCOURSEHOLD) ||
+    // Arming safety policy, not the model's NAV-mode set (rc_modes.c isNavModeBox):
+    // only modes that depend on a healthy position estimate block arming. GCSNAV and
+    // NAVLAUNCH are routinely active before arming and are deliberately excluded;
+    // AUTOSPEED and ALTHOLD only matter for this check on fixed wing.
+    const bool positionDependentModeIsActive = IS_RC_MODE_ACTIVE(BOXNAVRTH) || IS_RC_MODE_ACTIVE(BOXNAVWP) || IS_RC_MODE_ACTIVE(BOXNAVCOURSEHOLD) ||
                                     IS_RC_MODE_ACTIVE(BOXNAVCRUISE) || IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD) ||
                                     (STATE(FIXED_WING_LEGACY) && (IS_RC_MODE_ACTIVE(BOXAUTOSPEED) || IS_RC_MODE_ACTIVE(BOXNAVALTHOLD)));
 
@@ -6400,8 +6405,8 @@ navArmingBlocker_e navigationIsBlockingArming(bool *usedBypass)
         return NAV_ARMING_BLOCKER_MISSING_GPS_FIX;
     }
 
-    // Don't allow arming if any of NAV modes is active
-    if (!ARMING_FLAG(ARMED) && navBoxModesEnabled) {
+    // Don't allow arming if any position-dependent mode is active
+    if (!ARMING_FLAG(ARMED) && positionDependentModeIsActive) {
         return NAV_ARMING_BLOCKER_NAV_IS_ALREADY_ACTIVE;
     }
 
@@ -6832,6 +6837,26 @@ bool activatePositionHoldMode(void)
     return false;
 }
 
+/*-----------------------------------------------------------
+ * Mode selection by command
+ *-----------------------------------------------------------*/
+bool navigationSelectModesByCommand(const boxBitmask_t *mask)
+{
+    for (unsigned box = 0; box < CHECKBOX_ITEM_COUNT; box++) {
+        if (!bitArrayGet(mask->bits, box)) {
+            continue;
+        }
+
+        if (!isSelectableFlightModeBox((boxId_e)box) || !isBoxAvailable((boxId_e)box)) {
+            return false;
+        }
+    }
+
+    rcModeSetCommandedModes(mask);
+    navProcessFSMEvents(selectNavEventFromBoxModeInput());
+    return true;
+}
+
 void activateForcedRTH(void)
 {
     abortFixedWingLaunch();
@@ -7061,8 +7086,11 @@ bool navigationRTHAllowsLanding(void)
         (allow == NAV_RTH_ALLOW_LANDING_FS_ONLY && FLIGHT_MODE(FAILSAFE_MODE));
 }
 
-bool isNavLaunchEnabled(void)
+bool isNavLaunchAvailable(void)
 {
+    // Launch is configured and in play: FSM activation, arming checks, flight-time
+    // accounting, flying detection. Channel-fed launch works in Autopilot too; a
+    // telemetry takeoff command for headless launches comes with the MC launch work.
     return (IS_RC_MODE_ACTIVE(BOXNAVLAUNCH) || feature(FEATURE_FW_LAUNCH)) && STATE(AIRPLANE);
 }
 

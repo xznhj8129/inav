@@ -2,6 +2,8 @@
 
 #include "common/time.h"
 
+#include "flight/failsafe.h"
+
 #include "mavlink/mavlink_modes.h"
 #include "mavlink/mavlink_routing.h"
 #include "mavlink/mavlink_runtime.h"
@@ -1221,6 +1223,14 @@ bool mavlinkHandleIncomingHeartbeat(void)
     mavlink_heartbeat_t msg;
     mavlink_msg_heartbeat_decode(&mavlinkContext.recvMsg, &msg);
 
+    // A heartbeat from a GCS or onboard controller identifies the peer as a control
+    // peer. Only control peers keep the telemetry link alive; other vehicles must not
+    // mask a lost control link.
+    const bool isControlPeer = (msg.type == MAV_TYPE_GCS || msg.type == MAV_TYPE_ONBOARD_CONTROLLER);
+    if (isControlPeer) {
+        failsafeNotifyTelemetryActivity();
+    }
+
     // A framed HEARTBEAT is the protocol's presence signal. Track it per peer
     // (route table entry) rather than per port, so a steady peer cannot mask a
     // newly joining one behind the same port, and a peer moving to another
@@ -1232,6 +1242,9 @@ bool mavlinkHandleIncomingHeartbeat(void)
     // holds MAVLINK_MAX_ROUTES peers, enough for a GCS plus a few companions.
     mavlinkRouteEntry_t *route = mavlinkFindRoute(mavlinkContext.recvMsg.sysid, mavlinkContext.recvMsg.compid);
     if (route) {
+        if (isControlPeer) {
+            route->isControlPeer = true;
+        }
         const timeMs_t nowMs = millis();
         const bool firstHeartbeat = route->lastHeartbeatMs == 0;
         const bool heartbeatGap = nowMs - route->lastHeartbeatMs >= MAVLINK_HEARTBEAT_RECONNECT_GAP_MS;

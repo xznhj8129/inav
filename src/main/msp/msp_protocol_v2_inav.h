@@ -148,6 +148,7 @@
 #define MSP2_INAV_FULL_LOCAL_POSE               0x2220
 
 #define MSP2_INAV_SET_WP_INDEX                  0x2221  //in message  jump to waypoint N during active WP mission; payload: U8 wp_index (0-based, relative to mission start)
+#define MSP2_INAV_SET_MODE                      0x2222  //in message  select a flight mode by box permanent ID; payload: U8 permanent_id
 #define MSP2_INAV_SET_CRUISE_HEADING            0x2223  //in message  set heading while in Cruise/Course Hold mode; payload: I32 heading_centidegrees (0-35999)
 #define MSP2_INAV_ACTIVATE_LANDING              0x2224  //in message  land at the current position through the normal waypoint LAND path; payload: none
 #define MSP2_INAV_ACTIVATE_RTH                  0x2225  //in message  trigger normal return-to-home mode; payload: none

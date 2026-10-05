@@ -39,6 +39,9 @@ tables:
     values: ["PWM", "SBUS", "SBUS_PWM"]
   - name: failsafe_procedure
     values: ["LAND", "DROP", "RTH", "NONE"]
+  - name: control_mode
+    values: ["PILOT", "AUTOPILOT"]
+    enum: controlMode_e
   - name: current_sensor
     values: ["NONE", "ADC", "VIRTUAL", "FAKE", "ESC", "SMARTPORT", "CRSF", "CAN", "INA226"]
     enum: currentSensor_e
@@ -814,7 +817,7 @@ groups:
         field: halfDuplex
         table: tristate
       - name: msp_override_channels
-        description: "Mask of RX channels that may be overridden by MSP `SET_RAW_RC`. Note that this requires the `MSP RC Override` flight mode."
+        description: "Mask of RX channels that may be overridden by MSP `SET_RAW_RC`. Note that this requires the `Control Override` flight mode."
         default_value: 0
         field: mspOverrideChannels
         condition: USE_MSP_RC_OVERRIDE
@@ -972,6 +975,11 @@ groups:
         default_value: 7
         min: -1
         max: 600
+      - name: failsafe_telem_timeout
+        description: "Autopilot mode: time in deciseconds to wait before activating failsafe when the telemetry link is lost. The heartbeat is any inbound message on a physical MSP port (USB excluded) or a MAVLink HEARTBEAT from a GCS or onboard controller. 0 = no guard time."
+        default_value: 50
+        min: 0
+        max: 200
 
   - name: PG_LIGHTS_CONFIG
     type: lightsConfig_t
@@ -1711,6 +1719,16 @@ groups:
         field: prearmTimeoutMs
         min: 0
         max: 10000
+
+  - name: PG_CONTROL_MODE_CONFIG
+    headers: ["fc/control_mode.h"]
+    type: controlModeConfig_t
+    members:
+      - name: control_mode
+        description: "PILOT: a pilot controls the aircraft through RC channels; the RC link is the arming and failsafe lifeline (default). AUTOPILOT: RC channels are ignored and only navigation modes are available; the telemetry link is the arming and failsafe lifeline."
+        default_value: PILOT
+        field: controlMode
+        table: control_mode
 
   - name: PG_GENERAL_SETTINGS
     headers: ["config/general_settings.h"]
@@ -2821,7 +2839,7 @@ groups:
         default_value: 500
         field: general.auto_speed
         min: 10
-        max: 2000
+        max: 65535
       - name: nav_min_ground_speed
         description: "Minimum ground speed for navigation flight modes [m/s]. Currently, this only affects fixed wing. Default 7 m/s."
         default_value: 7
@@ -2833,13 +2851,13 @@ groups:
         default_value: 1000
         field: general.max_auto_speed
         min: 10
-        max: 2000
+        max: 65535
       - name: nav_manual_speed
         description: "Maximum speed allowed when processing pilot input for POSHOLD/CRUISE control mode [cm/s] [Multirotor only]"
         default_value: 750
         field: general.max_manual_speed
         min: 10
-        max: 2000
+        max: 65535
       - name: nav_land_minalt_vspd
         description: "Vertical descent velocity under nav_land_slowdown_minalt during the RTH landing phase. [cm/s]"
         default_value: 50

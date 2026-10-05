@@ -229,12 +229,12 @@ Allows extending the available RC channel count beyond the native RC link capaci
 
 **Priority order** (last writer wins):
 1. Primary RX (SBUS, CRSF, FPort, etc.)
-2. MSP RC Override (if active)
+2. Control Override (if active)
 3. **MSP AUX Overlay** (CH13–CH32)
 
 **Important:** For serial RX protocols, the firmware cannot detect which channels the sender actively uses. If AUX_RC targets a channel that the RX link also sends, AUX_RC will override it. Configure the start channel above your RC link's active channel range.
 
-When MSP is the primary RX provider (`receiver_type = MSP`), channels covered by `MSP_SET_RAW_RC` are automatically protected. Channels in the `msp_override_channels` bitmask are also protected when MSP RC Override mode is active.
+When MSP is the primary RX provider (`receiver_type = MSP`), channels covered by `MSP_SET_RAW_RC` are automatically protected. Channels in the `msp_override_channels` bitmask are also protected when Control Override mode is active.
 
 See the [MSP documentation](development/msp/README.md) for the full message format.
 

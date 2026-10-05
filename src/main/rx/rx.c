@@ -41,6 +41,7 @@
 #include "drivers/time.h"
 
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_modes.h"
 #include "fc/settings.h"
@@ -87,6 +88,7 @@ static bool mspOverrideDataProcessingRequired = false;
 static bool rxSignalReceived = false;
 static bool rxFlightChannelsValid = false;
 static uint8_t rxChannelCount;
+static timeMs_t lastValidChannelUpdateAt = 0;   // when valid channel data was last processed (Autopilot freshness)
 
 static timeUs_t rxNextUpdateAtUs = 0;
 static timeUs_t needRxSignalBefore = 0;
@@ -279,6 +281,16 @@ void rxInit(void)
     rcChannels[THROTTLE].raw = (feature(FEATURE_REVERSIBLE_MOTORS)) ? PWM_RANGE_MIDDLE : rxConfig()->rx_min_usec;
     rcChannels[THROTTLE].data = rcChannels[THROTTLE].raw;
 
+    // Autopilot has no receiver writing channels, so auxiliary channels also start at a
+    // valid, inert LOW (the same value the throttle uses, below every mode range by
+    // default). Reversible motors keep the mid throttle, which is their neutral.
+    // Pilot mode keeps the upstream initialization.
+    if (isAutopilotControlMode()) {
+        for (int i = NON_AUX_CHANNEL_COUNT; i < MAX_SUPPORTED_RC_CHANNEL_COUNT; i++) {
+            rcChannels[i].raw = rcChannels[i].data = rxConfig()->rx_min_usec;
+        }
+    }
+
     // Initialize ARM switch to OFF position when arming via switch is defined
     for (int i = 0; i < MAX_MODE_ACTIVATION_CONDITION_COUNT; i++) {
         if (modeActivationConditions(i)->modeId == BOXARM && IS_RANGE_USABLE(&modeActivationConditions(i)->range)) {
@@ -380,6 +392,11 @@ uint8_t calculateChannelRemapping(const uint8_t *channelMap, uint8_t channelMapE
 bool rxIsReceivingSignal(void)
 {
     return rxSignalReceived;
+}
+
+timeMs_t rxGetLastValidChannelUpdateAt(void)
+{
+    return lastValidChannelUpdateAt;
 }
 
 bool rxAreFlightChannelsValid(void)
@@ -530,7 +547,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
         for (int i = overlayStart; i < 32; i++) {
             if (mspAuxOverlay[i] > 0) {
 #if defined(USE_RX_MSP) && defined(USE_MSP_RC_OVERRIDE)
-                // Skip channels controlled by MSP RC Override when active
+                // Skip channels controlled by Control Override when active
                 if (IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE) && (rxConfig()->mspOverrideChannels & (1U << i))) {
                     continue;
                 }
@@ -542,6 +559,7 @@ bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs)
 
     // Update failsafe
     if (rxFlightChannelsValid && rxSignalReceived) {
+        lastValidChannelUpdateAt = millis();
         failsafeOnValidDataReceived();
     } else {
         failsafeOnValidDataFailed();

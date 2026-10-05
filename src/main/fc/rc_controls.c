@@ -41,6 +41,7 @@
 
 #include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/fc_core.h"
 #include "fc/rc_controls.h"
@@ -189,6 +190,13 @@ static void updateRcStickPositions(void)
 
 void processRcStickPositions(bool isThrottleLow)
 {
+    // Channel values are real in Autopilot, but the stick *commands* (gyro calibration,
+    // profile switching, stick arming, save/load) are configuration gestures of a local
+    // pilot and do not exist there.
+    if (isAutopilotControlMode()) {
+        return;
+    }
+
     static timeMs_t lastTickTimeMs = 0;
     static uint8_t rcDelayCommand;      // this indicates the number of time (multiple of RC measurement at 50Hz) the sticks must be maintained to run or switch off motors
     static uint32_t rcSticks;           // this hold sticks position for command combos

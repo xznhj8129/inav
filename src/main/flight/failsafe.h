@@ -46,6 +46,7 @@ typedef struct failsafeConfig_s {
 #ifdef USE_GPS_FIX_ESTIMATION
     int16_t failsafe_gps_fix_estimation_delay;  // Time delay before Failsafe triggered when GPX Fix estimation is applied (s)
 #endif
+    uint8_t failsafe_telem_timeout;             // Autopilot mode: guard time for failsafe activation after telemetry link loss. 1 step = 0.1sec (TENTH_SECOND)
 } failsafeConfig_t;
 
 PG_DECLARE(failsafeConfig_t, failsafeConfig);
@@ -155,6 +156,9 @@ typedef struct failsafeState_s {
 #ifdef USE_GPS_FIX_ESTIMATION
     timeMs_t wpModeGPSFixEstimationDelayedFailsafeStart;    // waypoint mission delayed failsafe timer start time on GPS fix estimation
 #endif
+    timeMs_t telemLinkActivityAt;           // last telemetry-link heartbeat (Autopilot mode)
+    timeMs_t telemLinkUpSince;              // start of the current uninterrupted telemetry-link presence (Autopilot mode)
+    bool telemLinkSeen;                     // a telemetry-link heartbeat has been seen (Autopilot mode)
     failsafeProcedure_e activeProcedure;
     failsafePhase_e phase;
     failsafeRxLinkState_e rxLinkState;
@@ -171,6 +175,10 @@ failsafePhase_e failsafePhase(void);
 bool failsafeIsMonitoring(void);
 bool failsafeIsActive(void);
 bool failsafeIsReceivingRxData(void);
+
+// Autopilot mode: the active liveness source is the telemetry link instead of RC
+void failsafeNotifyTelemetryActivity(void);
+bool failsafeIsReceivingControlLinkData(void);
 void failsafeOnRxSuspend(void);
 void failsafeOnRxResume(void);
 bool failsafeMayRequireNavigationMode(void);

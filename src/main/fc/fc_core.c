@@ -58,6 +58,7 @@
 #include "fc/fc_core.h"
 #include "fc/cli.h"
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/multifunction.h"
 #include "fc/rc_adjustments.h"
@@ -225,12 +226,26 @@ static void updateArmingStatus(void)
             }
         }
 
-        /* CHECK: RX signal */
-        if (!failsafeIsReceivingRxData()) {
-            ENABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+        /* CHECK: control link - RC in Pilot mode, telemetry heartbeat in Autopilot mode */
+        if (isAutopilotControlMode()) {
+            // Autopilot mode ignores RC channels; its liveness source is the configured
+            // telemetry-link heartbeat.
+            if (failsafeIsReceivingControlLinkData()) {
+                DISABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            }
+            else {
+                ENABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            }
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
         }
         else {
-            DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+            DISABLE_ARMING_FLAG(ARMING_DISABLED_TELEM_LINK);
+            if (!failsafeIsReceivingRxData()) {
+                ENABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+            }
+            else {
+                DISABLE_ARMING_FLAG(ARMING_DISABLED_RC_LINK);
+            }
         }
 
         /* CHECK: Throttle */
@@ -244,7 +259,7 @@ static void updateArmingStatus(void)
         }
 
         /* CHECK: pitch / roll sticks centered when NAV_LAUNCH_MODE enabled */
-        if (isNavLaunchEnabled()) {
+        if (isNavLaunchAvailable()) {
             if (isRollPitchStickDeflected(CONTROL_DEADBAND)) {
                 ENABLE_ARMING_FLAG(ARMING_DISABLED_ROLLPITCH_NOT_CENTERED);
             } else {
@@ -360,7 +375,7 @@ static void updateArmingStatus(void)
         DISABLE_ARMING_FLAG(ARMING_DISABLED_DSHOT_BEEPER);
 #endif
 
-        if (isModeActivationConditionPresent(BOXPREARM)) {
+        if (!isAutopilotControlMode() && isModeActivationConditionPresent(BOXPREARM)) {
             if (IS_RC_MODE_ACTIVE(BOXPREARM)) {
                 if (prearmWasReset && (armingConfig()->prearmTimeoutMs == 0 || millis() - prearmActivationTime < armingConfig()->prearmTimeoutMs)) {
                     DISABLE_ARMING_FLAG(ARMING_DISABLED_NO_PREARM);
@@ -441,7 +456,21 @@ static RP2350_FAST_CODE void processPilotAndFailSafeActions(float dT)
         // Only recompute when the RX task has delivered new data (~50 Hz).
         {
             static int16_t cachedCmd[3] = {0, 0, 0};
-            if (isRXDataNew) {
+
+            // Autopilot: channel values are real but nothing is required to keep updating
+            // them. When they stop arriving, AER decays to centered so a disappeared
+            // telemetry client cannot leave a stick deflection latched. Throttle is
+            // deliberately sticky. The window is the frame-loss detection period (200 ms),
+            // the same freshness the MSP overrides use; it is not extended by failsafe_delay.
+            bool channelDataStale = false;
+            if (isAutopilotControlMode()) {
+                const timeMs_t lastChannelUpdateAt = rxGetLastValidChannelUpdateAt();
+                channelDataStale = (lastChannelUpdateAt == 0) || ((millis() - lastChannelUpdateAt) > PERIOD_RXDATA_FAILURE);
+            }
+
+            if (channelDataStale) {
+                cachedCmd[ROLL] = cachedCmd[PITCH] = cachedCmd[YAW] = 0;
+            } else if (isRXDataNew) {
                 cachedCmd[ROLL]  = getAxisRcCommand(rxGetChannelValue(ROLL),
                     FLIGHT_MODE(MANUAL_MODE) ? currentControlProfile->manual.rcExpo8 : currentControlProfile->stabilized.rcExpo8,
                     rcControlsConfig()->deadband);
@@ -697,7 +726,7 @@ void processRx(timeUs_t currentTimeUs)
     calculateRxChannelsAndUpdateFailsafe(currentTimeUs);
 
     // in 3D mode, we need to be able to disarm by switch at any time
-    if (feature(FEATURE_REVERSIBLE_MOTORS)) {
+    if (feature(FEATURE_REVERSIBLE_MOTORS) && !isAutopilotControlMode()) {
         if (!IS_RC_MODE_ACTIVE(BOXARM)) {
             disarm(DISARM_SWITCH_3D);
         }
@@ -989,7 +1018,7 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = US2S(cycleTime);
 
-    bool fwLaunchIsActive = STATE(AIRPLANE) && isNavLaunchEnabled() && armTime == 0;
+    bool fwLaunchIsActive = STATE(AIRPLANE) && isNavLaunchAvailable() && armTime == 0;
 
     if (ARMING_FLAG(ARMED) && (!STATE(AIRPLANE) || !fwLaunchIsActive || fixedWingLaunchStatus() >= FW_LAUNCH_DETECTED)) {
         flightTime += cycleTime;

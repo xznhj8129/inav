@@ -29,6 +29,7 @@ typedef struct box_s {
 
 const box_t *findBoxByActiveBoxId(uint8_t activeBoxId);
 const box_t *findBoxByPermanentId(uint8_t permanentId);
+bool isBoxAvailable(boxId_e boxId);
 
 struct boxBitmask_s;
 void packBoxModeFlags(struct boxBitmask_s * mspBoxModeFlags);

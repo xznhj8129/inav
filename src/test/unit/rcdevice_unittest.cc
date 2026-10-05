@@ -32,6 +32,7 @@ extern "C" {
 
     #include "drivers/serial.h"
 
+    #include "fc/control_mode.h"
     #include "fc/rc_controls.h"
     #include "fc/rc_modes.h"
     #include "fc/runtime_config.h"
@@ -128,6 +129,7 @@ static void resetRCDeviceStatus()
 static void resetRcModeActivationForTest()
 {
     DISABLE_ARMING_FLAG(ARMED);
+    rcModeClearCommandedModes();
 
     boxBitmask_t mask;
     memset(&mask, 0, sizeof(mask));
@@ -208,6 +210,149 @@ TEST(RCModeTest, ActivationOverrideClearsWhenDisarmed)
     EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
     EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXANGLE));
 
+    resetRcModeActivationForTest();
+}
+
+TEST(RCModeTest, CommandedModesSurviveDisarm)
+{
+    resetRcModeActivationForTest();
+
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    bitArraySet(mask.bits, BOXANGLE);
+    rcModeUpdate(&mask);
+
+    boxBitmask_t selection;
+    memset(&selection, 0, sizeof(selection));
+    bitArraySet(selection.bits, BOXNAVRTH);
+    rcModeSetCommandedModes(&selection);
+
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
+
+    ENABLE_ARMING_FLAG(ARMED);
+    rcModeUpdate(&mask);
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
+
+    DISABLE_ARMING_FLAG(ARMED);
+    rcModeUpdate(&mask);
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
+
+    resetRcModeActivationForTest();
+}
+
+TEST(RCModeTest, CommandedModesClearOnFlightModeChange)
+{
+    resetRcModeActivationForTest();
+
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    bitArraySet(mask.bits, BOXANGLE);
+    rcModeUpdate(&mask);
+
+    boxBitmask_t selection;
+    memset(&selection, 0, sizeof(selection));
+    bitArraySet(selection.bits, BOXNAVPOSHOLD);
+    rcModeSetCommandedModes(&selection);
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD));
+
+    bitArrayClr(mask.bits, BOXANGLE);
+    bitArraySet(mask.bits, BOXHORIZON);
+    rcModeUpdate(&mask);
+
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXHORIZON));
+
+    resetRcModeActivationForTest();
+}
+
+TEST(RCModeTest, CommandedModesSurviveUnrelatedModeChange)
+{
+    resetRcModeActivationForTest();
+
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    bitArraySet(mask.bits, BOXANGLE);
+    rcModeUpdate(&mask);
+
+    boxBitmask_t selection;
+    memset(&selection, 0, sizeof(selection));
+    bitArraySet(selection.bits, BOXNAVRTH);
+    rcModeSetCommandedModes(&selection);
+
+    bitArraySet(mask.bits, BOXCAMERA1);
+    rcModeUpdate(&mask);
+
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXCAMERA1));
+
+    resetRcModeActivationForTest();
+}
+
+TEST(RCModeTest, CommandedModesClearOnGcsNavChannelChange)
+{
+    resetRcModeActivationForTest();
+
+    // GCS NAV is command-selectable but not part of the one-shot override's
+    // release set, so it needs its own coverage.
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    bitArraySet(mask.bits, BOXGCSNAV);
+    rcModeUpdate(&mask);
+
+    boxBitmask_t selection;
+    memset(&selection, 0, sizeof(selection));
+    bitArraySet(selection.bits, BOXNAVPOSHOLD);
+    rcModeSetCommandedModes(&selection);
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD));
+
+    memset(&mask, 0, sizeof(mask));
+    rcModeUpdate(&mask);
+
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD));
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXGCSNAV));
+
+    resetRcModeActivationForTest();
+}
+
+TEST(RCModeTest, CommandedModesSupersedeActivationOverride)
+{
+    resetRcModeActivationForTest();
+
+    ENABLE_ARMING_FLAG(ARMED);
+    rcModeSetActivationOverride(BOXNAVRTH);
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
+
+    boxBitmask_t selection;
+    memset(&selection, 0, sizeof(selection));
+    bitArraySet(selection.bits, BOXNAVPOSHOLD);
+    rcModeSetCommandedModes(&selection);
+
+    EXPECT_FALSE(IS_RC_MODE_ACTIVE(BOXNAVRTH));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXNAVPOSHOLD));
+
+    resetRcModeActivationForTest();
+}
+
+TEST(RCModeTest, AutopilotKeepsAllBoxes)
+{
+    controlModeConfigMutable()->controlMode = CONTROL_MODE_AUTOPILOT;
+    resetRcModeActivationForTest();
+
+    boxBitmask_t mask;
+    memset(&mask, 0, sizeof(mask));
+    bitArraySet(mask.bits, BOXMSPRCOVERRIDE);
+    bitArraySet(mask.bits, BOXCAMERA1);
+    bitArraySet(mask.bits, BOXANGLE);
+    rcModeUpdate(&mask);
+
+    // Autopilot does not filter boxes: a remote pilot or GCS may use the full
+    // set, including the offboard gate and manual modes. Only command-based
+    // selection stays NAV-only (navigationSelectModesByCommand).
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXMSPRCOVERRIDE));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXCAMERA1));
+    EXPECT_TRUE(IS_RC_MODE_ACTIVE(BOXANGLE));
+
+    controlModeConfigMutable()->controlMode = CONTROL_MODE_PILOT;
     resetRcModeActivationForTest();
 }
 

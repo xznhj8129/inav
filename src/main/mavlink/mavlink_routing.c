@@ -33,6 +33,7 @@ void mavlinkLearnRoute(uint8_t ingressPortIndex)
     mavRouteTable[mavRouteCount].ingressPortIndex = ingressPortIndex;
     mavRouteTable[mavRouteCount].lastHeartbeatPortIndex = 0;
     mavRouteTable[mavRouteCount].lastHeartbeatMs = 0;
+    mavRouteTable[mavRouteCount].isControlPeer = false;
     mavRouteCount++;
 }
 

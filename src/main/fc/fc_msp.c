@@ -2802,7 +2802,7 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
 
 #if defined(USE_RX_MSP) && defined(USE_MSP_RC_OVERRIDE)
     case MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE:
-        if (dataSize < 7) {
+        if (dataSize < 9) {
             return MSP_RESULT_ERROR;
         }
         {
@@ -2810,12 +2810,13 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
             const int16_t rollTarget = (int16_t)sbufReadU16(src);
             const int16_t pitchTarget = (int16_t)sbufReadU16(src);
             const int16_t yawTarget = (int16_t)sbufReadU16(src);
-            mspOverrideSetFlightAxisAngleOverride(overrideMask, rollTarget, pitchTarget, yawTarget);
+            const int16_t throttleTarget = (int16_t)sbufReadU16(src);
+            mspOverrideSetFlightAxisAngleOverride(overrideMask, rollTarget, pitchTarget, yawTarget, throttleTarget);
         }
         break;
 
     case MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE:
-        if (dataSize < 7) {
+        if (dataSize < 9) {
             return MSP_RESULT_ERROR;
         }
         {
@@ -2823,7 +2824,8 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
             const int16_t rollTarget = (int16_t)sbufReadU16(src);
             const int16_t pitchTarget = (int16_t)sbufReadU16(src);
             const int16_t yawTarget = (int16_t)sbufReadU16(src);
-            mspOverrideSetFlightAxisRateOverride(overrideMask, rollTarget, pitchTarget, yawTarget);
+            const int16_t throttleTarget = (int16_t)sbufReadU16(src);
+            mspOverrideSetFlightAxisRateOverride(overrideMask, rollTarget, pitchTarget, yawTarget, throttleTarget);
         }
         break;
 #endif
@@ -4117,9 +4119,25 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
         }
         break;
 
+    case MSP2_INAV_SET_MODE:
+        // Select a flight mode by box permanent ID (the MSP_BOXIDS space).
+        // Payload: U8  permanent_id
+        if (dataSize == 1) {
+            const box_t *box = findBoxByPermanentId(sbufReadU8(src));
+            if (box && isBoxAvailable(box->boxId)) {
+                boxBitmask_t selection;
+                memset(&selection, 0, sizeof(selection));
+                bitArraySet(selection.bits, box->boxId);
+                if (navigationSelectModesByCommand(&selection)) {
+                    break;
+                }
+            }
+        }
+        return MSP_RESULT_ERROR;
+
     case MSP2_INAV_SET_CRUISE_HEADING:
         // Set heading while Cruise / Course Hold is active.
-        // Payload: I32  heading_centidegrees  (0–35999)
+        // Payload: I32  heading_centidegrees (0–35999)
         if (dataSize >= 4) {
             int32_t headingCd;
             if (sbufReadI32Safe(&headingCd, src) && navSetCruiseHeading(headingCd)) {

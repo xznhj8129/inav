@@ -142,10 +142,17 @@ void rcModeUpdate(boxBitmask_t *newState);
 boxId_e rcModeSetActivationOverride(boxId_e boxId);
 void rcModeClearActivationOverride(boxId_e boxId);
 
+// Command-selected flight modes: survive disarm, released by a channel-driven
+// flight-mode selection change or another command
+void rcModeSetCommandedModes(const boxBitmask_t *mask);
+void rcModeClearCommandedModes(void);
+bool isSelectableFlightModeBox(boxId_e box);
+
 bool isModeActivationConditionPresent(boxId_e modeId);
 
 void processAirmode(void);
 bool isUsingNavigationModes(void);
+
 bool isRangeActive(uint8_t auxChannelIndex, const channelRange_t *range);
 
 void updateActivatedModes(void);

@@ -86,6 +86,71 @@ static PLANE_MODE inavToArduPlaneMap(flightModeForTelemetry_e flightMode)
     }
 }
 
+// The ArduPilot mode tables INAV decodes apply to fixed wing and the rotorcraft
+// family. Rovers and boats have their own mode numbers (rover CIRCLE is 9,
+// which is copter LAND), so they must not be decoded through the copter table.
+static bool mavlinkModeTablesAreSupported(void)
+{
+    switch (mixerConfig()->platformType) {
+        case PLATFORM_MULTIROTOR:
+        case PLATFORM_TRICOPTER:
+        case PLATFORM_HELICOPTER:
+        case PLATFORM_AIRPLANE:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+// Reverse of the reporting maps above: interpret an ArduPilot custom mode as an
+// INAV mode selection. GUIDED selects GCS NAV together with POSHOLD, which is how
+// INAV represents guided targets. The current mixer profile's platform decides
+// the table, matching mavlinkGetVehicleType() and the reporting maps; VTOL
+// auto-transition profiles therefore switch tables with the profile.
+mavlinkModeSelectAction_e mavlinkSelectModeFromCustomMode(uint8_t customMode, boxBitmask_t *mask)
+{
+    memset(mask, 0, sizeof(*mask));
+
+    if (!mavlinkModeTablesAreSupported()) {
+        return MAVLINK_MODE_SELECT_NONE;
+    }
+
+    if (mixerConfig()->platformType == PLATFORM_AIRPLANE) {
+        switch (customMode) {
+            case PLANE_MODE_AUTOLAND:      return MAVLINK_MODE_SELECT_LANDING;
+            case PLANE_MODE_MANUAL:        bitArraySet(mask->bits, BOXMANUAL);     return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_STABILIZE:     bitArraySet(mask->bits, BOXHORIZON);    return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_FLY_BY_WIRE_A: bitArraySet(mask->bits, BOXANGLE);      return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_FLY_BY_WIRE_B: bitArraySet(mask->bits, BOXNAVALTHOLD); return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_CRUISE:        bitArraySet(mask->bits, BOXNAVCRUISE);  return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_AUTO:          bitArraySet(mask->bits, BOXNAVWP);      return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_RTL:           bitArraySet(mask->bits, BOXNAVRTH);     return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_LOITER:        bitArraySet(mask->bits, BOXNAVPOSHOLD); return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_TAKEOFF:       bitArraySet(mask->bits, BOXNAVLAUNCH);  return MAVLINK_MODE_SELECT_BOXES;
+            case PLANE_MODE_GUIDED:        bitArraySet(mask->bits, BOXNAVPOSHOLD);
+                                           bitArraySet(mask->bits, BOXGCSNAV);
+                                           return MAVLINK_MODE_SELECT_BOXES;
+            default:                       return MAVLINK_MODE_SELECT_NONE;
+        }
+    }
+
+    switch (customMode) {
+        case COPTER_MODE_LAND:      return MAVLINK_MODE_SELECT_LANDING;
+        case COPTER_MODE_STABILIZE: bitArraySet(mask->bits, BOXANGLE);      return MAVLINK_MODE_SELECT_BOXES;
+        case COPTER_MODE_ALT_HOLD:  bitArraySet(mask->bits, BOXNAVALTHOLD); return MAVLINK_MODE_SELECT_BOXES;
+        case COPTER_MODE_AUTO:      bitArraySet(mask->bits, BOXNAVWP);      return MAVLINK_MODE_SELECT_BOXES;
+        case COPTER_MODE_GUIDED:    bitArraySet(mask->bits, BOXNAVPOSHOLD);
+                                    bitArraySet(mask->bits, BOXGCSNAV);
+                                    return MAVLINK_MODE_SELECT_BOXES;
+        case COPTER_MODE_LOITER:    bitArraySet(mask->bits, BOXNAVPOSHOLD); return MAVLINK_MODE_SELECT_BOXES;
+        case COPTER_MODE_RTL:       bitArraySet(mask->bits, BOXNAVRTH);     return MAVLINK_MODE_SELECT_BOXES;
+        case COPTER_MODE_POSHOLD:   bitArraySet(mask->bits, BOXNAVPOSHOLD); return MAVLINK_MODE_SELECT_BOXES;
+        case COPTER_MODE_BRAKE:     bitArraySet(mask->bits, BOXNAVPOSHOLD); return MAVLINK_MODE_SELECT_BOXES;
+        default:                    return MAVLINK_MODE_SELECT_NONE;
+    }
+}
+
 #ifdef USE_MAVLINK_STANDARD_MODES
 static const mavlinkModeDescriptor_t planeModes[] = {
     { PLANE_MODE_MANUAL,        MAV_STANDARD_MODE_NON_STANDARD,  0,                      "MANUAL" },

@@ -80,6 +80,7 @@
 #include "io/osd/custom_elements.h"
 
 #include "fc/config.h"
+#include "fc/control_mode.h"
 #include "fc/control_profile.h"
 #include "fc/fc_core.h"
 #include "fc/fc_tasks.h"
@@ -846,7 +847,7 @@ static const char * osdArmingDisabledReasonMessage(void)
         case ARMING_DISABLED_FAILSAFE_SYSTEM:
             // See handling of FAILSAFE_RX_LOSS_MONITORING in failsafe.c
             if (failsafePhase() == FAILSAFE_RX_LOSS_MONITORING) {
-                if (failsafeIsReceivingRxData()) {
+                if (failsafeIsReceivingControlLinkData()) {
                     // reminder to disarm to exit FAILSAFE_RX_LOSS_MONITORING once timeout period ends
                     if (IS_RC_MODE_ACTIVE(BOXARM)) {
                         return OSD_MESSAGE_STR(OSD_MSG_TURN_ARM_SW_OFF);
@@ -916,6 +917,8 @@ static const char * osdArmingDisabledReasonMessage(void)
             return OSD_MESSAGE_STR(OSD_MSG_FS_EN);
         case ARMING_DISABLED_RC_LINK:
             return OSD_MESSAGE_STR(OSD_MSG_NO_RC_LINK);
+        case ARMING_DISABLED_TELEM_LINK:
+            return OSD_MESSAGE_STR(OSD_MSG_NO_TELEM_LINK);
         case ARMING_DISABLED_THROTTLE:
             return OSD_MESSAGE_STR(OSD_MSG_THROTTLE_NOT_LOW);
         case ARMING_DISABLED_ROLLPITCH_NOT_CENTERED:
@@ -1009,6 +1012,14 @@ static const char * osdFailsafePhaseMessage(void)
 
 static const char * osdFailsafeInfoMessage(void)
 {
+    if (isAutopilotControlMode()) {
+        // No sticks to move; recovery is automatic once the telemetry link returns
+        if (!failsafeIsReceivingControlLinkData() && !FLIGHT_MODE(NAV_FW_AUTOLAND)) {
+            return OSD_MESSAGE_STR(OSD_MSG_NO_TELEM_LINK);
+        }
+        return NULL;
+    }
+
     if (failsafeIsReceivingRxData() && !FLIGHT_MODE(NAV_FW_AUTOLAND)) {
         // User must move sticks to exit FS mode
         return OSD_MESSAGE_STR(OSD_MSG_MOVE_EXIT_FS);

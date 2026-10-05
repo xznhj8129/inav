@@ -210,6 +210,7 @@ void rxInit(void);
 void rxUpdateRSSISource(void);
 bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime);
 bool rxIsReceivingSignal(void);
+timeMs_t rxGetLastValidChannelUpdateAt(void);
 bool rxAreFlightChannelsValid(void);
 bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
 bool isRxPulseValid(uint16_t pulseDuration);

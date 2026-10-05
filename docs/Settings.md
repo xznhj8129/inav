@@ -645,6 +645,17 @@ Blackbox logging rate numerator. Use num/denom settings to decide if a frame sho
 
 ---
 
+### control_mode
+
+PILOT: a pilot controls the aircraft through RC channels; the RC link is the arming and failsafe lifeline (default). AUTOPILOT: RC channels are ignored and only navigation modes are available; the telemetry link is the arming and failsafe lifeline.
+
+| Allowed Values |  |
+| --- | --- |
+| PILOT | Default |
+| AUTOPILOT |  |
+
+---
+
 ### crsf_use_legacy_baro_packet
 
 CRSF telemetry: If `ON`, send altitude about start point in GPS telemetry packet. If `OFF`, GPS has ASL altitude, altitude about start point in separate packet. Default: 'OFF'
@@ -1334,6 +1345,16 @@ Threshold for stick motion to consider failsafe condition resolved. If non-zero 
 | Default | Min | Max |
 | --- | --- | --- |
 | 50 | 0 | 500 |
+
+---
+
+### failsafe_telem_timeout
+
+Autopilot mode: time in deciseconds to wait before activating failsafe when the telemetry link is lost. The heartbeat is any inbound message on a physical MSP port (USB excluded) or a MAVLink HEARTBEAT from a GCS or onboard controller. 0 = no guard time.
+
+| Default | Min | Max |
+| --- | --- | --- |
+| 50 | 0 | 200 |
 
 ---
 
@@ -3611,7 +3632,7 @@ If enabled, motor will stop when throttle is low on this mixer_profile
 
 ### msp_override_channels
 
-Mask of RX channels that may be overridden by MSP `SET_RAW_RC`. Note that this requires the `MSP RC Override` flight mode.
+Mask of RX channels that may be overridden by MSP `SET_RAW_RC`. Note that this requires the `Control Override` flight mode.
 
 | Default | Min | Max |
 | --- | --- | --- |
@@ -3645,7 +3666,7 @@ Speed in fully autonomous modes (RTH, WP) [cm/s]. Used for WP mode when no speci
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 500 | 10 | 2000 |
+| 500 | 10 | 65535 |
 
 ---
 
@@ -4429,7 +4450,7 @@ Maximum speed allowed when processing pilot input for POSHOLD/CRUISE control mod
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 750 | 10 | 2000 |
+| 750 | 10 | 65535 |
 
 ---
 
@@ -4449,7 +4470,7 @@ Maximum speed allowed in fully autonomous modes (RTH, WP) [cm/s] [Multirotor onl
 
 | Default | Min | Max |
 | --- | --- | --- |
-| 1000 | 10 | 2000 |
+| 1000 | 10 | 65535 |
 
 ---
 
