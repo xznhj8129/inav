@@ -383,7 +383,9 @@ typedef enum {
     OSD_GPS_EXTRA_STATS,
     OSD_AUTO_SPEED,  // 170
     OSD_TERRAIN_AGL, // 171,
-    OSD_ACTIVE_RX_LINK,
+    // 172 is MZTC_STATUS, already in the configurator ahead of the firmware
+    // (iNavFlight/inav#11837), so it is left free here
+    OSD_ACTIVE_RX_LINK = 173,
     OSD_RX1_LINK_STATS,
     OSD_RX2_LINK_STATS,
     OSD_ITEM_COUNT // MUST BE LAST
