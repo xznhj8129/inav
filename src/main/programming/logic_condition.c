@@ -708,6 +708,50 @@ static int logicConditionGetWaypointOperandValue(int operand) {
             return logicConditionMissionWaypointHasUserAction(NAV_Status.activeWpIndex, NAV_WP_USER4);
             break;
 
+        case LOGIC_CONDITION_OPERAND_WAYPOINTS_BEARING:
+            {
+                int32_t bearing = 0;
+                if (posControl.waypointListValid && 
+                    posControl.waypointCount > 0 &&
+                    NAV_Status.activeWpIndex < (uint8_t)posControl.waypointCount &&
+                    NAV_Status.activeWpIndex < NAV_MAX_WAYPOINTS) {
+                    fpVector3_t poi;
+                    gpsLocation_t wp;
+                    wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
+                    wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
+                    wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
+                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, GEO_ALT_RELATIVE);
+
+                    bearing = calculateBearingToDestination(&poi);
+                }
+
+                return bearing;
+            }
+            break;
+
+        case LOGIC_CONDITION_OPERAND_WAYPOINTS_ELEVATION:
+        {
+            int32_t elevation = 0;
+            if (posControl.waypointListValid && 
+                posControl.waypointCount > 0 &&
+                NAV_Status.activeWpIndex < (uint8_t)posControl.waypointCount &&
+                NAV_Status.activeWpIndex < NAV_MAX_WAYPOINTS) {
+
+                    fpVector3_t poi;
+                    gpsLocation_t wp;
+                    uint8_t wpp3;
+                    wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
+                    wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
+                    wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
+                    wpp3 = posControl.waypointList[NAV_Status.activeWpIndex].p3;
+                    const geoAltitudeConversionMode_e altConv = (wpp3 & NAV_WP_MSL_DATUM) ? GEO_ALT_ABSOLUTE : GEO_ALT_RELATIVE;
+                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, altConv);
+
+                    elevation = calculateElevationToDestination(&poi);
+            }
+            return elevation;
+        }
+
         default:
             return 0;
             break;
