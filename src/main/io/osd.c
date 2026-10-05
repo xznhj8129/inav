@@ -86,6 +86,7 @@
 #include "fc/multifunction.h"
 #include "fc/rc_adjustments.h"
 #include "fc/rc_controls.h"
+#include "fc/rc_modes.h"
 #include "fc/settings.h"
 
 #include "flight/imu.h"
@@ -178,6 +179,10 @@ static unsigned currentLayout = 0;
 static int layoutOverride = -1;
 static bool hasExtendedFont = false; // Wether the font supports characters > 256
 static timeMs_t layoutOverrideUntil = 0;
+// osdOverrideLayout() is also called by MSP (a timed Configurator preview,
+// unrelated to whether the CMS menu is open) - only a menu-owned override may
+// be force-cleared when the menu goes away unexpectedly.
+static bool layoutOverrideOwnedByMenu = false;
 static float GForce, GForceAxis[XYZ_AXIS_COUNT];
 
 // OSD Filters
@@ -233,7 +238,7 @@ static bool osdDisplayHasCanvas;
 #define AH_MAX_PITCH_DEFAULT 20 // Specify default maximum AHI pitch value displayed (degrees)
 
 PG_REGISTER_WITH_RESET_TEMPLATE(osdConfig_t, osdConfig, PG_OSD_CONFIG, 0);
-PG_REGISTER_WITH_RESET_FN(osdLayoutsConfig_t, osdLayoutsConfig, PG_OSD_LAYOUTS_CONFIG, 3);
+PG_REGISTER_WITH_RESET_FN(osdLayoutsConfig_t, osdLayoutsConfig, PG_OSD_LAYOUTS_CONFIG, 4);
 
 /* OSD formatting helpers replacing common tfp_sprintf patterns
  * for reduced code size and CPU overhead. */
@@ -932,6 +937,10 @@ static const char * osdArmingDisabledReasonMessage(void)
 
         case ARMING_DISABLED_GEOZONE:
 #ifdef USE_GEOZONE
+            // Check the exact reason
+            if (geozoneIsConfigInvalid()) {
+                return OSD_MESSAGE_STR(OSD_MSG_GEOZONE_MISCONFIG);
+            }
             return OSD_MESSAGE_STR(OSD_MSG_NFZ);
 #else
             FALLTHROUGH;
@@ -1600,10 +1609,12 @@ static void osdDisplayBatteryVoltage(uint8_t elemPosX, uint8_t elemPosY, uint16_
     osdFormatCentiNumber(buff, voltage, 0, decimals, 0, digits, false);
     buff[digits] = SYM_VOLT;
     buff[digits+1] = '\0';
+#ifdef USE_ADC
     const batteryState_e batteryVoltageState = checkBatteryVoltageState();
     if (batteryVoltageState == BATTERY_CRITICAL || batteryVoltageState == BATTERY_WARNING) {
         TEXT_ATTRIBUTES_ADD_BLINK(elemAttr);
     }
+#endif
     displayWriteWithAttr(osdDisplayPort, elemPosX + 1, elemPosY, buff, elemAttr);
 }
 
@@ -2502,7 +2513,6 @@ static bool osdDrawSingleElement(uint8_t item)
 #elif defined(USE_TERRAIN)
             range = terrainGetLastDistanceCm();
 #endif
-
             if (range < 0) {
                 buff[0] = buff[1] = buff[2] = '-';
             } else {
@@ -2511,7 +2521,21 @@ static bool osdDrawSingleElement(uint8_t item)
         }
             break;
 #endif
-
+#ifdef USE_TERRAIN
+        case OSD_TERRAIN_AGL:
+        {
+            int32_t range =  terrainGetLastDistanceCm();
+            if (range < 0) {
+                for(uint8_t i = 1; i < osdConfig()->decimals_altitude + 1; i++){
+                    buff[i] = '-';
+                }
+            } else {
+                osdFormatAltitudeSymbol(buff, range);
+            }
+            buff[0] = SYM_TERRAIN_FOLLOWING;
+            break;
+        }
+#endif
     case OSD_ONTIME:
         {
             osdFormatOnTime(buff);
@@ -3707,7 +3731,7 @@ static bool osdDrawSingleElement(uint8_t item)
                 );
                 displayWrite(osdDisplayPort, elemPosX, elemPosY, buff);
             }
-            break;
+            return true;
         }
 
     case OSD_IMU_TEMPERATURE:
@@ -3765,7 +3789,7 @@ static bool osdDrawSingleElement(uint8_t item)
             buff[1] = SYM_BLANK;
             bool valid = isEstimatedWindSpeedValid();
             float verticalWindSpeed;
-            verticalWindSpeed = -getEstimatedWindSpeed(Z);  //from NED to NEU
+            verticalWindSpeed = getEstimatedWindSpeed(Z);  // NEU
             if (verticalWindSpeed < 0) {
                 buff[1] = SYM_AH_DECORATION_DOWN;
                 verticalWindSpeed = -verticalWindSpeed;
@@ -3927,7 +3951,7 @@ static bool osdDrawSingleElement(uint8_t item)
 
             displayWrite(osdDisplayPort, elemPosX, elemPosY + 1, "BP");
             attr = TEXT_ATTRIBUTES_NONE;
-            osdFormatIntUnit(buff, 4, currentControlProfile->throttle.pa_breakpoint, 0);
+            osdFormatIntUnit(buff, 4, currentControlProfile->throttle.tpa_breakpoint, 0);
             if (isAdjustmentFunctionSelected(ADJUSTMENT_TPA_BREAKPOINT)) {
                 TEXT_ATTRIBUTES_ADD_BLINK(attr);
             }
@@ -6010,6 +6034,22 @@ void osdUpdate(timeUs_t currentTimeUs)
     // boxes take priority.
     unsigned activeLayout;
     if (layoutOverride >= 0) {
+#ifdef USE_CMS
+        // Drop a menu-owned override as soon as the menu is gone, since the
+        // menu can be closed without the layout editor's onExit running
+        // (in-flight auto-close), which would otherwise leave the OSD stuck
+        // on the layout being edited. A timed override requested over MSP
+        // (Configurator preview) is unrelated to cmsInMenu and must not be
+        // cancelled here - it expires on its own via layoutOverrideUntil below.
+        if (!cmsInMenu && layoutOverrideOwnedByMenu) {
+            layoutOverrideUntil = 0;
+            layoutOverride = -1;
+            layoutOverrideOwnedByMenu = false;
+        }
+#endif
+    }
+
+    if (layoutOverride >= 0) {
         activeLayout = layoutOverride;
         // Check for timed override, it will go into effect on
         // the next OSD iteration
@@ -6085,6 +6125,11 @@ void osdOverrideLayout(int layout, timeMs_t duration)
     } else {
         layoutOverrideUntil = 0;
     }
+}
+
+void osdSetLayoutOverrideOwnedByMenu(bool owned)
+{
+    layoutOverrideOwnedByMenu = owned;
 }
 
 int osdGetActiveLayout(bool *overridden)
@@ -6398,6 +6443,23 @@ textAttributes_t osdGetSystemMessage(char *buff, size_t buff_size, bool isCenter
                     }
                 }
             }
+#ifdef USE_CMS
+            // In-flight CMS menu messages - shown alongside any active NAV messages
+            // (RTH, WP, etc.) via OSD message rotation. Uses a dedicated buffer
+            // to avoid overwriting messageBuf which may contain NAV state messages.
+            {
+                uint32_t menuCountdownMs = cmsGetOpenCountdownRemaining();
+                if (menuCountdownMs > 0) {
+                    static char cmsMenuBuf[16];
+                    unsigned sec = menuCountdownMs / 1000;
+                    unsigned dec = (menuCountdownMs % 1000) / 100;
+                    tfp_sprintf(cmsMenuBuf, "MENU IN %u.%u", sec, dec);
+                    ADD_MSG(cmsMenuBuf);
+                } else if (IS_RC_MODE_ACTIVE(BOXINFLIGHTMENU) && !cmsInMenu && !cmsIsMenuSwitchLatched()) {
+                    ADD_MSG(OSD_MESSAGE_STR(OSD_MSG_MENU_NAV_REQ));
+                }
+            }
+#endif
         } else if (ARMING_FLAG(ARMING_DISABLED_ALL_FLAGS)) {    /* ADDS MAXIMUM OF 2 MESSAGES TO TOTAL */
             unsigned invalidIndex;
 
@@ -6452,7 +6514,7 @@ textAttributes_t osdGetSystemMessage(char *buff, size_t buff_size, bool isCenter
 
         if (messageCount > 0) {
             message = messages[OSD_ALTERNATING_CHOICES(systemMessageCycleTime(messageCount, messages), messageCount)];
-            if (message == failsafeInfoMessage) {
+            if (message == failsafeInfoMessage || message == OSD_MESSAGE_STR(OSD_MSG_MENU_NAV_REQ)) {
                 // failsafeInfoMessage is not useful for recovering
                 // a lost model, but might help avoiding a crash.
                 // Blink to grab user attention.

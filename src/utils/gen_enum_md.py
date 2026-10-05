@@ -11,6 +11,9 @@ Rules:
   * If no assignment -> auto-increment.
 - If auto-increment occurs inside an active preprocessor condition, wrap the number
   in parentheses to indicate conditional numbering: e.g., 3, 4, #ifdef, (5), (6).
+- Mutually-exclusive branches (#ifdef X / #ifndef X siblings, or #else/#elif within
+  one #if family) restart numbering from the branch base, because only one branch's
+  members exist in any given build.
 - Tracks nested #if/#ifdef/#ifndef/#elif/#else/#endif and shows Condition text.
 - Handles multiline enumerators (split at the first top-level comma).
 """
@@ -61,10 +64,37 @@ def is_plain_int_literal(expr: str) -> Optional[int]:
             return None
     return None
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parents[1]
+MSP_DOCS = REPO_ROOT / 'docs/development/msp'
+ALL_ENUMS_H = SCRIPT_DIR / 'all_enums.h'
+
 # ---------- Parsing regexes ----------
 
 RE_ENUM_START   = re.compile(r'^\s*typedef\s+enum(?:\s+[A-Za-z_]\w*)?\s*\{')
 RE_ENUM_END     = re.compile(r'^\s*\}\s*([A-Za-z_]\w*)\s*;')
+
+# Allman brace style: `typedef enum` with the `{` alone on the next line. Common
+# in third-party sources we do not control, so join the two before parsing
+# rather than teaching every pattern below about it.
+RE_ENUM_HEAD    = re.compile(r'^(\s*(?:typedef\s+)?enum(?:\s+[A-Za-z_]\w*)?)\s*$')
+RE_OPEN_BRACE   = re.compile(r'^\s*\{\s*$')
+
+
+def join_allman_braces(lines: List[str]) -> List[str]:
+    out: List[str] = []
+    i = 0
+
+    while i < len(lines):
+        head = RE_ENUM_HEAD.match(lines[i])
+        if head and i + 1 < len(lines) and RE_OPEN_BRACE.match(lines[i + 1]):
+            out.append(head.group(1) + ' {')
+            i += 2
+            continue
+        out.append(lines[i])
+        i += 1
+
+    return out
 RE_LINE_COMMENT = re.compile(r'^\s*//\s*(.+?)\s*$')
 
 RE_IFDEF   = re.compile(r'^\s*#\s*ifdef\s+(\w+)')
@@ -81,24 +111,74 @@ def normalize_condition_text(text: str) -> str:
     return t
 
 class ConditionStack:
+    """Tracks preprocessor conditionals and the auto-increment base each branch
+    started from, so mutually-exclusive branches (#ifdef X / #ifndef X siblings,
+    or #else / #elif within one family) restart numbering from the shared base
+    instead of continuing through the other branch's members.
+    """
     def __init__(self):
-        self.stack: List[str] = []
-    def push_ifdef(self, sym: str):  self.stack.append(sym)
-    def push_ifndef(self, sym: str): self.stack.append(f'!{sym}')
-    def push_if(self, expr: str):    self.stack.append(normalize_condition_text(expr))
-    def elif_(self, expr: str):
-        if self.stack: self.stack.pop()
-        self.stack.append(normalize_condition_text(expr))
-    def else_(self):
-        if not self.stack: return
-        top = self.stack.pop()
-        if top.startswith('!'): self.stack.append(top[1:])
-        elif top and all(ch.isalnum() or ch == '_' for ch in top): self.stack.append(f'!{top}')
-        else: self.stack.append(f'NOT({top})')
+        # Open frames: {'text', 'base', 'sym', 'polarity'}
+        self.stack: List[dict] = []
+        # Most recently closed frame per nesting level, for sibling detection
+        self.closed: dict = {}
+
+    def push_ifdef(self, sym: str, base: Optional[int] = None) -> Optional[int]:
+        return self._push({'text': sym, 'base': base, 'sym': sym, 'polarity': True})
+
+    def push_ifndef(self, sym: str, base: Optional[int] = None) -> Optional[int]:
+        return self._push({'text': f'!{sym}', 'base': base, 'sym': sym, 'polarity': False})
+
+    def push_if(self, expr: str, base: Optional[int] = None) -> Optional[int]:
+        return self._push({'text': normalize_condition_text(expr), 'base': base, 'sym': None, 'polarity': None})
+
+    def _push(self, frame: dict) -> Optional[int]:
+        prev = self.closed.get(len(self.stack))
+        if prev and frame['sym'] is not None and prev['sym'] == frame['sym'] \
+                and prev['polarity'] != frame['polarity']:
+            # mutually-exclusive sibling: restart numbering from the sibling's base
+            frame['base'] = prev['base']
+        self.stack.append(frame)
+        return frame['base']
+
+    def elif_(self, expr: str) -> Optional[int]:
+        if not self.stack:
+            return None
+        base = self.stack[-1]['base']
+        self.stack[-1] = {'text': normalize_condition_text(expr), 'base': base, 'sym': None, 'polarity': None}
+        return base
+
+    def else_(self) -> Optional[int]:
+        if not self.stack:
+            return None
+        base = self.stack[-1]['base']
+        text = self.stack[-1]['text']
+        if text.startswith('!'):
+            text = text[1:]
+        elif text and all(ch.isalnum() or ch == '_' for ch in text):
+            text = f'!{text}'
+        else:
+            text = f'NOT({text})'
+        self.stack[-1] = {'text': text, 'base': base, 'sym': None, 'polarity': None}
+        return base
+
     def endif(self):
-        if self.stack: self.stack.pop()
+        if not self.stack:
+            return
+        top = self.stack.pop()
+        if top['sym'] is not None:
+            self.closed[len(self.stack)] = top
+        else:
+            self.closed.pop(len(self.stack), None)
+
+    def note_item(self):
+        """An enumerator was parsed at this nesting level, so a previously
+        closed sibling here is no longer immediately preceding and must not
+        be treated as the alternate of a later same-symbol block."""
+        self.closed.pop(len(self.stack), None)
+
     def current(self) -> str:
-        return " AND ".join(self.stack) if self.stack else ""
+        return " AND ".join(f['text'] for f in self.stack) if self.stack else ""
+
     def has_active(self) -> bool:
         return bool(self.stack)
 
@@ -123,7 +203,9 @@ def parse_files(paths: List[Path]) -> List[EnumDef]:
     outer_cond = ConditionStack()
 
     for path in paths:
-        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        lines = join_allman_braces(
+            path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        )
         i = 0
         recent_comment: Optional[str] = None
 
@@ -164,12 +246,28 @@ def parse_files(paths: List[Path]) -> List[EnumDef]:
                         while idx < len(body_lines):
                             bl = body_lines[idx]
 
-                            # inner preproc
-                            if m := RE_IFDEF.match(bl):   inner.push_ifdef(m.group(1)); idx += 1; continue
-                            if m := RE_IFNDEF.match(bl):  inner.push_ifndef(m.group(1)); idx += 1; continue
-                            if m := RE_IF.match(bl):      inner.push_if(m.group(1)); idx += 1; continue
-                            if m := RE_ELIF.match(bl):    inner.elif_(m.group(1)); idx += 1; continue
-                            if RE_ELSE.match(bl):         inner.else_(); idx += 1; continue
+                            # inner preproc — reset counter when entering an
+                            # exclusive alternate branch (returns new base)
+                            if m := RE_IFDEF.match(bl):
+                                new_base = inner.push_ifdef(m.group(1), current_numeric)
+                                if new_base is not None: current_numeric = new_base
+                                idx += 1; continue
+                            if m := RE_IFNDEF.match(bl):
+                                new_base = inner.push_ifndef(m.group(1), current_numeric)
+                                if new_base is not None: current_numeric = new_base
+                                idx += 1; continue
+                            if m := RE_IF.match(bl):
+                                new_base = inner.push_if(m.group(1), current_numeric)
+                                if new_base is not None: current_numeric = new_base
+                                idx += 1; continue
+                            if m := RE_ELIF.match(bl):
+                                new_base = inner.elif_(m.group(1))
+                                if new_base is not None: current_numeric = new_base
+                                idx += 1; continue
+                            if RE_ELSE.match(bl):
+                                new_base = inner.else_()
+                                if new_base is not None: current_numeric = new_base
+                                idx += 1; continue
                             if RE_ENDIF.match(bl):        inner.endif(); idx += 1; continue
 
                             # accumulate one item across lines
@@ -232,6 +330,7 @@ def parse_files(paths: List[Path]) -> List[EnumDef]:
                                         value_display = str(current_numeric)
 
                             enum.items.append(EnumItem(name=name, value_display=value_display, cond=cond_text))
+                            inner.note_item()
                             idx += 1
 
                         enums.append(enum)
@@ -276,13 +375,16 @@ def render_markdown(enums: List[EnumDef], build: dict) -> str:
             jsonfile[e.name][name_md.strip('`')] = [val, cond] if len(cond)>0 else val
         # normalize source to a stable inav/src/... path
         if '_source' in jsonfile[e.name]:
-            jsonfile[e.name]['_source'] = jsonfile[e.name]['_source'].replace('../../../src', 'inav/src')
+            src = jsonfile[e.name]['_source']
+            if src.startswith('src/'):
+                src = 'inav/' + src
+            jsonfile[e.name]['_source'] = src
         out.append("")
     wrapped = {
         "build": build,
         "enums": jsonfile,
     }
-    Path("inav_enums.json").write_text(json.dumps(wrapped, indent=4), encoding="utf-8")
+    (MSP_DOCS / "inav_enums.json").write_text(json.dumps(wrapped, indent=4), encoding="utf-8")
     return "\n".join(out)
 
 # ---------- Main ----------
@@ -294,7 +396,7 @@ def main() -> int:
     parser.add_argument("--fc-version-patch-level", required=True, type=int)
     args = parser.parse_args()
 
-    path = Path("all_enums.h")
+    path = ALL_ENUMS_H
     if not path.exists():
         print(f"Error: {path} not found", file=sys.stderr)
         return 1
@@ -309,7 +411,7 @@ def main() -> int:
             },
         },
     )
-    Path("inav_enums_ref.md").write_text(md, encoding="utf-8")
+    (MSP_DOCS / "inav_enums_ref.md").write_text(md, encoding="utf-8")
     return 0
 
 if __name__ == "__main__":
