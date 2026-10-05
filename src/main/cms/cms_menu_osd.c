@@ -217,6 +217,8 @@ static const OSD_Entry menuOsdElemsEntries[] =
     OSD_ELEMENT_ENTRY("AZIMUTH", OSD_AZIMUTH),
     OSD_ELEMENT_ENTRY("GRD COURSE", OSD_GROUND_COURSE),
     OSD_ELEMENT_ENTRY("X TRACK ERR", OSD_CROSS_TRACK_ERROR),
+    OSD_ELEMENT_ENTRY("ADSB WARNING", OSD_ADSB_WARNING),
+    OSD_ELEMENT_ENTRY("ADSB INFO", OSD_ADSB_INFO),
 #endif // GPS
     OSD_ELEMENT_ENTRY("HEADING", OSD_HEADING),
     OSD_ELEMENT_ENTRY("HEADING GR.", OSD_HEADING_GRAPH),
@@ -224,7 +226,7 @@ static const OSD_Entry menuOsdElemsEntries[] =
     OSD_ELEMENT_ENTRY("CRS HLD ADJ", OSD_COURSE_HOLD_ADJUSTMENT),
 #if defined(USE_BARO) || defined(USE_GPS)
     OSD_ELEMENT_ENTRY("VARIO", OSD_VARIO),
-    OSD_ELEMENT_ENTRY("VARIO NUM", OSD_VARIO_NUM),
+    OSD_ELEMENT_ENTRY("V SPEED", OSD_VERTICAL_SPEED_INDICATOR),
 #endif // defined
     OSD_ELEMENT_ENTRY("ALTITUDE", OSD_ALTITUDE),
     OSD_ELEMENT_ENTRY("ALTITUDE MSL", OSD_ALTITUDE_MSL),
@@ -380,6 +382,7 @@ static long osdElementsOnEnter(const OSD_Entry *from)
     // and override it on the OSD so previews so this layout.
     osdCurrentLayout = from - cmsx_menuOsdLayoutEntries - 1;
     osdOverrideLayout(osdCurrentLayout, 0);
+    osdSetLayoutOverrideOwnedByMenu(true);
     return 0;
 }
 
@@ -389,6 +392,7 @@ static long osdElementsOnExit(const OSD_Entry *from)
 
     // Stop overriding OSD layout
     osdOverrideLayout(-1, 0);
+    osdSetLayoutOverrideOwnedByMenu(false);
     return 0;
 }
 

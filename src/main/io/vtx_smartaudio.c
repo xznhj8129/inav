@@ -212,7 +212,7 @@ int saDacToPowerIndex(int dac)
 
 int saDbiToMw(uint16_t dbi) {
 
-    uint16_t mw = (uint16_t)pow(10.0, dbi / 10.0);
+    uint16_t mw = (uint16_t)roundf(powf(10.0f, (float)dbi / 10.0f));
 
     if (dbi > 14) {
         // For powers greater than 25mW round up to a multiple of 50 to match expectations
@@ -413,14 +413,16 @@ static void saProcessResponse(uint8_t *buf, int len)
 static void saReceiveFramer(uint8_t c)
 {
 
-    static enum saFramerState_e {
+    typedef enum {
         S_WAITPRE1, // Waiting for preamble 1 (0xAA)
         S_WAITPRE2, // Waiting for preamble 2 (0x55)
         S_WAITRESP, // Waiting for response code
         S_WAITLEN,  // Waiting for length
         S_DATA,     // Receiving data
         S_WAITCRC,  // Waiting for CRC
-    } state = S_WAITPRE1;
+    } saFramerState_e;
+
+    static saFramerState_e state = S_WAITPRE1;
 
     static int len;
     static int dlen;

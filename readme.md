@@ -1,10 +1,13 @@
 # INAV - navigation capable flight controller
 
+# INAV Documentation
+> For documentation on using INAV, see our new docs site at [inavflight.github.io](https://inavflight.github.io/)
+
 # F411 PSA
 
 > INAV no longer accepts targets based on STM32 F411 MCU.
 
-> INAV 7 was the last INAV official release available for F411 based flight controllers. INAV 8 is not officially available for F411 boards.
+> INAV 7 was the last INAV official release available for F411 based flight controllers. INAV 8 is not officially available for F411 boards and the team has not tested either. Issues that can't be reproduced on other MCUs may not be fixed and the targets for F411 targets may eventually be completelly removed from future releases.
 
 # ICM426xx IMUs PSA
 
@@ -12,11 +15,7 @@
 
 # M7, M6 and older UBLOX GPS units PSA
 
-> INAV 8.0 will mark those GPS as deprecated and INAV 9.0.0 will require UBLOX units with Protocol version 15.00 or newer. This means that you need a GPS unit based on UBLOX M8 or newer.
-
-> If you want to check the protocol version of your unit, it is displayed in INAV's 7.0.0+ status cli command.
-> INAV 8.0.0 will warn you if your GPS is too old.
-> ```GPS: HW Version: Unknown Proto: 0.00 Baud: 115200 (UBLOX Proto >= 15.0 required)```
+> INAV 8.0 marked those GPS as deprecated and INAV 9.0.0 and higher require UBLOX units with Protocol version 15.00 or newer. This means that you need a GPS unit based on UBLOX M8 or newer.
 
 
 > M8, M9 and M10 GPS are the most common units in use today, are readly available and have similar capabilities.
@@ -24,32 +23,24 @@
 
 ![INAV](http://static.rcgroups.net/forums/attachments/6/1/0/3/7/6/a9088858-102-inav.png)
 
-# PosHold, Navigation and RTH without compass PSA
-
-Attention all drone pilots and enthusiasts,
-
-Are you ready to take your flights to new heights with INAV 7.1? We've got some important information to share with you.
-
-INAV 7.1 brings an exciting update to navigation capabilities. Now, you can soar through the skies, navigate waypoints, and even return to home without relying on a compass. Yes, you heard that right! But before you launch into the air, there's something crucial to consider.
-
-While INAV 7.1 may not require a compass for basic navigation functions, we strongly advise you to install one for optimal flight performance. Here's why:
-
-🛰️ Better Flight Precision: A compass provides essential data for accurate navigation, ensuring smoother and more precise flight paths.
-
-🌐 Enhanced Reliability: With a compass onboard, your drone can maintain stability even in challenging environments, low speeds and strong wind.
-
-🚀 Minimize Risks: Although INAV 7.1 can get you where you need to go without a compass, flying without one may result in a bumpier ride and increased risk of drift or inaccurate positioning.
-
-Remember, safety and efficiency are paramount when operating drones. By installing a compass, you're not just enhancing your flight experience, but also prioritizing safety for yourself and those around you.
-
-So, before you take off on your next adventure, make sure to equip your drone with a compass. It's the smart choice for smoother flights and better navigation.
-
-Fly safe, fly smart with INAV 7.1 and a compass by your side!
-
 # INAV Community
 
 * [INAV Discord Server](https://discord.gg/peg2hhbYwN)
 * [INAV Official on Facebook](https://www.facebook.com/groups/INAVOfficial)
+
+## Downloads
+
+### INAV Configurator
+
+**Get the latest version:** **[Download INAV Configurator](https://github.com/iNavFlight/inav-configurator/releases/latest)** - Available for Windows, macOS, and Linux
+
+The INAV Configurator is the official desktop application for configuring your INAV flight controller. Choose your platform from the Assets section on the releases page.
+
+### INAV Firmware
+
+**Get the latest firmware:** **[Download INAV Firmware](https://github.com/iNavFlight/inav/releases/latest)**
+
+Download the latest INAV flight controller firmware. Flash it to your flight controller using the configurator.
 
 ## Features
 

@@ -2,6 +2,8 @@ set(MAIN_INCLUDE_DIRS
     "${MAIN_LIB_DIR}"
     "${MAIN_SRC_DIR}"
     "${MAIN_LIB_DIR}/main/MAVLink"
+    "${MAIN_SRC_DIR}/drivers/dronecan/libcanard"
+    "${DSDLC_GENERATED_DIRS}"
 )
 
 set(MAIN_DEFINITIONS
@@ -71,6 +73,15 @@ function(get_generated_files_dir output target_name)
     set(${output} ${CMAKE_CURRENT_BINARY_DIR}/${target_name} PARENT_SCOPE)
 endfunction()
 
+# Reads an environment variable and escapes it, so that it can be passed as an
+# argument to a custom command. CMake splits unescaped ';' into a list when it
+# generates a command line, which breaks PATH on Windows, where entries are
+# separated by ';'.
+function(escape_env var name)
+    string(REPLACE ";" "\\;" value "$ENV{${name}}")
+    set(${var} "${value}" PARENT_SCOPE)
+endfunction()
+
 function(setup_executable exe name)
     get_generated_files_dir(generated_dir ${name})
     target_compile_options(${exe} PRIVATE ${MAIN_COMPILE_OPTIONS})
@@ -108,10 +119,10 @@ function(setup_firmware_target exe name)
 endfunction()
 
 function(exclude_from_all target)
-    set_property(TARGET ${target} PROPERTY
+    set_target_properties(${target} PROPERTIES
         TARGET_MESSAGES OFF
-        EXCLUDE_FROM_ALL 1
-        EXCLUDE_FROM_DEFAULT_BUILD 1)
+        EXCLUDE_FROM_ALL ON
+        EXCLUDE_FROM_DEFAULT_BUILD ON)
 endfunction()
 
 function(collect_targets)

@@ -56,6 +56,38 @@ typedef struct osd_sidebar_s {
     uint8_t idle;
 } osd_sidebar_t;
 
+void osdGridDrawThrottleGauge(displayPort_t *display, unsigned gx, unsigned gy, uint8_t thrPos)
+{
+    uint16_t thrChars[] = {SYM_THR_GAUGE_EMPTY, SYM_THR_GAUGE_EMPTY, SYM_THR_GAUGE_EMPTY, SYM_THR_GAUGE_EMPTY, SYM_THR_GAUGE_EMPTY};
+
+    if (thrPos >= 100)
+        thrChars[0] = SYM_THR_GAUGE_FULL;
+    else if (thrPos >= 90)
+        thrChars[0] = SYM_THR_GAUGE_HALF;
+    if (thrPos >= 80)
+        thrChars[1] = SYM_THR_GAUGE_FULL;
+    else if (thrPos >= 70)
+        thrChars[1] = SYM_THR_GAUGE_HALF;
+    if (thrPos >= 60)
+        thrChars[2] = SYM_THR_GAUGE_FULL;
+    else if (thrPos >= 50)
+        thrChars[2] = SYM_THR_GAUGE_HALF;
+    if (thrPos >= 40)
+        thrChars[3] = SYM_THR_GAUGE_FULL;
+    else if (thrPos >= 30)
+        thrChars[3] = SYM_THR_GAUGE_HALF;
+    if (thrPos >= 20)
+        thrChars[4] = SYM_THR_GAUGE_FULL;
+    else if (thrPos >= 10)
+        thrChars[4] = SYM_THR_GAUGE_HALF;
+
+    displayWriteChar(display, gx, gy, thrChars[0]);
+    displayWriteChar(display, gx, gy + 1, thrChars[1]);
+    displayWriteChar(display, gx, gy + 2, thrChars[2]);
+    displayWriteChar(display, gx, gy + 3, thrChars[3]);
+    displayWriteChar(display, gx, gy + 4, thrChars[4]);
+}
+
 void osdGridDrawVario(displayPort_t *display, unsigned gx, unsigned gy, float zvel)
 {
     int v = zvel / OSD_VARIO_CM_S_PER_ARROW;
@@ -268,7 +300,8 @@ static uint16_t osdUpdateSidebar(osd_sidebar_scroll_e scroll, osd_sidebar_t *sid
             break;
     }
     if (offset) {
-        decoration -= steps % SYM_AH_DECORATION_COUNT;
+        // Higher glyph codes draw the ticks lower, so the scale moves down as the value rises
+        decoration += steps % SYM_AH_DECORATION_COUNT;
         if (decoration > SYM_AH_DECORATION_MAX) {
             decoration -= SYM_AH_DECORATION_COUNT;
         } else if (decoration < SYM_AH_DECORATION_MIN) {

@@ -84,7 +84,9 @@ uint8_t mscStart(void)
     IOInit(IOGetByTag(IO_TAG(PA11)), OWNER_USB, 0, 0);
     IOInit(IOGetByTag(IO_TAG(PA12)), OWNER_USB, 0, 0);
 
-    USBD_Init(&USBD_Device, &VCP_Desc, 0);
+    // Use MSC descriptor for standalone MSC mode (not composite)
+    // This fixes Windows enumeration issue with new USB library v2.11.3
+    USBD_Init(&USBD_Device, &MSC_Desc, 0);
 
     /** Regsiter class */
     USBD_RegisterClass(&USBD_Device, USBD_MSC_CLASS);
@@ -108,6 +110,12 @@ uint8_t mscStart(void)
     }
 
     USBD_Start(&USBD_Device);
+
+    // The early VCP init is skipped in MSC mode, so the USB voltage detector
+    // must be enabled here (it is otherwise done in usbVcpInitHardware).
+    // Cold boot failures observed without this, even when USB cable is not connected.
+    HAL_PWREx_EnableUSBVoltageDetector();
+    delay(100);
 
     // NVIC configuration for SYSTick
     NVIC_DisableIRQ(SysTick_IRQn);

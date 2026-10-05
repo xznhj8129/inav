@@ -81,13 +81,22 @@ typedef enum {
     LOGIC_CONDITION_TIMER                       = 49,
     LOGIC_CONDITION_DELTA                       = 50,
     LOGIC_CONDITION_APPROX_EQUAL                = 51,
-    LOGIC_CONDITION_LED_PIN_PWM                 = 52,
+    LOGIC_CONDITION_PINIO_PWM                   = 52,
     LOGIC_CONDITION_DISABLE_GPS_FIX             = 53,
     LOGIC_CONDITION_RESET_MAG_CALIBRATION       = 54,
-    LOGIC_CONDITION_LAST                        = 55,
+    LOGIC_CONDITION_SET_GIMBAL_SENSITIVITY      = 55,
+    LOGIC_CONDITION_OVERRIDE_MIN_GROUND_SPEED   = 56,
+    LOGIC_CONDITION_SET_ALTITUDE_TARGET         = 57,
+    LOGIC_CONDITION_ACOS                        = 58,
+    LOGIC_CONDITION_ASIN                        = 59,
+    LOGIC_CONDITION_ATAN2                       = 60,
+    LOGIC_CONDITION_DISABLE_AUTOSPEED_AIRSPEED  = 61,
+    LOGIC_CONDITION_ACTIVATE_RTH                = 62,
+    LOGIC_CONDITION_ACTIVATE_LANDING            = 63,
+    LOGIC_CONDITION_LAST
 } logicOperation_e;
 
-typedef enum logicOperandType_s {
+typedef enum {
     LOGIC_CONDITION_OPERAND_TYPE_VALUE = 0,
     LOGIC_CONDITION_OPERAND_TYPE_RC_CHANNEL,
     LOGIC_CONDITION_OPERAND_TYPE_FLIGHT,
@@ -146,6 +155,15 @@ typedef enum {
     LOGIC_CONDITION_OPERAND_FLIGHT_FLOWN_LOITER_RADIUS,                     // 43
     LOGIC_CONDITION_OPERAND_FLIGHT_LQ_DOWNLINK,                             // 44
     LOGIC_CONDITION_OPERAND_FLIGHT_UPLINK_RSSI_DBM,                         // 45
+    LOGIC_CONDITION_OPERAND_FLIGHT_MIN_GROUND_SPEED, // m/s                 // 46
+    LOGIC_CONDITION_OPERAND_FLIGHT_HORIZONTAL_WIND_SPEED, // cm/s           // 47
+    LOGIC_CONDITION_OPERAND_FLIGHT_WIND_DIRECTION, // deg                   // 48
+    LOGIC_CONDITION_OPERAND_FLIGHT_RELATIVE_WIND_OFFSET, // deg             // 49
+#ifdef USE_AUTO_TRANSITION
+    LOGIC_CONDITION_OPERAND_FLIGHT_AUTOTRANSITION_TARGET_STABILIZED_ROLL,  // 50
+    LOGIC_CONDITION_OPERAND_FLIGHT_AUTOTRANSITION_TARGET_STABILIZED_PITCH, // 51
+    LOGIC_CONDITION_OPERAND_FLIGHT_AUTOTRANSITION_TARGET_STABILIZED_YAW,   // 52
+#endif
 } logicFlightOperands_e;
 
 typedef enum {
@@ -202,6 +220,8 @@ typedef enum {
 #ifdef USE_GPS_FIX_ESTIMATION
     LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_GPS_FIX = (1 << 11),
 #endif
+    LOGIC_CONDITION_GLOBAL_FLAG_OVERRIDE_MIN_GROUND_SPEED = (1 << 12),
+    LOGIC_CONDITION_GLOBAL_FLAG_DISABLE_AUTOSPEED_AIRSPEED = (1 << 13),
 } logicConditionsGlobalFlags_t;
 
 typedef enum {
@@ -263,6 +283,7 @@ float getThrottleScale(float globalThrottleScale);
 int16_t getRcCommandOverride(int16_t command[], uint8_t axis);
 int16_t getRcChannelOverride(uint8_t channel, int16_t originalValue);
 uint32_t getLoiterRadius(uint32_t loiterRadius);
+uint32_t getMinGroundSpeed(uint32_t minGroundSpeed);
 float getFlightAxisAngleOverride(uint8_t axis, float angle);
 float getFlightAxisRateOverride(uint8_t axis, float rate);
 bool isFlightAxisAngleOverrideActive(uint8_t axis);

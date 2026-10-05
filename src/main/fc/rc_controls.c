@@ -41,7 +41,7 @@
 
 #include "fc/cli.h"
 #include "fc/config.h"
-#include "fc/controlrate_profile.h"
+#include "fc/control_profile.h"
 #include "fc/fc_core.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
@@ -131,12 +131,14 @@ bool throttleStickIsLow(void)
     return calculateThrottleStatus(feature(FEATURE_REVERSIBLE_MOTORS) ? THROTTLE_STATUS_TYPE_COMMAND : THROTTLE_STATUS_TYPE_RC) == THROTTLE_LOW;
 }
 
-int16_t throttleStickMixedValue(void)
+int16_t RP2350_FAST_CODE throttleStickMixedValue(void)
 {
     int16_t throttleValue;
+    uint16_t lowLimit = feature(FEATURE_REVERSIBLE_MOTORS) ? PWM_RANGE_MIN : rxConfig()->mincheck;
 
-    throttleValue = constrain(rxGetChannelValue(THROTTLE), rxConfig()->mincheck, PWM_RANGE_MAX);
-    throttleValue = (uint16_t)(throttleValue - rxConfig()->mincheck) * PWM_RANGE_MIN / (PWM_RANGE_MAX - rxConfig()->mincheck);  // [MINCHECK;2000] -> [0;1000]
+    throttleValue = constrain(rxGetChannelValue(THROTTLE), lowLimit, PWM_RANGE_MAX);
+    throttleValue = (uint16_t)(throttleValue - lowLimit) * PWM_RANGE_MIN / (PWM_RANGE_MAX - lowLimit);  // [LOWLIMIT;2000] -> [0;1000]
+
     return rcLookupThrottle(throttleValue);
 }
 

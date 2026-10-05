@@ -43,6 +43,7 @@ typedef struct uartDevice_s {
     uint8_t af_rx;
     uint8_t af_tx;
     uint8_t irq;
+    bool pinSwap;
 } uartDevice_t;
 
 #define UART_PIN_AF_HELPER(uart, pin)  CONCAT4(UART_PIN_AF_UART, uart, _, pin)
@@ -64,6 +65,9 @@ static uartDevice_t uart1 =
     .af_tx = UART_PIN_AF_HELPER(1, UART1_TX_PIN),
     .rcc = RCC_APB2(USART1),
     .irq = USART1_IRQn,
+#ifdef USE_UART1_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -77,6 +81,9 @@ static uartDevice_t uart2 =
     .af_tx = GPIO_AF7_USART2,
     .rcc = RCC_APB1L(USART2),
     .irq = USART2_IRQn,
+#ifdef USE_UART2_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -90,6 +97,9 @@ static uartDevice_t uart3 =
     .af_tx = GPIO_AF7_USART3,
     .rcc = RCC_APB1L(USART3),
     .irq = USART3_IRQn,
+#ifdef USE_UART3_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -114,6 +124,9 @@ static uartDevice_t uart4 =
     .af_tx = UART_PIN_AF_HELPER(4, UART4_TX_PIN),
     .rcc = RCC_APB1L(UART4),
     .irq = UART4_IRQn,
+#ifdef USE_UART4_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -134,6 +147,9 @@ static uartDevice_t uart5 =
     .af_tx = UART_PIN_AF_HELPER(5, UART5_TX_PIN),
     .rcc = RCC_APB1L(UART5),
     .irq = UART5_IRQn,
+#ifdef USE_UART5_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -147,6 +163,9 @@ static uartDevice_t uart6 =
     .af_tx = GPIO_AF7_USART6,
     .rcc = RCC_APB2(USART6),
     .irq = USART6_IRQn,
+#ifdef USE_UART6_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -173,6 +192,9 @@ static uartDevice_t uart7 =
 #endif
     .rcc = RCC_APB1L(UART7),
     .irq = UART7_IRQn,
+#ifdef USE_UART7_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -186,6 +208,9 @@ static uartDevice_t uart8 =
     .af_tx = GPIO_AF8_UART8,
     .rcc = RCC_APB1L(UART8),
     .irq = UART8_IRQn,
+#ifdef USE_UART8_PIN_SWAP
+    .pinSwap = true,
+#endif
 };
 #endif
 
@@ -233,6 +258,30 @@ static uartDevice_t* uartHardwareMap[] = {
     NULL,
 #endif
 };
+
+static uartDevice_t *uartFindDevice(uartPort_t *uartPort)
+{
+    for (unsigned i = 0; i < UARTDEV_MAX; i++) {
+        uartDevice_t *pDevice = uartHardwareMap[i];
+        if (pDevice && pDevice->dev == uartPort->USARTx) {
+            return pDevice;
+        }
+    }
+    return NULL;
+}
+
+void uartConfigurePinSwap(uartPort_t *uartPort)
+{
+    uartDevice_t *uartDevice = uartFindDevice(uartPort);
+    if (!uartDevice) {
+        return;
+    }
+
+    if (uartDevice->pinSwap) {
+        uartPort->Handle.AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_SWAP_INIT;
+        uartPort->Handle.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
+    }
+}
 
 void uartGetPortPins(UARTDevice_e device, serialPortPins_t * pins)
 {
@@ -309,8 +358,15 @@ void uartIrqHandler(uartPort_t *s)
     }
 
     /* UART in mode Transmitter (transmission end) -----------------------------*/
+    // TCIE is never enabled here, so TC is only a stale status flag left over from
+    // the last transmitted byte. It used to be forwarded to HAL_UART_IRQHandler(),
+    // which treats a pending overrun as a blocking error and permanently disables
+    // the RX interrupts (UART_EndRxTransfer) - a receiver on a busy UART then dies
+    // after any long IRQ-disabled window such as an internal flash write. Nothing
+    // in the HAL handler is needed for INAV's own TXE/RXNE-driven transfers, so
+    // just acknowledge the flag.
     if ((__HAL_UART_GET_IT(huart, UART_IT_TC) != RESET)) {
-        HAL_UART_IRQHandler(huart);
+        __HAL_UART_CLEAR_IT(huart, UART_CLEAR_TCF);
     }
 }
 

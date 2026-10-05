@@ -70,7 +70,7 @@ First, tell the Blackbox to log using a serial port (rather than to an onboard d
 
 You need to let INAV know which of [your serial ports][] you connect your OpenLog to (i.e. the Blackbox port), which you can do on the Configurator's Ports tab.
 
-You should use a hardware serial port. SoftSerial ports can be used for the Blackbox. However, because they are limited to 19200 baud, your logging rate will need to be severely reduced to compensate. Therefore the use of SoftSerial is not recommended.
+You should use a hardware serial port. SoftSerial ports can be used for the Blackbox. However, because softserial is bit-banged and only reliably usable at low baud rates, your logging rate will need to be severely reduced to compensate. Therefore the use of SoftSerial is not recommended.
 
 When using a hardware serial port, Blackbox should be set to at least 115200 baud on that port. When using fast looptimes (<2500), a baud rate of 250000 should be used instead in order to reduce dropped frames.
 
@@ -120,6 +120,9 @@ These chips are also supported:
 * Winbond W25Q64 - 64 Mbit / 8 MByte
 * Micron N25Q0128 - 128 Mbit / 16 MByte
 * Winbond W25Q128 - 128 Mbit / 16 MByte
+* Puya PY25Q128HA - 128 Mbit / 16 MByte
+* Winbond W25N01  - 1 Gbit / 128 MByte
+* Winbond W25N02  - 2 Gbit / 256 MByte
 
 #### Enable recording to dataflash
 On the Configurator's CLI tab, you must enter `set blackbox_device=SPIFLASH` to switch to logging to an onboard dataflash chip, then save.
@@ -163,13 +166,45 @@ The CLI command `blackbox` allows setting which Blackbox fields are recorded to 
 * `PEAKS_R` - Roll axis noise peak
 * `PEAKS_P` - Pitch axis noise peak
 * `PEAKS_Y` - Yaw axis noise peak
+* `SERVOS` - Servo outputs (for planes, tris, etc.)
+
+On a board with two IMUs, `gyro_secondary_enabled` adds `gyroRaw2[0..2]`, the second
+sensor's rates in deg/s, in the same body frame as `gyroRaw` and with that sensor's
+own alignment already applied. It has no flag of its own here: that setting is the
+switch, and nothing else puts the field in the log, not even another feature that
+starts the second sensor for its own reasons. With the setting on, the flight
+controller reads that sensor only while a log is being written. Include `GYRO_RAW` as well to compare the two sensors, since
+`gyroADC` is filtered and `gyroRaw2` is not.
 
 Usage:
 
 * `blackbox` currently enabled Blackbox fields
 * `blackbox list` all available fields
 * `blackbox -MOTORS` disable MOTORS logging
-* `blackbox MOTOR` enable MOTORS logging
+* `blackbox MOTORS` enable MOTORS logging
+
+### Debug Mode Logging
+
+In addition to the standard blackbox fields above, INAV supports logging debug values for troubleshooting and analysis via the `debug_mode` setting. When a debug mode is active, it populates 8 debug values (`debug[0]` through `debug[7]`) with mode-specific data that gets logged to the blackbox.
+
+Available debug modes include:
+- `FLOW_RAW` - Optical flow sensor raw data (useful for sensor alignment)
+- `LANDING` - Landing mode debugging
+- `POS_EST` - Position estimation debugging
+- `GPS` - GPS debugging
+- `ALTITUDE` - Altitude estimation debugging
+- `MAG` - Raw, uncalibrated magnetometer samples (useful for external compass calibration)
+- And 20+ other modes for specific subsystems
+
+To use debug mode logging:
+```
+set debug_mode = FLOW_RAW    # Enable a specific debug mode
+set debug_mode = NONE        # Disable debug mode (default)
+```
+
+You can view current debug values in the CLI with the `debug` command, or display them in real-time on your OSD using the `OSD_DEBUG` element.
+
+For technical details on debug logging and blackbox internals, see the [Blackbox Internals](development/Blackbox%20Internals.md) documentation.
 
 ## Usage
 

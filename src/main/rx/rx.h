@@ -29,7 +29,8 @@
 
 #define PWM_RANGE_MIN 1000
 #define PWM_RANGE_MAX 2000
-#define PWM_RANGE_MIDDLE (PWM_RANGE_MIN + ((PWM_RANGE_MAX - PWM_RANGE_MIN) / 2))
+#define PWM_RANGE_HALF ((PWM_RANGE_MAX - PWM_RANGE_MIN) / 2)
+#define PWM_RANGE_MIDDLE (PWM_RANGE_MIN + PWM_RANGE_HALF)
 
 #define PWM_PULSE_MIN   750       // minimum PWM pulse width which is considered valid
 #define PWM_PULSE_MAX   2250      // maximum PWM pulse width which is considered valid
@@ -126,7 +127,7 @@ typedef struct rxConfig_s {
     uint8_t rcFilterFrequency;              // RC filter cutoff frequency (smoothness vs response sharpness)
     uint8_t autoSmooth;                     // auto smooth rx input (0 = off, 1 = on)
     uint8_t autoSmoothFactor;               // auto smooth rx input factor (1 = no smoothing, 100 = lots of smoothing)
-    uint16_t mspOverrideChannels;           // Channels to override with MSP RC when BOXMSPRCOVERRIDE is active
+    uint32_t mspOverrideChannels;           // Channels to override with MSP RC when BOXMSPRCOVERRIDE is active
     uint8_t rssi_source;
 #ifdef USE_SERIALRX_SRXL2
     uint8_t srxl2_unit_id;
@@ -232,3 +233,7 @@ void resumeRxSignal(void);
 // filtering and some extra processing like value holding
 // during failsafe.
 int16_t rxGetChannelValue(unsigned channelNumber);
+
+// MSP aux channel overlay (CH13-CH32). Sets a channel value that persists
+// across RX update cycles. value=0 ignores that channel and skips it.
+void rxMspAuxOverlaySet(uint8_t channelIndex, uint16_t value);

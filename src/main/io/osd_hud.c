@@ -127,7 +127,7 @@ void osdHudDrawPoi(uint32_t poiDistance, int16_t poiDirection, int32_t poiAltitu
     uint8_t center_x;
     uint8_t center_y;
     bool poi_is_oos = 0;
-    char buff[4];
+    char buff[5]; // 4 characters plus the terminator osdFormatCentiNumber and tfp_sprintf write at index 4
     int altc = 0;
 
     uint8_t minX = osdConfig()->hud_margin_h + 2;
@@ -137,7 +137,7 @@ void osdHudDrawPoi(uint32_t poiDistance, int16_t poiDirection, int32_t poiAltitu
 
     osdCrosshairPosition(&center_x, &center_y);
 
-    if (!(osdConfig()->pan_servo_pwm2centideg == 0)){
+    if (!(osdConfig()->osd_pan_servo_range_decadegrees == 0)){
         poiDirection = poiDirection + osdGetPanServoOffset();
     }
 
@@ -185,6 +185,11 @@ void osdHudDrawPoi(uint32_t poiDistance, int16_t poiDirection, int32_t poiAltitu
             d = constrain(((error_x + 180) / 30), 0, 12);
             if (d == 12) {
                 d = 0; // Directly behind
+            }
+
+            //for native DJI is 0 direction forward
+            if(osdConfig()->video_system == VIDEO_SYSTEM_DJI_NATIVE) {
+                d = (d + 6) % 12;
             }
 
             d = SYM_HUD_CARDINAL + d;

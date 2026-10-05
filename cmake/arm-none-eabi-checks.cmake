@@ -108,7 +108,10 @@ endfunction()
 
 function(arm_none_eabi_gcc_add_path)
     set(gcc_path "${TOOLS_DIR}/${base_dir_name}/bin")
-    if(CMAKE_HOST_SYSTEM MATCHES ".*Windows.*")
+    # CMAKE_HOST_SYSTEM is still empty here, since this file is included before
+    # project() has been called, so the test would always fail and PATH would be
+    # built with ':' as the separator even on Windows.
+    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
         set(sep "\\;")
     else()
         set(sep ":")
@@ -125,12 +128,23 @@ function(arm_none_eabi_gcc_check)
     if(NOT version)
         message("-- could not find ${prog}")
         arm_none_eabi_gcc_install()
+        gcc_get_version(version
+            TRIPLET ${arm_none_eabi_triplet}
+            PROGRAM_NAME prog
+            PROGRAM_PATH prog_path
+        )
         return()
     endif()
     message("-- found ${prog} ${version} at ${prog_path}")
     if(COMPILER_VERSION_CHECK AND NOT arm_none_eabi_gcc_version STREQUAL version)
         message("-- expecting ${prog} version ${arm_none_eabi_gcc_version}, but got version ${version} instead")
 	arm_none_eabi_gcc_install()
+        unset(gcc CACHE)
+        gcc_get_version(version
+            TRIPLET ${arm_none_eabi_triplet}
+            PROGRAM_NAME prog
+            PROGRAM_PATH prog_path
+        )
         return()
     endif()
 endfunction()
