@@ -131,6 +131,28 @@ void mavlinkRuntimeCheckState(void)
     }
 }
 
+static int mavlinkEncodeMessageForPort(const mavlinkPortRuntime_t *state, const mavlink_msg_entry_t *msgEntry, uint8_t *mavBuffer)
+{
+    mavlink_status_t txStatus = { 0 };
+    txStatus.current_tx_seq = state->txSeq;
+    if (mavlinkGetProtocolVersion() == 1) {
+        txStatus.flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+    }
+
+    mavlink_message_t txMsg = mavSendMsg;
+    mavlink_finalize_message_buffer(
+        &txMsg,
+        txMsg.sysid,
+        txMsg.compid,
+        &txStatus,
+        msgEntry->min_msg_len,
+        txMsg.len,
+        msgEntry->crc_extra
+    );
+
+    return mavlink_msg_to_send_buffer(mavBuffer, &txMsg);
+}
+
 void mavlinkSendMessage(void)
 {
     const mavlink_msg_entry_t *msgEntry = mavlink_get_msg_entry(mavSendMsg.msgid);
@@ -162,26 +184,9 @@ void mavlinkSendMessage(void)
             continue;
         }
 
-        mavlink_status_t txStatus = { 0 };
-        txStatus.current_tx_seq = state->txSeq;
-        if (mavlinkGetProtocolVersion() == 1) {
-            txStatus.flags |= MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
-        }
-
-        mavlink_message_t txMsg = mavSendMsg;
-        mavlink_finalize_message_buffer(
-            &txMsg,
-            txMsg.sysid,
-            txMsg.compid,
-            &txStatus,
-            msgEntry->min_msg_len,
-            txMsg.len,
-            msgEntry->crc_extra
-        );
-        state->txSeq = txStatus.current_tx_seq;
-
         uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
-        const int msgLength = mavlink_msg_to_send_buffer(mavBuffer, &txMsg);
+        const int msgLength = mavlinkEncodeMessageForPort(state, msgEntry, mavBuffer);
+        state->txSeq++;
         if (msgLength <= 0) {
             continue;
         }
@@ -196,6 +201,27 @@ void mavlinkSendMessage(void)
         serialWriteBuf(state->port, mavBuffer, msgLength);
         serialEndWrite(state->port);
     }
+}
+
+bool mavlinkSendMessageToPortIfRoom(uint8_t portIndex)
+{
+    const mavlink_msg_entry_t *msgEntry = mavlink_get_msg_entry(mavSendMsg.msgid);
+    mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
+    if (!msgEntry || !state->telemetryEnabled || !state->port) {
+        return false;
+    }
+
+    uint8_t mavBuffer[MAVLINK_MAX_PACKET_LEN];
+    const int msgLength = mavlinkEncodeMessageForPort(state, msgEntry, mavBuffer);
+    if (msgLength <= 0 || serialTxBytesFree(state->port) < (uint32_t)msgLength) {
+        return false;
+    }
+
+    state->txSeq++;
+    serialBeginWrite(state->port);
+    serialWriteBuf(state->port, mavBuffer, msgLength);
+    serialEndWrite(state->port);
+    return true;
 }
 
 static bool processMAVLinkIncomingTelemetry(uint8_t ingressPortIndex, timeUs_t currentTimeUs)
@@ -264,21 +290,23 @@ static bool processMAVLinkIncomingTelemetry(uint8_t ingressPortIndex, timeUs_t c
     return false;
 }
 
-static bool isMAVLinkTelemetryHalfDuplex(uint8_t portIndex)
+static bool isMAVLinkTelemetryHalfDuplexBackoff(uint8_t portIndex, timeUs_t currentTimeUs)
 {
     const mavlinkPortRuntime_t *state = &mavPortStates[portIndex];
 
     if (!state->portConfig) {
         return false;
     }
+
+    bool halfDuplex = false;
     const int8_t link = mavlinkRxLinkForPortFunctionMask(state->portConfig->functionMask);
     if (link == RX_LINK_PRIMARY) {
-        return tristateWithDefaultOffIsActive(rxConfig()->halfDuplex);
+        halfDuplex = tristateWithDefaultOffIsActive(rxConfig()->halfDuplex);
+    } else if (link == RX_LINK_SECONDARY) {
+        halfDuplex = tristateWithDefaultOffIsActive(rxConfig()->halfDuplexSecondary);
     }
-    if (link == RX_LINK_SECONDARY) {
-        return tristateWithDefaultOffIsActive(rxConfig()->halfDuplexSecondary);
-    }
-    return false;
+
+    return halfDuplex && ((currentTimeUs - state->lastRxFrameUs) < TELEMETRY_MAVLINK_DELAY);
 }
 
 void mavlinkRuntimeHandle(timeUs_t currentTimeUs)
@@ -296,16 +324,21 @@ void mavlinkRuntimeHandle(timeUs_t currentTimeUs)
 
         mavlinkSetActivePortContext(portIndex);
 
+#ifdef USE_MAVLINK_MSP_TUNNEL
+        // Before RX and the periodic stream, so a pending reply gets TX space first.
+        if (!isMAVLinkTelemetryHalfDuplexBackoff(portIndex, currentTimeUs)) {
+            mavlinkFlushTunnelMspReply(portIndex);
+        }
+#endif
+
         // Process incoming MAVLink on this port and forward when needed.
         processMAVLinkIncomingTelemetry(portIndex, currentTimeUs);
 
         // Restore context back to this port before periodic send decisions.
         mavlinkSetActivePortContext(portIndex);
         bool shouldSendTelemetry = false;
-        const bool halfDuplexBackoff = isMAVLinkTelemetryHalfDuplex(portIndex) &&
-            ((currentTimeUs - state->lastRxFrameUs) < TELEMETRY_MAVLINK_DELAY);
 
-        if (halfDuplexBackoff) {
+        if (isMAVLinkTelemetryHalfDuplexBackoff(portIndex, currentTimeUs)) {
             continue;
         }
 

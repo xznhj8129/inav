@@ -385,6 +385,7 @@ static long osdElementsOnEnter(const OSD_Entry *from)
     // and override it on the OSD so previews so this layout.
     osdCurrentLayout = from - cmsx_menuOsdLayoutEntries - 1;
     osdOverrideLayout(osdCurrentLayout, 0);
+    osdSetLayoutOverrideOwnedByMenu(true);
     return 0;
 }
 
@@ -394,6 +395,7 @@ static long osdElementsOnExit(const OSD_Entry *from)
 
     // Stop overriding OSD layout
     osdOverrideLayout(-1, 0);
+    osdSetLayoutOverrideOwnedByMenu(false);
     return 0;
 }
 

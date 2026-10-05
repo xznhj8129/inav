@@ -179,7 +179,13 @@ static void beginRequest(mspSharedContext_t *context, uint16_t payloadSize)
 
 bool receiveMspFrame(mspSharedContext_t *context, const uint8_t *frameStart, int payloadLength)
 {
-    if (!context || !frameStart || payloadLength < MIN_LENGTH_CHUNK) {
+    if (!context || !frameStart) {
+        return false;
+    }
+
+    if (payloadLength < MIN_LENGTH_CHUNK) {
+        // Garbage aborts a partial request rather than leaving it to be resumed
+        context->receivingRequest = false;
         return false;
     }
 
