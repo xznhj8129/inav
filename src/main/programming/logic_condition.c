@@ -711,16 +711,17 @@ static int logicConditionGetWaypointOperandValue(int operand) {
         case LOGIC_CONDITION_OPERAND_WAYPOINTS_BEARING:
             {
                 int32_t bearing = 0;
-                if (posControl.waypointListValid && 
-                    posControl.waypointCount > 0 &&
-                    NAV_Status.activeWpIndex < (uint8_t)posControl.waypointCount &&
-                    NAV_Status.activeWpIndex < NAV_MAX_WAYPOINTS) {
+                if (navGetCurrentStateFlags() & NAV_AUTO_WP) {
                     fpVector3_t poi;
                     gpsLocation_t wp;
-                    wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
-                    wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
-                    wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
-                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, GEO_ALT_RELATIVE);
+                    navWaypoint_t waypoint;
+                    if (!navGetMissionWaypointByRelativeIndex(NAV_Status.activeWpIndex, &waypoint)) {
+                        return 0;
+                    }
+                    wp.lat = waypoint.lat;
+                    wp.lon = waypoint.lon;
+                    wp.alt = waypoint.alt;
+                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, waypointMissionAltConvMode(waypoint.p3));
 
                     bearing = calculateBearingToDestination(&poi);
                 }
@@ -730,27 +731,26 @@ static int logicConditionGetWaypointOperandValue(int operand) {
             break;
 
         case LOGIC_CONDITION_OPERAND_WAYPOINTS_ELEVATION:
-        {
-            int32_t elevation = 0;
-            if (posControl.waypointListValid && 
-                posControl.waypointCount > 0 &&
-                NAV_Status.activeWpIndex < (uint8_t)posControl.waypointCount &&
-                NAV_Status.activeWpIndex < NAV_MAX_WAYPOINTS) {
-
+            {
+                int32_t elevation = 0;
+                if (navGetCurrentStateFlags() & NAV_AUTO_WP) {
                     fpVector3_t poi;
                     gpsLocation_t wp;
-                    uint8_t wpp3;
-                    wp.lat = posControl.waypointList[NAV_Status.activeWpIndex].lat;
-                    wp.lon = posControl.waypointList[NAV_Status.activeWpIndex].lon;
-                    wp.alt = posControl.waypointList[NAV_Status.activeWpIndex].alt;
-                    wpp3 = posControl.waypointList[NAV_Status.activeWpIndex].p3;
-                    const geoAltitudeConversionMode_e altConv = (wpp3 & NAV_WP_MSL_DATUM) ? GEO_ALT_ABSOLUTE : GEO_ALT_RELATIVE;
-                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, altConv);
+                    navWaypoint_t waypoint;
+                    if (!navGetMissionWaypointByRelativeIndex(NAV_Status.activeWpIndex, &waypoint)) {
+                        return 0;
+                    }
+                    wp.lat = waypoint.lat;
+                    wp.lon = waypoint.lon;
+                    wp.alt = waypoint.alt;
+                    geoConvertGeodeticToLocal(&poi, &posControl.gpsOrigin, &wp, waypointMissionAltConvMode(waypoint.p3));
 
                     elevation = calculateElevationToDestination(&poi);
+                }
+
+                return elevation;
             }
-            return elevation;
-        }
+            break;
 
         default:
             return 0;
