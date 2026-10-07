@@ -5056,7 +5056,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 
 **Reply Payload:** **None**  
 
-**Notes:** Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
+**Notes:** Requires at least 1 byte; trailing bytes are ignored. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
 
 ## <a id="msp2_betaflight_bind"></a>`MSP2_BETAFLIGHT_BIND (12288 / 0x3000)`
 **Description:** Initiates the receiver binding procedure for supported serial protocols (CRSF, SRXL2).  

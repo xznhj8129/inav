@@ -2880,7 +2880,7 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
 #endif
 
     case MSP2_INAV_SET_RX_LINK:
-        if (dataSize != 1) {
+        if (dataSize < 1) {
             return MSP_RESULT_ERROR;
         }
         tmp_u8 = sbufReadU8(src);
