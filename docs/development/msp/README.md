@@ -6853,7 +6853,7 @@ since INAV 10.0
 
 Sets or clears the active navigation ROI.
 
-> Expects exactly 19 bytes.
+> Expects at least 19 bytes; trailing bytes are ignored.
 
 *request:*
 

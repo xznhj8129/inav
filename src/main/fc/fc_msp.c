@@ -2537,8 +2537,7 @@ static mspResult_e mspFcNavROIInCommand(sbuf_t *src)
 {
     const int dataSize = sbufBytesRemaining(src);
     msp2InavSetNavRoiRequest_t pkt;
-    // Exactly the struct: a longer payload is a different message, not a padded one
-    if (dataSize != (int)sizeof(pkt) || !mspReadRequest(src, &pkt, dataSize)) {
+    if (!mspReadRequest(src, &pkt, dataSize)) {
         return MSP_RESULT_ERROR;
     }
 

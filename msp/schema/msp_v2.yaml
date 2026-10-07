@@ -9934,7 +9934,7 @@ messages:
     mspv: 2
     group: inav
     description: Sets or clears the active navigation ROI.
-    notes: Expects exactly 19 bytes.
+    notes: Expects at least 19 bytes; trailing bytes are ignored.
     request:
       fields:
         lat:

@@ -3424,7 +3424,7 @@ MSP_STATIC_ASSERT(sizeof(msp2InavNavRoiReply_t) == 19, msp2InavNavRoiReply_t_siz
 
 // MSP2_INAV_SET_NAV_ROI (MSPv2) id=8759
 // Sets or clears the active navigation ROI.
-// Notes: Expects exactly 19 bytes.
+// Notes: Expects at least 19 bytes; trailing bytes are ignored.
 typedef struct MSP_PACKED {
     int32_t lat;  // ROI latitude | 1e-7 deg
     int32_t lon;  // ROI longitude | 1e-7 deg
