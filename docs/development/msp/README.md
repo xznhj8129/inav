@@ -5084,7 +5084,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 
 **Reply Payload:** **None**  
 
-**Notes:** Expects exactly 19 bytes.
+**Notes:** Expects at least 19 bytes; trailing bytes are ignored.
 
 ## <a id="msp2_inav_goto_roi"></a>`MSP2_INAV_GOTO_ROI (8760 / 0x2238)`
 **Description:** Commands navigation to move guided desired position to the active ROI.  
