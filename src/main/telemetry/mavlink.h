@@ -26,3 +26,7 @@ void handleMAVLinkTelemetry(timeUs_t currentTimeUs);
 void checkMAVLinkTelemetryState(void);
 
 void freeMAVLinkTelemetryPort(void);
+
+// Each port carrying MAVLink must be named by exactly one mavlink_portN_serial
+// slot. On failure invalidSettingIndex, when given, names the slot to fix.
+bool mavlinkPortBindingsValid(unsigned *invalidSettingIndex);

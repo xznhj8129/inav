@@ -12,6 +12,9 @@
 
 #include "config/general_settings.h"
 #include "flight/rpm_filter.h"
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_MAVLINK)
+#include "telemetry/mavlink.h"
+#endif
 #include "settings_generated.c"
 
 static bool settingGetWord(char *buf, int idx)
@@ -199,6 +202,13 @@ bool settingsValidate(unsigned *invalidIndex)
 			return false;
 		}
 	}
+#if defined(USE_TELEMETRY) && defined(USE_TELEMETRY_MAVLINK)
+	// Cross-setting check, reported through the same invalid-setting path so
+	// arming, the OSD and the CLI name the MAVLink slot to fix.
+	if (!mavlinkPortBindingsValid(invalidIndex)) {
+		return false;
+	}
+#endif
 	return true;
 }
 
