@@ -147,6 +147,8 @@ def build_cli_config_commands(config: Dict[str, Any], mavlink_port_count: int) -
         build_serial_command(3, uart4_mask, telemetry_baud),
         build_serial_command(4, uart5_mask, telemetry_baud),
         "set mavlink_version = 2",
+        # MAVLink port K is bound to serial index K (UART2..UART5); unused slots are unbound.
+        *[f"set mavlink_port{k}_serial = {k if k <= mavlink_port_count else -1}" for k in range(1, 5)],
         "set mavlink_port1_high_latency = OFF",
         "set mavlink_port2_high_latency = OFF",
         "set mavlink_port3_high_latency = OFF",

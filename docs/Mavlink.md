@@ -2,7 +2,7 @@
 
 INAV has a selective but broad MAVLink implementation. It is still not a drop-in MAVLink autopilot stack like ArduPilot or PX4, but it now covers much more than simple telemetry: multiport routing, mission upload/download, waypoint reached notifications, guided/navigation control, request-response services, RC override for MAVLink serial RX, high-latency mode, MSP-over-MAVLink tunnel, and native MLRS receiver integration.
 
-INAV supports up to 4 concurrent MAVLink telemetry ports (`MAX_MAVLINK_PORTS`), one endpoint per serial port configured with `FUNCTION_TELEMETRY_MAVLINK`.
+INAV supports up to 4 concurrent MAVLink telemetry ports (`MAX_MAVLINK_PORTS`). Each MAVLink port is bound explicitly to a serial port configured with `FUNCTION_TELEMETRY_MAVLINK` through `mavlink_port{1-4}_serial`; nothing is assigned by port order. A serial port with MAVLink telemetry enabled that no slot names, or that two slots name, is an invalid setting and blocks arming (`Invalid setting: mavlink_portN_serial`).
 
 INAV builds against the checked-in generated `storm32` MAVLink headers/dialect bundle, which includes the native mLRS messages used by the implementation. The STorM32 dialect is a superset of the ArduPilot and common message sets.
 
@@ -34,7 +34,7 @@ MAVLink is built only into targets with more than 512 KB of flash (STM32F405, ST
 
 ### Usage guidance
 
-- If you rely on RC via MAVLink, set `receiver_type = SERIAL` and `serialrx_provider = MAVLINK`. The serial port carrying MAVLink RC override traffic must also be configured for MAVLink telemetry so the MAVLink parser is active on that link.
+- If you rely on RC via MAVLink, set `receiver_type = SERIAL` and `serialrx_provider = MAVLINK`. The serial port carrying MAVLink RC override traffic must also be configured for MAVLink telemetry and bound to a MAVLink port (`mavlink_portN_serial`) so the MAVLink parser is active on that link.
 - If MAVLink RX and telemetry intentionally share one half-duplex wire, enable `serialrx_halfduplex` for that setup.
 - Leave `mavlink_version = 2` unless you intentionally need MAVLink1 compatibility. Native MLRS messages, MSP tunnel, high-latency mode, `AUTOPILOT_VERSION`, and `PROTOCOL_VERSION` all depend on MAVLink2 behavior.
 - SITL builds explicitly include MAVLink telemetry and MAVLink serial RX so this receiver path can be exercised in simulation.
@@ -56,6 +56,7 @@ MAVLink is built only into targets with more than 512 KB of flash (STM32F405, ST
   - `mavlink_port1_extra3_rate`
 - Port 1 uses configured CLI rates (`mavlink_port1_*_rate`).
 - Ports 2..4 start with heartbeat only (1 Hz), all other streams disabled.
+- `mavlink_port{1-4}_serial` - serial port carrying that MAVLink port, using the `serial` command numbering. `-1` (default) leaves the slot unused.
 - `mavlink_port{1-4}_min_txbuffer` - minimum remote TX buffer level before sending when per-port flow-control information is available.
 - `mavlink_port{1-4}_radio_type` - selects `GENERIC`, `ELRS`, `SIK`, or `MLRS`. `GENERIC` / `ELRS` / `SIK` use `RADIO_STATUS` interpretation; `MLRS` uses native `MLRS_RADIO_LINK_*` traffic on the RX-sharing MAVLink port.
 - `mavlink_port{1-4}_high_latency` - turns on MAVLink `HIGH_LATENCY2` mode on that port.
