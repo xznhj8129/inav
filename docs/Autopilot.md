@@ -223,7 +223,7 @@ MSP active modes / the FSM state once it flies, not through the heartbeat.
 - all five fields are part of the message; mask bit 3 enables the throttle override;
 - send **one** of the two commands (angle XOR rate) per setpoint — mixing them is undefined;
 - must be refreshed within **200 ms (5 Hz)**; expiry clears everything, including throttle;
-- `throttle` is clamped to `idle..max` at the mixer and outranks the programming-framework throttle override.
+- `throttle` is clamped to `idle..max` at the mixer and outranks the programming-framework throttle override; it is ignored while failsafe is active or an emergency landing is executing.
 
 ```
  setpoints ≥5 Hz :  ANGLE_OVERRIDE(0x2216) XOR RATE_OVERRIDE(0x2217)

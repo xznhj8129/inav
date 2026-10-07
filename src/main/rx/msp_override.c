@@ -41,6 +41,8 @@
 #include "flight/failsafe.h"
 #include "flight/pid.h"
 
+#include "navigation/navigation.h"
+
 #include "rx/rx.h"
 #include "rx/msp.h"
 #include "rx/msp_override.h"
@@ -347,6 +349,12 @@ bool mspOverrideThrottleActive(int *target)
     }
 
     if (!mspThrottleOverrideActive) {
+        return false;
+    }
+
+    // Failsafe and emergency landing own the throttle; a still-fresh offboard
+    // setpoint must not outrank them.
+    if (failsafeIsActive() || navigationIsExecutingAnEmergencyLanding()) {
         return false;
     }
 

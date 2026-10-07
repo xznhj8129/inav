@@ -464,6 +464,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 [8731 - MSP2_INAV_NAV_TARGET](#msp2_inav_nav_target)  
 [8736 - MSP2_INAV_FULL_LOCAL_POSE](#msp2_inav_full_local_pose)  
 [8737 - MSP2_INAV_SET_WP_INDEX](#msp2_inav_set_wp_index)  
+[8738 - MSP2_INAV_SET_MODE](#msp2_inav_set_mode)  
 [8739 - MSP2_INAV_SET_CRUISE_HEADING](#msp2_inav_set_cruise_heading)  
 [8740 - MSP2_INAV_ACTIVATE_LANDING](#msp2_inav_activate_landing)  
 [8741 - MSP2_INAV_ACTIVATE_RTH](#msp2_inav_activate_rth)  
@@ -4797,34 +4798,36 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 **Notes:** Set new altitude target. Requires 5-byte payload (datum + target) and is set-only. Valid only in NAV or ALTHOLD modes. Command is rejected unless altitude control is active, not landing/emergency landing, altitude estimation is valid, and datum is supported (MSL requires valid GPS origin; TERRAIN is reserved and rejected).
 
 ## <a id="msp2_inav_flight_axis_angle_override"></a>`MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE (8726 / 0x2216)`
-**Description:** Enables or disables a flight-axis angle override for the selected axis.  
+**Description:** Enables or disables a flight-axis angle override and the throttle override for the selected fields.  
   
 **Request Payload:**
 |Field|C Type|Size (Bytes)|Units|Description|
 |---|---|---|---|---|
-| `overrideMask` | `uint8_t` | 1 | Bitmask | Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis. |
+| `overrideMask` | `uint8_t` | 1 | Bitmask | Bitmask of desired-state fields: bit 0 Roll, bit 1 Pitch, bit 2 Yaw, bit 3 Throttle. A set bit enables that override, a clear bit disables it. |
 | `angleTargetRoll` | `int16_t` | 2 | deci-degrees | Angle target in deci-degrees. Roll/Pitch clamped to configured angle limits |
 | `angleTargetPitch` | `int16_t` | 2 | deci-degrees | Angle target in deci-degrees. Roll/Pitch clamped to configured angle limits |
 | `angleTargetYaw` | `int16_t` | 2 | deci-degrees | Angle target in deci-degrees. Yaw clamped to 0–3600. |
+| `throttleTarget` | `int16_t` | 2 | us | Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer; enabled by mask bit 3. |
 
 **Reply Payload:** **None**  
 
-**Notes:** Uses the same override path as logic conditions and bypasses stick-derived angle targets.
+**Notes:** Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. The throttle setpoint is ignored while failsafe is active or an emergency landing is executing. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.
 
 ## <a id="msp2_inav_flight_axis_rate_override"></a>`MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE (8727 / 0x2217)`
-**Description:** Enables or disables a flight-axis rate override for the selected axis.  
+**Description:** Enables or disables a flight-axis rate override and the throttle override for the selected fields.  
   
 **Request Payload:**
 |Field|C Type|Size (Bytes)|Units|Description|
 |---|---|---|---|---|
-| `overrideMask` | `uint8_t` | 1 | Bitmask | Bitmask of desired-state fields that follow (Roll, Pitch, Yaw). Non-zero enables the override; zero disables it for that axis. |
+| `overrideMask` | `uint8_t` | 1 | Bitmask | Bitmask of desired-state fields: bit 0 Roll, bit 1 Pitch, bit 2 Yaw, bit 3 Throttle. A set bit enables that override, a clear bit disables it. |
 | `rateTargetRoll` | `int16_t` | 2 | deg/s | Rate target, clamped to ±2000 |
 | `rateTargetPitch` | `int16_t` | 2 | deg/s | Rate target, clamped to ±2000 |
 | `rateTargetYaw` | `int16_t` | 2 | deg/s | Rate target, clamped to ±2000 |
+| `throttleTarget` | `int16_t` | 2 | us | Offboard throttle setpoint in PWM microseconds, clamped to idle..max at the mixer; enabled by mask bit 3. |
 
 **Reply Payload:** **None**  
 
-**Notes:** Expects 7 bytes. Overrides rate targets just before control is applied, bypassing stick-derived setpoints.
+**Notes:** Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. The throttle setpoint is ignored while failsafe is active or an emergency landing is executing. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.
 
 ## <a id="msp2_inav_set_local_target"></a>`MSP2_INAV_SET_LOCAL_TARGET (8728 / 0x2218)`
 **Description:** Sets a body-frame offset target relative to the current vehicle position.  
@@ -4923,6 +4926,18 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 **Reply Payload:** **None**  
 
 **Notes:** Returns error if the aircraft is not armed, `NAV_WP_MODE` is not active, or the index is outside the valid mission range (`startWpIndex` to `startWpIndex + waypointCount - 1`). On success, sets `posControl.activeWaypointIndex` to the requested index and fires `NAV_FSM_EVENT_SWITCH_TO_WAYPOINT_JUMP`, transitioning the navigation FSM back to `NAV_STATE_WAYPOINT_PRE_ACTION` so the flight controller re-initialises navigation for the new target.
+
+## <a id="msp2_inav_set_mode"></a>`MSP2_INAV_SET_MODE (8738 / 0x2222)`
+**Description:** Selects a flight mode by box permanent ID, replacing channel-based mode selection for headless/GCS operation.  
+  
+**Request Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `permanent_id` | `uint8_t` | 1 | - | Flight-mode box permanent ID from MSP_BOXIDS, e.g. NAV RTH=10, NAV POSHOLD=11, NAV WP=28 |
+
+**Reply Payload:** **None**  
+
+**Notes:** Selects a flight mode the way a channel mode switch would: the selection survives disarm, so a mode can be chosen before arming, and it is released when a channel-driven flight-mode selection changes or another command replaces it. The navigation FSM decides when the selected mode becomes active. In Autopilot control mode only navigation modes are accepted; manual modes are rejected. Returns error for unknown, unavailable or non-mode box IDs, and for any mode not selectable by command. A position-dependent navigation mode (RTH, WP, POSHOLD, COURSEHOLD, CRUISE, FW ALTHOLD) selected before arming triggers the existing navigation arming safety (ARMING_DISABLED_NAVIGATION_UNSAFE); arm first, or select GCS NAV / NAV LAUNCH to keep arming available. The selection is remembered across arm/disarm, so a position-dependent mode left selected when the aircraft disarms blocks the next arm until a different selection replaces it; GCS NAV (permanent ID 31) is the reliable clear.
 
 ## <a id="msp2_inav_set_cruise_heading"></a>`MSP2_INAV_SET_CRUISE_HEADING (8739 / 0x2223)`
 **Description:** Sets the course heading target while Cruise or Course Hold mode is active, causing the aircraft to turn to and maintain the new heading.  
