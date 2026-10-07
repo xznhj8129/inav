@@ -41,20 +41,14 @@ int8_t mavlinkRxLinkForPortFunctionMask(uint32_t functionMask)
         return -1;
     }
 
-    const bool primaryMavlinkRx = rxConfig()->receiverType == RX_TYPE_SERIAL &&
+    // As upstream: a MAVLink port carries a receiver only when it also has that
+    // receiver's RX function bit. Without it the port is a plain telemetry link,
+    // even while a receiver is set to MAVLink.
+    const bool rx1 = (functionMask & FUNCTION_RX_SERIAL) &&
+        rxConfig()->receiverType == RX_TYPE_SERIAL &&
         rxConfig()->serialrx_provider == SERIALRX_MAVLINK;
-
-    // Preserve the legacy single-RX behavior: MAVLink RC is carried by the
-    // MAVLink telemetry runtime, so it does not require the telemetry UART to
-    // also be assigned the SERIAL_RX function. When Dual RX is active the RX
-    // function bits are still required to identify which MAVLink link a port
-    // belongs to.
-    if (!rxIsDualRxEnabled()) {
-        return primaryMavlinkRx ? RX_LINK_PRIMARY : -1;
-    }
-
-    const bool rx1 = (functionMask & FUNCTION_RX_SERIAL) && primaryMavlinkRx;
-    const bool rx2 = (functionMask & FUNCTION_RX_SERIAL_SECONDARY) &&
+    const bool rx2 = rxIsDualRxEnabled() &&
+        (functionMask & FUNCTION_RX_SERIAL_SECONDARY) &&
         rxConfig()->receiverTypeSecondary == RX_TYPE_SERIAL &&
         rxConfig()->serialrx_provider_secondary == SERIALRX_MAVLINK;
 
@@ -131,8 +125,10 @@ bool mavlinkRxInit(const rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfi
     UNUSED(rxConfig);
 
     // With Dual RX active, the serial RX function identifies which MAVLink
-    // telemetry port belongs to each receiver. Single RX keeps the legacy
-    // behavior and can use any MAVLink telemetry port without a SERIAL_RX role.
+    // telemetry port belongs to each receiver, so init fails without one.
+    // Single RX initialises without a port, as upstream does; RC is still only
+    // taken from a MAVLink port that carries FUNCTION_RX_SERIAL
+    // (mavlinkRxLinkForPortFunctionMask).
     if (rxIsDualRxEnabled()) {
         const serialPortConfig_t *portConfig = findSerialPortConfig(portFunction);
         if (!portConfig || !(portConfig->functionMask & FUNCTION_TELEMETRY_MAVLINK)) {
