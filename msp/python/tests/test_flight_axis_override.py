@@ -47,7 +47,7 @@ def main() -> None:
 
         active_modes = api.get_active_modes()
         if boxes.BoxEnum.BOXMSPRCOVERRIDE not in active_modes:
-            print("MSP RC OVERRIDE is not active; enable the mode before running.")
+            print("CONTROL OVERRIDE is not active; enable the mode before running.")
 
         sequence = [
             ("angle", dict(roll_deg=25.0, pitch_deg=None, yaw_deg=None)),

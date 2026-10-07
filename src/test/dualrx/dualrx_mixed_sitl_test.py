@@ -330,6 +330,8 @@ def configure_case(kind: str) -> list[str]:
         "set mavlink_sysid = 1",
         "aux 0 13 0 1700 2100",
         "feature TELEMETRY",
+        "set mavlink_port3_serial = -1",
+        "set mavlink_port4_serial = -1",
     ]
     if kind == "crsf-mavlink":
         commands += [
@@ -339,6 +341,8 @@ def configure_case(kind: str) -> list[str]:
             "set serialrx_provider_rx2 = MAVLINK",
             f"serial 2 {FUNCTION_RX_SERIAL}",
             f"serial 3 {FUNCTION_RX_SERIAL_SECONDARY | FUNCTION_TELEMETRY_MAVLINK}",
+            "set mavlink_port1_serial = 3",
+            "set mavlink_port2_serial = -1",
             "set msp_override_channels = 1",
             "aux 1 50 1 1700 2100",
         ]
@@ -348,6 +352,8 @@ def configure_case(kind: str) -> list[str]:
             "set serialrx_provider = CRSF",
             "set receiver_type_rx2 = MSP",
             f"serial 2 {FUNCTION_RX_SERIAL}",
+            "set mavlink_port1_serial = -1",
+            "set mavlink_port2_serial = -1",
         ]
     elif kind == "mavlink-mavlink":
         commands += [
@@ -357,6 +363,8 @@ def configure_case(kind: str) -> list[str]:
             "set serialrx_provider_rx2 = MAVLINK",
             f"serial 2 {FUNCTION_RX_SERIAL | FUNCTION_TELEMETRY_MAVLINK}",
             f"serial 3 {FUNCTION_RX_SERIAL_SECONDARY | FUNCTION_TELEMETRY_MAVLINK}",
+            "set mavlink_port1_serial = 2",
+            "set mavlink_port2_serial = 3",
         ]
     else:
         raise ValueError(kind)

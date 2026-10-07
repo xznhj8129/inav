@@ -76,6 +76,11 @@ def case_commands(case: PairCase) -> list[str]:
         commands.append(f"serial 2 {serial_mask(case.provider_1, False)}")
     if case.receiver_type_2 == "SERIAL":
         commands.append(f"serial 3 {serial_mask(case.provider_2, True)}")
+    # A MAVLink port only opens when a slot names it; the eeprom is fresh per case.
+    if case.provider_1 == "MAVLINK":
+        commands.append("set mavlink_port1_serial = 2")
+    if case.provider_2 == "MAVLINK":
+        commands.append("set mavlink_port2_serial = 3")
     return commands
 
 

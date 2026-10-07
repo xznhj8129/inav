@@ -9,7 +9,7 @@ This document covers the operating model, the command and setpoint surfaces,
 the settings and the procedures.
 
 See also: [Mavlink.md](Mavlink.md), [Settings.md](Settings.md),
-`docs/development/msp/msp_messages.json` (MSP payload source of truth).
+`msp/schema/msp_v2.yaml` (MSP payload source of truth).
 
 ---
 

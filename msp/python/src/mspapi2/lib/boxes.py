@@ -42,7 +42,7 @@ MODEBOXES = { # Key = permanentID
     47: {"boxName": "USER1",               "boxEnum": "BOXUSER1",            "boxId": 37},
     48: {"boxName": "USER2",               "boxEnum": "BOXUSER2",            "boxId": 38},
     49: {"boxName": "LOITER CHANGE",       "boxEnum": "BOXLOITERDIRCHN",     "boxId": 40},
-    50: {"boxName": "MSP RC OVERRIDE",     "boxEnum": "BOXMSPRCOVERRIDE",    "boxId": 41},
+    50: {"boxName": "CONTROL OVERRIDE",    "boxEnum": "BOXMSPRCOVERRIDE",    "boxId": 41},
     51: {"boxName": "PREARM",              "boxEnum": "BOXPREARM",           "boxId": 42},
     52: {"boxName": "TURTLE",              "boxEnum": "BOXTURTLE",           "boxId": 43},
     53: {"boxName": "NAV CRUISE",          "boxEnum": "BOXNAVCRUISE",        "boxId": 44},
