@@ -3401,7 +3401,7 @@ MSP_STATIC_ASSERT(sizeof(msp2InavEscSrxl2CalibrateRequest_t) == 1, msp2InavEscSr
 
 // MSP2_INAV_SET_RX_LINK (MSPv2) id=8757
 // Requests a dual RX handover to the given link.
-// Notes: Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
+// Notes: Requires at least 1 byte; trailing bytes are ignored. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
 typedef struct MSP_PACKED {
     uint8_t link;  // RX link to hand over to (rxLink_e): 0 RX1, 1 RX2.
 } msp2InavSetRxLinkRequest_t;

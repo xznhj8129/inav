@@ -3134,7 +3134,7 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
     case MSP2_INAV_SET_RX_LINK:
         {
             msp2InavSetRxLinkRequest_t pkt;
-            if (dataSize != (int)sizeof(pkt) || !mspReadRequest(src, &pkt, dataSize) ||
+            if (!mspReadRequest(src, &pkt, dataSize) ||
                 pkt.link >= RX_LINK_COUNT || !rxRequestLinkHandover((rxLink_e)pkt.link, RX_LINK_SWITCH_HANDOVER_MSP)) {
                 return MSP_RESULT_ERROR;
             }

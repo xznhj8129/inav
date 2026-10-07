@@ -6808,7 +6808,7 @@ since INAV 10.0
 
 Requests a dual RX handover to the given link.
 
-> Requires exactly 1 byte. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
+> Requires at least 1 byte; trailing bytes are ignored. Requests a handover through rxRequestLinkHandover() with reason RX_LINK_SWITCH_HANDOVER_MSP; returns an MSP error for an out-of-range link or when the handover is refused.
 
 *request:*
 
