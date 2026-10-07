@@ -116,8 +116,10 @@ bool bufferCrsfMspFrame(rxLink_e link, uint8_t requestOriginId, const uint8_t *f
 
     if (start) {
         // CRSF is request/reply. Once a complete request or response is owned
-        // by the telemetry task, a second request cannot replace it.
+        // by the telemetry task, a second request cannot replace it; it only
+        // makes the task drop an undrained reply, and the retry gets through.
         if (sharedMspEndpointBusy(context)) {
+            sharedMspAbandonReply(context);
             return false;
         }
         crsfMspRequestOriginId[link] = requestOriginId;
@@ -652,14 +654,7 @@ static bool serviceCrsfMspLink(rxLink_e link)
 {
     mspSharedContext_t *context = &crsfMspContexts[link];
 
-    if (sharedMspRequestPending(context)) {
-        const bool replyPending = processMspRequest(context, crsfMspResponseCompleteFn(link));
-        if (!replyPending) {
-            return false;
-        }
-    }
-
-    if (!sharedMspReplyPending(context)) {
+    if (!processMspRequest(context, crsfMspResponseCompleteFn(link))) {
         return false;
     }
 
