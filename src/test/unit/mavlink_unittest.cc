@@ -96,6 +96,7 @@ extern "C" {
     PG_REGISTER(systemConfig_t, systemConfig, PG_SYSTEM_CONFIG, 0);
     PG_REGISTER_ARRAY(mixerProfile_t, MAX_MIXER_PROFILE_COUNT, mixerProfiles, PG_MIXER_PROFILE, 0);
     PG_REGISTER(navConfig_t, navConfig, PG_NAV_CONFIG, 0);
+    PG_REGISTER(serialConfig_t, serialConfig, PG_SERIAL_CONFIG, 0);
 }
 
 #include "unittest_macros.h"
@@ -4038,6 +4039,27 @@ serialPortConfig_t *serialFindPortConfiguration(serialPortIdentifier_e identifie
         return &testPortConfig2;
     }
     return NULL;
+}
+
+// Linked by mavlinkPortBindingsValid() in telemetry/mavlink.c, which these
+// tests do not exercise.
+const setting_t *settingFind(const char *name)
+{
+    UNUSED(name);
+    return NULL;
+}
+
+unsigned settingGetIndex(const setting_t *val)
+{
+    UNUSED(val);
+    return 0;
+}
+
+int tfp_sprintf(char *s, const char *fmt, ...)
+{
+    UNUSED(fmt);
+    s[0] = '\0';
+    return 0;
 }
 
 portSharing_e determinePortSharing(const serialPortConfig_t *portConfig, serialPortFunction_e function)

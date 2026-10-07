@@ -85,7 +85,8 @@ const setting_t *settingFind(const char *name);
 const setting_t *settingGet(unsigned index);
 // Returns the setting index for the given setting.
 unsigned settingGetIndex(const setting_t *val);
-// Checks if all settings have values in their valid ranges.
+// Checks if all settings have values in their valid ranges, and that
+// the MAVLink port bindings name each MAVLink serial port exactly once.
 // If they don't, invalidIndex is filled with the first invalid
 // settings index and false is returned.
 bool settingsValidate(unsigned *invalidIndex);
