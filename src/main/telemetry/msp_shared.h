@@ -27,6 +27,7 @@ typedef struct mspSharedContext_s {
     volatile bool receivingRequest;
     volatile bool requestPending;
     volatile bool responsePending;
+    volatile bool abandonReply;     // set from RX context, acted on in task context
     bool responseHeaderSent;
 } mspSharedContext_t;
 
@@ -40,6 +41,8 @@ void resetSharedMsp(mspSharedContext_t *context);
 // request is executed later by processMspRequest() in normal task context.
 bool receiveMspFrame(mspSharedContext_t *context, const uint8_t *frameStart, int payloadLength);
 bool processMspRequest(mspSharedContext_t *context, mspResponseCompleteFnPtr completeFn);
+// RX-callback safe: marks an undrained reply for processMspRequest() to drop.
+void sharedMspAbandonReply(mspSharedContext_t *context);
 
 // Convenience path for transports already running in task context.
 bool handleMspFrame(mspSharedContext_t *context, const uint8_t *frameStart, int payloadLength);

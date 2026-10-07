@@ -111,6 +111,28 @@ bool sharedMspEndpointBusy(const mspSharedContext_t *context)
     return context && (context->requestPending || context->responsePending);
 }
 
+void sharedMspAbandonReply(mspSharedContext_t *context)
+{
+    // Only a reply already handed to the transport can be abandoned. While a
+    // request is pending the task may be reading it into a new response.
+    if (context && context->responsePending && !context->requestPending) {
+        context->abandonReply = true;
+    }
+}
+
+static void releaseReply(mspSharedContext_t *context, mspResponseCompleteFnPtr completeFn)
+{
+    // Keep the endpoint busy until both generic response state and any
+    // transport-owned transaction identity have been reset. An RX callback may
+    // start a new request as soon as responsePending becomes false.
+    context->responseHeaderSent = false;
+    sbufInit(&context->responsePacket.buf, context->responseBuffer, context->responseBuffer);
+    if (completeFn) {
+        completeFn();
+    }
+    context->responsePending = false;
+}
+
 static bool processMspPacket(mspSharedContext_t *context, mspResponseCompleteFnPtr completeFn)
 {
     mspPacket_t *response = &context->responsePacket;
@@ -148,6 +170,7 @@ static bool processMspPacket(mspSharedContext_t *context, mspResponseCompleteFnP
     // Commit the response before releasing the request buffer. An RX callback
     // sees requestPending || responsePending and therefore cannot overwrite the
     // request while mspFcProcessCommand() is reading it.
+    context->abandonReply = false;
     context->responsePending = true;
     context->requestPending = false;
     return true;
@@ -164,6 +187,7 @@ static void sendMspErrorResponse(mspSharedContext_t *context, uint8_t error, int
         context->responseBuffer + context->responseBufferSize);
     sbufWriteU8(&response->buf, error);
     sbufSwitchToReader(&response->buf, context->responseBuffer);
+    context->abandonReply = false;
     context->responsePending = true;
 }
 
@@ -192,8 +216,13 @@ bool receiveMspFrame(mspSharedContext_t *context, const uint8_t *frameStart, int
     /*
      * Do not let a new request overwrite a response that is still being
      * fragmented onto the transport. Endpoints are request/reply channels.
+     * A new request start supersedes the undrained reply, which the task drops;
+     * this frame is not kept, the requester's retry starts the next request.
      */
     if (sharedMspEndpointBusy(context)) {
+        if (frameStart[MSP_INDEX_STATUS] & TELEMETRY_MSP_START_MASK) {
+            sharedMspAbandonReply(context);
+        }
         return false;
     }
 
@@ -278,6 +307,15 @@ bool receiveMspFrame(mspSharedContext_t *context, const uint8_t *frameStart, int
 
 bool processMspRequest(mspSharedContext_t *context, mspResponseCompleteFnPtr completeFn)
 {
+    if (context && context->abandonReply) {
+        context->abandonReply = false;
+        // A flag raised as the reply finished on its own is stale; releasing
+        // again would end the transport state of the next request.
+        if (context->responsePending && !context->requestPending) {
+            releaseReply(context, completeFn);
+            return false;
+        }
+    }
     if (!sharedMspRequestPending(context)) {
         return sharedMspReplyPending(context);
     }
@@ -286,10 +324,8 @@ bool processMspRequest(mspSharedContext_t *context, mspResponseCompleteFnPtr com
 
 bool handleMspFrame(mspSharedContext_t *context, const uint8_t *frameStart, int payloadLength)
 {
-    if (receiveMspFrame(context, frameStart, payloadLength) && sharedMspRequestPending(context)) {
-        processMspRequest(context, NULL);
-    }
-    return sharedMspReplyPending(context);
+    receiveMspFrame(context, frameStart, payloadLength);
+    return processMspRequest(context, NULL);
 }
 
 bool sendMspReply(mspSharedContext_t *context, uint8_t payloadSize, mspResponseFnPtr responseFn, mspResponseCompleteFnPtr completeFn)
@@ -343,15 +379,7 @@ bool sendMspReply(mspSharedContext_t *context, uint8_t payloadSize, mspResponseF
         return true;
     }
 
-    // Keep the endpoint busy until both generic response state and any
-    // transport-owned transaction identity have been reset. An RX callback may
-    // start a new request as soon as responsePending becomes false.
-    context->responseHeaderSent = false;
-    sbufInit(txBuf, context->responseBuffer, context->responseBuffer);
-    if (completeFn) {
-        completeFn();
-    }
-    context->responsePending = false;
+    releaseReply(context, completeFn);
     return false;
 }
 
