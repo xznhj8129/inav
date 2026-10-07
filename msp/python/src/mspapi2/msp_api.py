@@ -880,14 +880,23 @@ class MSPApi:
         return self._codec.unpack_reply(InavMSP.MSP_SIMULATOR, raw_reply)
 
     if hasattr(InavMSP, "MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE"):
+        @staticmethod
+        def _throttle_override_field(mask: int, throttle_us: Optional[int]) -> tuple:
+            # Mask bit 3 enables the throttle setpoint (PWM us; the firmware clamps
+            # it to idle..max at the mixer). Absent leaves the bit clear.
+            if throttle_us is None:
+                return mask, 0
+            return mask | 0x08, max(-32768, min(32767, int(round(throttle_us))))
+
         def set_flight_axis_angle_override(
             self,
             *,
             roll_deg: Optional[float] = None,
             pitch_deg: Optional[float] = None,
             yaw_deg: Optional[float] = None,
+            throttle_us: Optional[int] = None,
         ) -> Mapping[str, Any]:
-            if roll_deg is None and pitch_deg is None and yaw_deg is None:
+            if roll_deg is None and pitch_deg is None and yaw_deg is None and throttle_us is None:
                 payload = self._pack_request(
                     InavMSP.MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE,
                     {
@@ -895,6 +904,7 @@ class MSPApi:
                         "angleTargetRoll": 0,
                         "angleTargetPitch": 0,
                         "angleTargetYaw": 0,
+                        "throttleTarget": 0,
                     },
                 )
                 self.info, rep = self._request(InavMSP.MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE, payload)
@@ -930,6 +940,8 @@ class MSPApi:
             if yaw_target > 3600:
                 yaw_target = 3600
 
+            mask, throttle_target = self._throttle_override_field(mask, throttle_us)
+
             payload = self._pack_request(
                 InavMSP.MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE,
                 {
@@ -937,6 +949,7 @@ class MSPApi:
                     "angleTargetRoll": roll_target,
                     "angleTargetPitch": pitch_target,
                     "angleTargetYaw": yaw_target,
+                    "throttleTarget": throttle_target,
                 },
             )
             self.info, rep = self._request(InavMSP.MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE, payload)
@@ -948,8 +961,9 @@ class MSPApi:
             roll_dps: Optional[float] = None,
             pitch_dps: Optional[float] = None,
             yaw_dps: Optional[float] = None,
+            throttle_us: Optional[int] = None,
         ) -> Mapping[str, Any]:
-            if roll_dps is None and pitch_dps is None and yaw_dps is None:
+            if roll_dps is None and pitch_dps is None and yaw_dps is None and throttle_us is None:
                 payload = self._pack_request(
                     InavMSP.MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE,
                     {
@@ -957,6 +971,7 @@ class MSPApi:
                         "rateTargetRoll": 0,
                         "rateTargetPitch": 0,
                         "rateTargetYaw": 0,
+                        "throttleTarget": 0,
                     },
                 )
                 self.info, rep = self._request(InavMSP.MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE, payload)
@@ -992,6 +1007,8 @@ class MSPApi:
             if yaw_target > 2000:
                 yaw_target = 2000
 
+            mask, throttle_target = self._throttle_override_field(mask, throttle_us)
+
             payload = self._pack_request(
                 InavMSP.MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE,
                 {
@@ -999,6 +1016,7 @@ class MSPApi:
                     "rateTargetRoll": roll_target,
                     "rateTargetPitch": pitch_target,
                     "rateTargetYaw": yaw_target,
+                    "throttleTarget": throttle_target,
                 },
             )
             self.info, rep = self._request(InavMSP.MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE, payload)
@@ -1091,10 +1109,10 @@ class MSPApi:
                 result["loiter_radius_m"] = rep["loiterRadius"] / 100.0
             return result
     else:
-        def set_flight_axis_angle_override(self, *, roll_deg: Optional[float] = None, pitch_deg: Optional[float] = None, yaw_deg: Optional[float] = None) -> Mapping[str, Any]:
+        def set_flight_axis_angle_override(self, *, roll_deg: Optional[float] = None, pitch_deg: Optional[float] = None, yaw_deg: Optional[float] = None, throttle_us: Optional[int] = None) -> Mapping[str, Any]:
             raise RuntimeError("API version mismatch")
 
-        def set_flight_axis_rate_override(self, *, roll_dps: Optional[float] = None, pitch_dps: Optional[float] = None, yaw_dps: Optional[float] = None) -> Mapping[str, Any]:
+        def set_flight_axis_rate_override(self, *, roll_dps: Optional[float] = None, pitch_dps: Optional[float] = None, yaw_dps: Optional[float] = None, throttle_us: Optional[int] = None) -> Mapping[str, Any]:
             raise RuntimeError("API version mismatch")
 
         def set_altitude_target(self, *, altitude_datum: Union[int, "InavEnums.geoAltitudeDatumFlag_e"], altitude_m: float) -> Mapping[str, Any]:

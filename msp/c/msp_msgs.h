@@ -439,7 +439,7 @@ typedef struct MSP_PACKED {
 
 // MSP_SET_RX_CONFIG (MSPv1) id=45
 // Sets receiver configuration settings.
-// Notes: Expects 24 bytes.
+// Notes: Expects at least 24 bytes. The 7-byte Dual RX tail is applied only when all of it is present (31 bytes); a shorter tail is ignored.
 typedef struct MSP_PACKED {
     uint8_t serialRxProvider;  // Enum `rxSerialReceiverType_e`. Sets `rxConfigMutable()->serialrx_provider`.
     uint16_t maxCheck;  // Sets `rxConfigMutable()->maxcheck`. | PWM
@@ -1764,7 +1764,7 @@ MSP_STATIC_ASSERT(sizeof(msp2CommonSetRadarPosRequest_t) == 19, msp2CommonSetRad
 
 // MSP2_COMMON_SET_MSP_RC_LINK_STATS (MSPv2) id=4109
 // Provides RC link statistics (RSSI, LQ) to the FC, typically from an MSP-based RC link (like ExpressLRS). Sent periodically by the RC link.
-// Notes: Requires `USE_RX_MSP`. Expects at least 7 bytes. Updates `rxLinkStatistics` and sets RSSI via `setRSSIFromMSP_RC()` only if `sublinkID` is 0. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
+// Notes: Requires `USE_RX_MSP`. Expects at least 7 bytes. Only `sublinkID` 0 is applied. Updates the statistics of the MSP RX link (the active link when MSP is not an RX link) and sets RSSI via `setRSSIFromMSP_RC()` only when that link is the active one. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
 typedef struct MSP_PACKED {
     uint8_t sublinkID;  // Sublink identifier (usually 0)
     uint8_t validLink;  // Indicates if the link is currently valid (not in failsafe) | Boolean
@@ -1778,7 +1778,7 @@ MSP_STATIC_ASSERT(sizeof(msp2CommonSetMspRcLinkStatsRequest_t) == 7, msp2CommonS
 
 // MSP2_COMMON_SET_MSP_RC_INFO (MSPv2) id=4110
 // Provides additional RC link information (power levels, band, mode) to the FC from an MSP-based RC link. Sent less frequently than link stats.
-// Notes: Requires `USE_RX_MSP`. Expects at least 15 bytes. Updates `rxLinkStatistics` only if `sublinkID` is 0. Converts band/mode strings to uppercase. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
+// Notes: Requires `USE_RX_MSP`. Expects at least 15 bytes. Only `sublinkID` 0 is applied. Updates the statistics of the MSP RX link (the active link when MSP is not an RX link). Converts band/mode to uppercase over their full width. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
 typedef struct MSP_PACKED {
     uint8_t sublinkID;  // Sublink identifier (usually 0)
     uint16_t uplinkTxPower;  // Uplink transmitter power level | mW

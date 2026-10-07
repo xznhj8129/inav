@@ -1077,7 +1077,7 @@ since INAV 1.0
 
 Sets receiver configuration settings.
 
-> Expects 24 bytes.
+> Expects at least 24 bytes. The 7-byte Dual RX tail is applied only when all of it is present (31 bytes); a shorter tail is ignored.
 
 *request:*
 
@@ -3886,7 +3886,7 @@ since INAV 8.0
 
 Provides RC link statistics (RSSI, LQ) to the FC, typically from an MSP-based RC link (like ExpressLRS). Sent periodically by the RC link.
 
-> Requires `USE_RX_MSP`. Expects at least 7 bytes. Updates `rxLinkStatistics` and sets RSSI via `setRSSIFromMSP_RC()` only if `sublinkID` is 0. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
+> Requires `USE_RX_MSP`. Expects at least 7 bytes. Only `sublinkID` 0 is applied. Updates the statistics of the MSP RX link (the active link when MSP is not an RX link) and sets RSSI via `setRSSIFromMSP_RC()` only when that link is the active one. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
 
 *request:*
 
@@ -3911,7 +3911,7 @@ since INAV 8.0
 
 Provides additional RC link information (power levels, band, mode) to the FC from an MSP-based RC link. Sent less frequently than link stats.
 
-> Requires `USE_RX_MSP`. Expects at least 15 bytes. Updates `rxLinkStatistics` only if `sublinkID` is 0. Converts band/mode strings to uppercase. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
+> Requires `USE_RX_MSP`. Expects at least 15 bytes. Only `sublinkID` 0 is applied. Updates the statistics of the MSP RX link (the active link when MSP is not an RX link). Converts band/mode to uppercase over their full width. This message expects **no reply** (`MSP_RESULT_NO_REPLY`).
 
 *request:*
 

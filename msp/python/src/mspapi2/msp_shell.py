@@ -194,7 +194,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                     if positional:
                         raise ShellInputError(
                             "Use named axes for overrides (angle: roll_deg/pitch_deg/yaw_deg, "
-                            "rate: roll_dps/pitch_dps/yaw_dps)."
+                            "rate: roll_dps/pitch_dps/yaw_dps, both: throttle_us)."
                         )
                     if not kwargs:
                         print("No axes provided -> sending empty mask to disable all overrides.")

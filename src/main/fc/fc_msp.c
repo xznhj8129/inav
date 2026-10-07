@@ -3841,11 +3841,17 @@ static mspResult_e mspFcProcessInCommand(uint16_t cmdMSP, sbuf_t *src)
                 statistics->uplinkTXPower = pkt.uplinkTxPower;
                 statistics->downlinkTXPower = pkt.downlinkTxPower;
 
+                // The labels arrive full width with no guaranteed terminator, so
+                // upper-case by size rather than with sl_toupperptr()'s strlen.
                 memcpy(statistics->band, pkt.band, sizeof(statistics->band));
-                sl_toupperptr(statistics->band);
+                for (int i = 0; i < (int)sizeof(statistics->band); i++) {
+                    statistics->band[i] = sl_toupper(statistics->band[i]);
+                }
 
                 memcpy(statistics->mode, pkt.mode, sizeof(statistics->mode));
-                sl_toupperptr(statistics->mode);
+                for (int i = 0; i < (int)sizeof(statistics->mode); i++) {
+                    statistics->mode[i] = sl_toupper(statistics->mode[i]);
+                }
 
                 rxLinkStatisticsUpdated(link,
                     RX_LINK_STATS_UPLINK_TX_POWER | RX_LINK_STATS_DOWNLINK_TX_POWER |
