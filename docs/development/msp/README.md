@@ -6414,7 +6414,7 @@ since INAV 10.0
 
 Enables or disables a flight-axis angle override and the throttle override for the selected fields.
 
-> Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.
+> Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. The throttle setpoint is ignored while failsafe is active or an emergency landing is executing. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.
 
 *request:*
 
@@ -6437,7 +6437,7 @@ since INAV 10.0
 
 Enables or disables a flight-axis rate override and the throttle override for the selected fields.
 
-> Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.
+> Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. The throttle setpoint is ignored while failsafe is active or an emergency landing is executing. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.
 
 *request:*
 

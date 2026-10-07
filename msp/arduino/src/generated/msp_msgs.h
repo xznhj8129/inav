@@ -3225,7 +3225,7 @@ MSP_STATIC_ASSERT(sizeof(msp2InavSetAltTargetRequest_t) == 5, msp2InavSetAltTarg
 
 // MSP2_INAV_FLIGHT_AXIS_ANGLE_OVERRIDE (MSPv2) id=8726
 // Enables or disables a flight-axis angle override and the throttle override for the selected fields.
-// Notes: Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.
+// Notes: Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. The throttle setpoint is ignored while failsafe is active or an emergency landing is executing. Bypasses stick-derived angle targets; angle and rate overrides are alternatives — send one of the two, not both.
 typedef struct MSP_PACKED {
     uint8_t overrideMask;  // Bitmask of desired-state fields: bit 0 Roll, bit 1 Pitch, bit 2 Yaw, bit 3 Throttle. A set bit enables that override, a clear bit disables it. | bitmask
     int16_t angleTargetRoll;  // Angle target in deci-degrees. Roll/Pitch clamped to configured angle limits | deci-degrees
@@ -3237,7 +3237,7 @@ MSP_STATIC_ASSERT(sizeof(msp2InavFlightAxisAngleOverrideRequest_t) == 9, msp2Ina
 
 // MSP2_INAV_FLIGHT_AXIS_RATE_OVERRIDE (MSPv2) id=8727
 // Enables or disables a flight-axis rate override and the throttle override for the selected fields.
-// Notes: Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.
+// Notes: Offboard setpoint: active only while CONTROL OVERRIDE is selected and refreshed at least every 200 ms (5 Hz), in both Pilot and Autopilot control modes. All payload fields are required. The throttle setpoint is ignored while failsafe is active or an emergency landing is executing. Overrides rate targets just before control is applied, bypassing stick-derived setpoints; angle and rate overrides are alternatives — send one of the two, not both.
 typedef struct MSP_PACKED {
     uint8_t overrideMask;  // Bitmask of desired-state fields: bit 0 Roll, bit 1 Pitch, bit 2 Yaw, bit 3 Throttle. A set bit enables that override, a clear bit disables it. | bitmask
     int16_t rateTargetRoll;  // Rate target, clamped to ±2000 | deg/s
