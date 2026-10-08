@@ -7214,7 +7214,7 @@ messages:
     mspv: 2
     group: inav
     description: Handles Hardware-in-the-Loop (HITL) simulation data exchange. Receives simulated sensor data and options, sends back control outputs and debug info.
-    notes: Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details.
+    notes: Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details. SITL stepped clock (`docs/SITL/SITL.md`) - in format 3 with `HITL_STEPPED_CLOCK`, the request ends with a `uint32` step in microseconds; SITL runs that much simulated time on the frame's sensor values before replying, and sets bit 3 (8) of the reply's debug index byte while the stepped clock is active.
     variable_len: true
     request:
       fields:

@@ -156,6 +156,10 @@
 #include "msp_msgs.h"
 #include "msp/msp_handler.h"
 
+#if defined(SITL_BUILD)
+#include "target/SITL/stepped_clock.h"
+#endif
+
 extern timeDelta_t cycleTime; // FIXME dependency on mw.c
 
 static const char * const flightControllerIdentifier = INAV_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -5090,6 +5094,15 @@ static mspResult_e mspProcessSimulatorCommand(sbuf_t *dst, sbuf_t *src, const in
             }
         } else {
             readMspSimulatorValues(src, remainingPayload, simMspVersion);
+#if defined(SITL_BUILD)
+            // The step closes a format 3 frame. It runs on the sensor values
+            // just read, and the reply below reports the state at its end.
+            if (simMspVersion == SIMULATOR_MSP_VERSION_3 && SIMULATOR_HAS_OPTION(HITL_STEPPED_CLOCK)) {
+                if (sbufBytesRemaining(src) < (int)sizeof(uint32_t) || !sitlRunStep(sbufReadU32(src))) {
+                    return MSP_RESULT_ERROR;
+                }
+            }
+#endif
         }
     }
 
@@ -5107,7 +5120,11 @@ static mspResult_e mspProcessSimulatorCommand(sbuf_t *dst, sbuf_t *src, const in
         ((mixerConfig()->platformType == PLATFORM_AIRPLANE) ? 128 : 0) |
         (ARMING_FLAG(ARMED) ? 64 : 0) |
         (!feature(FEATURE_OSD) ? 32: 0) |
-        (!isOSDTypeSupportedBySimulator() ? 16 : 0);
+        (!isOSDTypeSupportedBySimulator() ? 16 : 0)
+#if defined(SITL_BUILD)
+        | (sitlSteppedClockActive() ? 8 : 0)
+#endif
+        ;
 
     sbufWriteU8(dst, debugIndex);
     sbufWriteU32(dst, debug[simulatorData.debugIndex]);

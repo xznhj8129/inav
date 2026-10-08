@@ -4774,6 +4774,7 @@ enums:
       - HITL_RANGEFINDER = 4096
       - HITL_FAILSAFE_TRIGGERED = 8192
       - HITL_SITL_MODE = 16384
+      - HITL_STEPPED_CLOCK = 32768
   sitlCANMode_e:
     description: From inav/src/main/drivers/dronecan/libcanard/canard_sitl_driver.c
     storage: uint8

@@ -5015,6 +5015,7 @@ class simulatorFlags_t(IntEnum):
     HITL_RANGEFINDER = 4096
     HITL_FAILSAFE_TRIGGERED = 8192
     HITL_SITL_MODE = 16384
+    HITL_STEPPED_CLOCK = 32768
 
 
 class sitlCANMode_e(IntEnum):

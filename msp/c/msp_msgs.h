@@ -2406,7 +2406,7 @@ MSP_STATIC_ASSERT(sizeof(msp2InavTemperaturesReply_t) == 16, msp2InavTemperature
 
 // MSP_SIMULATOR (MSPv2) id=8223
 // Handles Hardware-in-the-Loop (HITL) simulation data exchange. Receives simulated sensor data and options, sends back control outputs and debug info.
-// Notes: Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details.
+// Notes: Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details. SITL stepped clock (`docs/SITL/SITL.md`) - in format 3 with `HITL_STEPPED_CLOCK`, the request ends with a `uint32` step in microseconds; SITL runs that much simulated time on the frame's sensor values before replying, and sets bit 3 (8) of the reply's debug index byte while the stepped clock is active.
 typedef struct MSP_PACKED {
     uint8_t simulatorVersion;  // Version of the simulator protocol (`SIMULATOR_MSP_VERSION`)
     uint8_t simulatorFlags_t;  // Bitmask: Options for HITL (`HITL_*` flags) | bitmask | enum simulatorFlags_t
@@ -2441,7 +2441,7 @@ MSP_STATIC_ASSERT(sizeof(mspSimulatorRequest_t) == 58, mspSimulatorRequest_t_siz
 
 // MSP_SIMULATOR (MSPv2) id=8223
 // Handles Hardware-in-the-Loop (HITL) simulation data exchange. Receives simulated sensor data and options, sends back control outputs and debug info.
-// Notes: Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details.
+// Notes: Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details. SITL stepped clock (`docs/SITL/SITL.md`) - in format 3 with `HITL_STEPPED_CLOCK`, the request ends with a `uint32` step in microseconds; SITL runs that much simulated time on the frame's sensor values before replying, and sets bit 3 (8) of the reply's debug index byte while the stepped clock is active.
 typedef struct MSP_PACKED {
     uint16_t stabilizedRoll;  // Stabilized Roll command output (-500 to 500)
     uint16_t stabilizedPitch;  // Stabilized Pitch command output (-500 to 500)

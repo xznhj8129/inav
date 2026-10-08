@@ -924,6 +924,7 @@ typedef enum {
     HITL_RANGEFINDER = 4096,
     HITL_FAILSAFE_TRIGGERED = 8192,
     HITL_SITL_MODE = 16384,
+    HITL_STEPPED_CLOCK = 32768,
 } simulatorFlags_t;
 
 // From inav/src/main/sensors/temperature.h

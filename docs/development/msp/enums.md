@@ -5732,6 +5732,7 @@ Harvested from INAV C source into `msp/schema/enums.yaml` by `msp/generator/harv
 | `HITL_RANGEFINDER` | 4096 | |
 | `HITL_FAILSAFE_TRIGGERED` | 8192 | |
 | `HITL_SITL_MODE` | 16384 | |
+| `HITL_STEPPED_CLOCK` | 32768 | |
 
 ---
 ## `sitlCANMode_e`
