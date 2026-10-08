@@ -3837,7 +3837,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 | `osdStartX` | `uint8_t` | 1 | (If OSD supported) Starting column for RLE data |
 | `osdRleData` | `uint8_t[]` | array | (If OSD supported) Run-length encoded OSD character data. Terminated by `[0, 0]` |
 
-**Notes:** Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details.
+**Notes:** Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details. SITL stepped clock: in format 3 with `HITL_STEPPED_CLOCK`, the request ends with a `uint32_t` step in microseconds; SITL runs that much simulated time on the frame's sensor values before replying, and sets bit 3 (8) of the reply's debug index byte while the stepped clock is active.
 
 ## <a id="msp2_inav_servo_mixer"></a>`MSP2_INAV_SERVO_MIXER (8224 / 0x2020)`
 **Description:** Retrieves the custom servo mixer rules, including programming framework condition IDs, for primary and secondary mixer profiles. Supersedes `MSP_SERVO_MIX_RULES`.  
