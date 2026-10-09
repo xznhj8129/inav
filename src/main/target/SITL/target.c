@@ -85,7 +85,7 @@ static struct timespec start_time;
 #define SITL_BETWEEN_STEPS_POLL_US 20   // wall-time poll for the next frame while sim time stands still
 
 static bool steppedClock;
-static bool steppedBusyWait;    // --stepped-busywait: poll without sleeping (one core, for a single fast run)
+static bool steppedBusyWait;    // --faster: poll without sleeping (one core, for a single fast run)
 static bool stepInProgress;
 static uint32_t stepCount;
 static timeUs_t simTimeUs;
@@ -258,7 +258,7 @@ void printCmdLineOptions(void)
     fprintf(stderr, "--fcproxy                      Use inav/betaflight FC as a proxy for serial receiver.\n");
     fprintf(stderr, "--tcpbaseport=[port]           Base TCP port for UART sockets (default: 5760)\n");
     fprintf(stderr, "--sdcard=[path]                Path to a FAT32 SD-card image file. If not specified, no SD card is simulated.\n");
-    fprintf(stderr, "--stepped-busywait             On the stepped clock, wait for the next MSP_SIMULATOR frame without sleeping:\n");
+    fprintf(stderr, "--faster                       On the stepped clock, wait for the next MSP_SIMULATOR frame without sleeping:\n");
     fprintf(stderr, "                               faster, but holds one CPU core. For a single run, not for several at once.\n");
     fprintf(stderr, "--chanmap=[mapstring]          Channel mapping. Maps INAVs motor and servo PWM outputs to the virtual receiver output in the simulator.\n");
     fprintf(stderr, "                               The mapstring has the following format: M(otor)|S(servo)<INAV-OUT>-<RECEIVER-OUT>,... All numbers must have two digits\n");
@@ -292,7 +292,7 @@ void parseArguments(int argc, char *argv[])
             {"fcproxy", no_argument, 0, '5'},
             {"tcpbaseport", required_argument, 0, '6'},
             {"sdcard", required_argument, 0, '7'},
-            {"stepped-busywait", no_argument, 0, '8'},
+            {"faster", no_argument, 0, '8'},
             {NULL, 0, NULL, 0}
         };
 
