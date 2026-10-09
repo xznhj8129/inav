@@ -191,6 +191,7 @@ A simulator that drives SITL over `MSP_SIMULATOR` (format 3) can run SITL on its
 - Between frames simulated time stands still and only MSP is serviced.
 - The first stepped frame switches SITL to the stepped clock until it reboots. Startup, CLI and save/reboot before that run on wall time.
 - While the stepped clock is active, the reply's debug index byte has bit 3 (value 8) set.
+- Between frames SITL polls for the next one with a short sleep. `--stepped-busywait` polls without sleeping: about twice the frame rate, but SITL holds one CPU core. Use it for a single run, not for several at once.
 - The sensor values are held for the whole step. A step must be short enough for the airframe: a multirotor needs about 2.5 ms (400 Hz), a fixed-wing flies the same with 10 ms steps.
 
 Frames without the flag behave exactly as before.
