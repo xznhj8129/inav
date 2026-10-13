@@ -2678,8 +2678,8 @@ messages:
       since: "1.0"
     mspv: 1
     group: v1
-    description: Sets filter configuration settings. Handles different payload lengths for backward compatibility.
-    notes: Requires at least 22 bytes; intermediate length checks enforce legacy Betaflight frame layout and call `pidInitFilters()` once the D-term notch placeholders are consumed.
+    description: Sets filter configuration settings.
+    notes: Requires the full 23-byte payload; shorter requests are rejected. The ignored fields keep the legacy Betaflight frame layout. Calls `pidInitFilters()`.
     replaced_by:
       - MSP2_COMMON_SET_SETTING
     request:
@@ -2687,55 +2687,55 @@ messages:
         gyroMainLpfHz:
           type: uint8
           unit: Hz
-          description: Sets `gyroConfigMutable()->gyro_main_lpf_hz`. (Size >= 5)
+          description: Sets `gyroConfigMutable()->gyro_main_lpf_hz`.
 
         dtermLpfHz:
           type: uint16
           unit: Hz
-          description: Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500). (Size >= 5)
+          description: Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500).
 
         yawLpfHz:
           type: uint16
           unit: Hz
-          description: Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255). (Size >= 5)
+          description: Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255).
 
         legacyGyroNotchHz:
           type: uint16
-          description: Ignored. (Size >= 9)
+          description: Ignored.
 
         legacyGyroNotchCutoff:
           type: uint16
-          description: Ignored. (Size >= 9)
+          description: Ignored.
 
         bfCompatDtermNotchHz:
           type: uint16
-          description: Ignored. (Size >= 13)
+          description: Ignored.
 
         bfCompatDtermNotchCutoff:
           type: uint16
-          description: Ignored. (Size >= 13)
+          description: Ignored.
 
         bfCompatGyroNotch2Hz:
           type: uint16
-          description: Ignored. (Size >= 17)
+          description: Ignored.
 
         bfCompatGyroNotch2Cutoff:
           type: uint16
-          description: Ignored. (Size >= 17)
+          description: Ignored.
 
         accNotchHz:
           type: uint16
           unit: Hz
-          description: Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255). (Size >= 21)
+          description: Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255).
 
         accNotchCutoff:
           type: uint16
           unit: Hz
-          description: Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255). (Size >= 21)
+          description: Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255).
 
         legacyGyroStage2LpfHz:
           type: uint16
-          description: Ignored. (Size >= 22)
+          description: Ignored.
     reply: null
 
   MSP_PID_ADVANCED:
