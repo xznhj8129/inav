@@ -950,22 +950,22 @@ class MSP_FILTER_CONFIG_reply_t(BaseModel):
 MSP_SET_FILTER_CONFIG: Final[int] = 93
 
 class MSP_SET_FILTER_CONFIG_request_t(BaseModel):
-    """Sets filter configuration settings. Handles different payload lengths for backward compatibility."""
+    """Sets filter configuration settings."""
 
     model_config = ConfigDict(populate_by_name=True)
 
-    gyroMainLpfHz: uint8 = Field(description='Sets `gyroConfigMutable()->gyro_main_lpf_hz`. (Size >= 5) [Hz]')
-    dtermLpfHz: uint16 = Field(description='Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500). (Size >= 5) [Hz]')
-    yawLpfHz: uint16 = Field(description='Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255). (Size >= 5) [Hz]')
-    legacyGyroNotchHz: uint16 = Field(description='Ignored. (Size >= 9)')
-    legacyGyroNotchCutoff: uint16 = Field(description='Ignored. (Size >= 9)')
-    bfCompatDtermNotchHz: uint16 = Field(description='Ignored. (Size >= 13)')
-    bfCompatDtermNotchCutoff: uint16 = Field(description='Ignored. (Size >= 13)')
-    bfCompatGyroNotch2Hz: uint16 = Field(description='Ignored. (Size >= 17)')
-    bfCompatGyroNotch2Cutoff: uint16 = Field(description='Ignored. (Size >= 17)')
-    accNotchHz: uint16 = Field(description='Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255). (Size >= 21) [Hz]')
-    accNotchCutoff: uint16 = Field(description='Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255). (Size >= 21) [Hz]')
-    legacyGyroStage2LpfHz: uint16 = Field(description='Ignored. (Size >= 22)')
+    gyroMainLpfHz: uint8 = Field(description='Sets `gyroConfigMutable()->gyro_main_lpf_hz`. [Hz]')
+    dtermLpfHz: uint16 = Field(description='Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500). [Hz]')
+    yawLpfHz: uint16 = Field(description='Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255). [Hz]')
+    legacyGyroNotchHz: uint16 = Field(description='Ignored.')
+    legacyGyroNotchCutoff: uint16 = Field(description='Ignored.')
+    bfCompatDtermNotchHz: uint16 = Field(description='Ignored.')
+    bfCompatDtermNotchCutoff: uint16 = Field(description='Ignored.')
+    bfCompatGyroNotch2Hz: uint16 = Field(description='Ignored.')
+    bfCompatGyroNotch2Cutoff: uint16 = Field(description='Ignored.')
+    accNotchHz: uint16 = Field(description='Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255). [Hz]')
+    accNotchCutoff: uint16 = Field(description='Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255). [Hz]')
+    legacyGyroStage2LpfHz: uint16 = Field(description='Ignored.')
 
 
 MSP_PID_ADVANCED: Final[int] = 94

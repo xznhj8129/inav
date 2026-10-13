@@ -920,21 +920,21 @@ typedef struct MSP_PACKED {
 MSP_STATIC_ASSERT(sizeof(mspFilterConfigReply_t) == 23, mspFilterConfigReply_t_size);
 
 // MSP_SET_FILTER_CONFIG (MSPv1) id=93
-// Sets filter configuration settings. Handles different payload lengths for backward compatibility.
-// Notes: Requires at least 22 bytes; intermediate length checks enforce legacy Betaflight frame layout and call `pidInitFilters()` once the D-term notch placeholders are consumed.
+// Sets filter configuration settings.
+// Notes: Requires the full 23-byte payload; shorter requests are rejected. The ignored fields keep the legacy Betaflight frame layout. Calls `pidInitFilters()`.
 typedef struct MSP_PACKED {
-    uint8_t gyroMainLpfHz;  // Sets `gyroConfigMutable()->gyro_main_lpf_hz`. (Size >= 5) | Hz
-    uint16_t dtermLpfHz;  // Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500). (Size >= 5) | Hz
-    uint16_t yawLpfHz;  // Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255). (Size >= 5) | Hz
-    uint16_t legacyGyroNotchHz;  // Ignored. (Size >= 9)
-    uint16_t legacyGyroNotchCutoff;  // Ignored. (Size >= 9)
-    uint16_t bfCompatDtermNotchHz;  // Ignored. (Size >= 13)
-    uint16_t bfCompatDtermNotchCutoff;  // Ignored. (Size >= 13)
-    uint16_t bfCompatGyroNotch2Hz;  // Ignored. (Size >= 17)
-    uint16_t bfCompatGyroNotch2Cutoff;  // Ignored. (Size >= 17)
-    uint16_t accNotchHz;  // Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255). (Size >= 21) | Hz
-    uint16_t accNotchCutoff;  // Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255). (Size >= 21) | Hz
-    uint16_t legacyGyroStage2LpfHz;  // Ignored. (Size >= 22)
+    uint8_t gyroMainLpfHz;  // Sets `gyroConfigMutable()->gyro_main_lpf_hz`. | Hz
+    uint16_t dtermLpfHz;  // Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500). | Hz
+    uint16_t yawLpfHz;  // Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255). | Hz
+    uint16_t legacyGyroNotchHz;  // Ignored.
+    uint16_t legacyGyroNotchCutoff;  // Ignored.
+    uint16_t bfCompatDtermNotchHz;  // Ignored.
+    uint16_t bfCompatDtermNotchCutoff;  // Ignored.
+    uint16_t bfCompatGyroNotch2Hz;  // Ignored.
+    uint16_t bfCompatGyroNotch2Cutoff;  // Ignored.
+    uint16_t accNotchHz;  // Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255). | Hz
+    uint16_t accNotchCutoff;  // Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255). | Hz
+    uint16_t legacyGyroStage2LpfHz;  // Ignored.
 } mspSetFilterConfigRequest_t;
 MSP_STATIC_ASSERT(sizeof(mspSetFilterConfigRequest_t) == 23, mspSetFilterConfigRequest_t_size);
 

@@ -2014,26 +2014,26 @@ id `93` · MSPv1 · group `v1`
 
 since INAV 1.0
 
-Sets filter configuration settings. Handles different payload lengths for backward compatibility.
+Sets filter configuration settings.
 
-> Requires at least 22 bytes; intermediate length checks enforce legacy Betaflight frame layout and call `pidInitFilters()` once the D-term notch placeholders are consumed.
+> Requires the full 23-byte payload; shorter requests are rejected. The ignored fields keep the legacy Betaflight frame layout. Calls `pidInitFilters()`.
 
 *request:*
 
 | Field | Type | Enum / flags | Description |
 |---|---|---|---|
-| gyroMainLpfHz | `uint8` |  Hz | Sets `gyroConfigMutable()->gyro_main_lpf_hz`. (Size >= 5) |
-| dtermLpfHz | `uint16` |  Hz | Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500). (Size >= 5) |
-| yawLpfHz | `uint16` |  Hz | Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255). (Size >= 5) |
-| legacyGyroNotchHz | `uint16` |   | Ignored. (Size >= 9) |
-| legacyGyroNotchCutoff | `uint16` |   | Ignored. (Size >= 9) |
-| bfCompatDtermNotchHz | `uint16` |   | Ignored. (Size >= 13) |
-| bfCompatDtermNotchCutoff | `uint16` |   | Ignored. (Size >= 13) |
-| bfCompatGyroNotch2Hz | `uint16` |   | Ignored. (Size >= 17) |
-| bfCompatGyroNotch2Cutoff | `uint16` |   | Ignored. (Size >= 17) |
-| accNotchHz | `uint16` |  Hz | Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255). (Size >= 21) |
-| accNotchCutoff | `uint16` |  Hz | Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255). (Size >= 21) |
-| legacyGyroStage2LpfHz | `uint16` |   | Ignored. (Size >= 22) |
+| gyroMainLpfHz | `uint8` |  Hz | Sets `gyroConfigMutable()->gyro_main_lpf_hz`. |
+| dtermLpfHz | `uint16` |  Hz | Sets `pidProfileMutable()->dterm_lpf_hz` (constrained 0-500). |
+| yawLpfHz | `uint16` |  Hz | Sets `pidProfileMutable()->yaw_lpf_hz` (constrained 0-255). |
+| legacyGyroNotchHz | `uint16` |   | Ignored. |
+| legacyGyroNotchCutoff | `uint16` |   | Ignored. |
+| bfCompatDtermNotchHz | `uint16` |   | Ignored. |
+| bfCompatDtermNotchCutoff | `uint16` |   | Ignored. |
+| bfCompatGyroNotch2Hz | `uint16` |   | Ignored. |
+| bfCompatGyroNotch2Cutoff | `uint16` |   | Ignored. |
+| accNotchHz | `uint16` |  Hz | Sets `accelerometerConfigMutable()->acc_notch_hz` (constrained 0-255). |
+| accNotchCutoff | `uint16` |  Hz | Sets `accelerometerConfigMutable()->acc_notch_cutoff` (constrained 1-255). |
+| legacyGyroStage2LpfHz | `uint16` |   | Ignored. |
 
 *reply:* none
 
