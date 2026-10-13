@@ -41,6 +41,8 @@ UARTs are replaced by TCP starting with port 5760 ascending. UART1 is mapped to 
 
 By default, UART1 and UART2 are configured for MSP connections. Other UARTs will have TCP listeners if they have an INAV function assigned.
 
+Telemetry ports (MAVLink, LTM, CRSF telemetry, ...) only open with the TELEMETRY feature on. SITL enables it by default; an EEPROM saved with it off keeps it off (`feature TELEMETRY` in the CLI, or the Configuration tab).
+
 To connect the Configurator to SITL, select "SITL".
 
 Alternativelly, select "TCP" and connect to ```localhost:5760``` (or ```127.0.0.1:5760``` if your OS doesn't understand `localhost`) (if SITL is running on the same machine).
