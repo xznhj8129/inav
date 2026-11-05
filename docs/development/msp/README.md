@@ -467,6 +467,7 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 [8739 - MSP2_INAV_SET_CRUISE_HEADING](#msp2_inav_set_cruise_heading)  
 [8740 - MSP2_INAV_ACTIVATE_LANDING](#msp2_inav_activate_landing)  
 [8741 - MSP2_INAV_ACTIVATE_RTH](#msp2_inav_activate_rth)  
+[8742 - MSP2_INAV_SET_HOME](#msp2_inav_set_home)  
 [8743 - MSP2_INAV_ARM_DISARM](#msp2_inav_arm_disarm)  
 [8744 - MSP2_INAV_TIMESYNC](#msp2_inav_timesync)  
 [8752 - MSP2_INAV_SET_AUX_RC](#msp2_inav_set_aux_rc)  
@@ -4953,6 +4954,21 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 **Reply Payload:** **None**  
 
 **Notes:** Requires the aircraft to be armed. Enters normal return-to-home mode through the same mode selector path as RC RTH, without setting the failsafe/geozone forced-RTH latch.
+
+## <a id="msp2_inav_set_home"></a>`MSP2_INAV_SET_HOME (8742 / 0x2226)`
+**Description:** Sets HOME from explicit geodetic coordinates, or restores preserved ARM_HOME when the provided LLA is null.  
+  
+**Request Payload:**
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `lat` | `int32_t` | 4 | 1e-7 deg | Requested home latitude |
+| `lon` | `int32_t` | 4 | 1e-7 deg | Requested home longitude |
+| `alt` | `int32_t` | 4 | cm | Requested home altitude |
+| `alt_datum` | `uint8_t` | 1 | bitfield | Altitude datum bitfield |
+
+**Reply Payload:** **None**  
+
+**Notes:** Expects exactly 13 bytes. Returns error if the normal home-update gate is not open (armed, usable estimated position, valid GPS origin, and GCS-assisted navigation enabled). Calls `navSetHomeFromGeodetic()` and interprets `alt_datum` with the same absolute-vs-relative altitude rule used by waypoint missions. Explicit null LLA (`lat=0`, `lon=0`, `alt=0`) restores the current home from the preserved ARM_HOME capture.
 
 ## <a id="msp2_inav_arm_disarm"></a>`MSP2_INAV_ARM_DISARM (8743 / 0x2227)`
 **Description:** Arms or disarms the flight controller using the normal FC arming path.  

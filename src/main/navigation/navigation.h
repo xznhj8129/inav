@@ -848,7 +848,9 @@ bool navigationIsExecutingAnEmergencyLanding(void);
 bool navigationIsControllingAltitude(void);
 bool navigationSetAltitudeTargetWithDatum(geoAltitudeDatumFlag_e datumFlag, int32_t targetAltitudeCm);
 bool navigationConsumeWaypointReached(uint16_t *seq);
-bool navCanSetHome(void);
+bool navCanSetHome(void);                       // shared home-update gate for MAVLink/MSP control paths
+bool navResetHomeToArmHome(void);               // restore current home to the original ARM_HOME capture
+bool navSetHomeFromGeodetic(const gpsLocation_t *llh, geoAltitudeDatumFlag_e datumFlag); // set HOME from geodetic LLH
 /* Returns true if navConfig()->general.flags.rth_allow_landing is NAV_RTH_ALLOW_LANDING_ALWAYS
  * or if it's NAV_RTH_ALLOW_LANDING_FAILSAFE and failsafe mode is active.
  */

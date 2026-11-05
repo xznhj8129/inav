@@ -169,6 +169,7 @@ static uint32_t lastLoiterRadiusOverride;
 static int activateLandingCalls;
 static bool activateLandingResult;
 static bool canSetHome;
+static int navResetHomeToArmHomeCalls;
 static navigationFSMStateFlags_t testNavStateFlags;
 static bool testModeActivationConditions[CHECKBOX_ITEM_COUNT];
 static char testOsdSystemMessage[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN + 1];
@@ -401,6 +402,7 @@ static void initMavlinkTestState(bool secondPort = false)
     activateLandingCalls = 0;
     activateLandingResult = true;
     canSetHome = true;
+    navResetHomeToArmHomeCalls = 0;
     testNavStateFlags = (navigationFSMStateFlags_t)0;
     memset(testModeActivationConditions, 0, sizeof(testModeActivationConditions));
     strcpy(testOsdSystemMessage, " ");
@@ -1568,6 +1570,33 @@ TEST(MavlinkTelemetryTest, SetHomeCurrentPositionUsesGpsLocation)
     EXPECT_EQ(lastWaypoint.lat, 375000000);
     EXPECT_EQ(lastWaypoint.lon, -1222500000);
     EXPECT_EQ(lastWaypoint.alt, 2456);
+}
+
+TEST(MavlinkTelemetryTest, SetHomeNullLlaResetsToArmHome)
+{
+    initMavlinkTestState();
+
+    mavlink_message_t cmd;
+    mavlink_msg_command_int_pack(
+        42, 200, &cmd,
+        1, testTargetComponent,
+        MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+        MAV_CMD_DO_SET_HOME,
+        0, 0,
+        0, 0, 0, 0,
+        0, 0, 0.0f);
+
+    pushRxMessage(&cmd);
+    handleMAVLinkTelemetry(1000);
+
+    mavlink_message_t ackMsg;
+    ASSERT_TRUE(popTxMessage(&ackMsg));
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&ackMsg, &ack);
+
+    EXPECT_EQ(ack.result, MAV_RESULT_ACCEPTED);
+    EXPECT_EQ(navResetHomeToArmHomeCalls, 1);
+    EXPECT_EQ(setWaypointCalls, 0);
 }
 
 TEST(MavlinkTelemetryTest, BroadcastCommandLongRepositionExecutesLocally)
@@ -4364,6 +4393,34 @@ bool activateForcedLanding(void)
 bool navCanSetHome(void)
 {
     return canSetHome;
+}
+
+bool navResetHomeToArmHome(void)
+{
+    if (!navCanSetHome()) {
+        return false;
+    }
+
+    navResetHomeToArmHomeCalls++;
+    return true;
+}
+
+bool navSetHomeFromGeodetic(const gpsLocation_t *llh, geoAltitudeDatumFlag_e datumFlag)
+{
+    if (!navCanSetHome()) {
+        return false;
+    }
+
+    if (llh->lat == 0 && llh->lon == 0 && llh->alt == 0) {
+        return navResetHomeToArmHome();
+    }
+
+    navWaypoint_t wp = {0};
+    wp.lat = llh->lat;
+    wp.lon = llh->lon;
+    wp.alt = ((datumFlag & NAV_WP_MSL_DATUM) == NAV_WP_MSL_DATUM) ? llh->alt - posControl.gpsOrigin.alt : llh->alt;
+    setWaypoint(0, &wp);
+    return true;
 }
 
 bool navigationSetAltitudeTargetWithDatum(geoAltitudeDatumFlag_e datumFlag, int32_t targetAltitudeCm)

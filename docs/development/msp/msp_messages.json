@@ -1,8 +1,8 @@
 {
     "version": {
         "major": 2,
-        "minor": 1,
-        "patch": 2
+        "minor": 2,
+        "patch": 0
     },
     "messages": {
         "MSP_API_VERSION": {
@@ -11807,6 +11807,41 @@
             "reply": null,
             "notes": "Requires the aircraft to be armed. Enters normal return-to-home mode through the same mode selector path as RC RTH, without setting the failsafe/geozone forced-RTH latch.",
             "description": "Commands the aircraft to execute its configured return-to-home sequence."
+        },
+        "MSP2_INAV_SET_HOME": {
+            "code": 8742,
+            "mspv": 2,
+            "request": {
+                "payload": [
+                    {
+                        "name": "lat",
+                        "ctype": "int32_t",
+                        "desc": "Requested home latitude",
+                        "units": "1e-7 deg"
+                    },
+                    {
+                        "name": "lon",
+                        "ctype": "int32_t",
+                        "desc": "Requested home longitude",
+                        "units": "1e-7 deg"
+                    },
+                    {
+                        "name": "alt",
+                        "ctype": "int32_t",
+                        "desc": "Requested home altitude",
+                        "units": "cm"
+                    },
+                    {
+                        "name": "alt_datum",
+                        "ctype": "uint8_t",
+                        "desc": "Altitude datum bitfield",
+                        "units": "bitfield"
+                    }
+                ]
+            },
+            "reply": null,
+            "notes": "Expects exactly 13 bytes. Returns error if the normal home-update gate is not open (armed, usable estimated position, valid GPS origin, and GCS-assisted navigation enabled). Calls `navSetHomeFromGeodetic()` and interprets `alt_datum` with the same absolute-vs-relative altitude rule used by waypoint missions. Explicit null LLA (`lat=0`, `lon=0`, `alt=0`) restores the current home from the preserved ARM_HOME capture.",
+            "description": "Sets HOME from explicit geodetic coordinates, or restores preserved ARM_HOME when the provided LLA is null."
         },
         "MSP2_INAV_ARM_DISARM": {
             "code": 8743,

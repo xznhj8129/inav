@@ -151,6 +151,7 @@
 #define MSP2_INAV_SET_CRUISE_HEADING            0x2223  //in message  set heading while in Cruise/Course Hold mode; payload: I32 heading_centidegrees (0-35999)
 #define MSP2_INAV_ACTIVATE_LANDING              0x2224  //in message  land at the current position through the normal waypoint LAND path; payload: none
 #define MSP2_INAV_ACTIVATE_RTH                  0x2225  //in message  trigger normal return-to-home mode; payload: none
+#define MSP2_INAV_SET_HOME                      0x2226  //in message  set HOME from explicit LLH; payload: I32 lat, I32 lon, I32 alt, U8 alt_datum
 #define MSP2_INAV_ARM_DISARM                    0x2227  //in message  set armed state; payload: U8 arm
 #define MSP2_INAV_TIMESYNC                      0x2228  //out message local monotonic boot time in nanoseconds; payload: U64 time_ns
 

@@ -135,30 +135,27 @@ static bool handleIncoming_COMMAND(
                     return true;
                 }
 
-                navWaypoint_t wp = {0};
-                wp.action = NAV_WP_ACTION_WAYPOINT;
                 if (param1 == 1.0f) {
-                    wp.lat = gpsSol.llh.lat;
-                    wp.lon = gpsSol.llh.lon;
-                    wp.alt = gpsSol.llh.alt - posControl.gpsOrigin.alt;
-                } else {
-                    if (!isfinite(latitudeDeg) || latitudeDeg < -90.0f || latitudeDeg > 90.0f ||
-                        !isfinite(longitudeDeg) || longitudeDeg < -180.0f || longitudeDeg > 180.0f ||
-                        !isfinite(altitudeMeters) ||
-                        altitudeMeters < (float)INT32_MIN / 100.0f ||
-                        altitudeMeters > (float)INT32_MAX / 100.0f) {
-                        mavlinkSendCommandAck(command, MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
-                        return true;
-                    }
-                    wp.lat = (int32_t)lrintf(latitudeDeg * 1e7f);
-                    wp.lon = (int32_t)lrintf(longitudeDeg * 1e7f);
-                    wp.alt = (int32_t)lrintf(altitudeMeters * 100.0f);
-                    if (mavlinkFrameUsesAbsoluteAltitude(frame)) {
-                        wp.alt -= posControl.gpsOrigin.alt;
-                    }
+                    const gpsLocation_t currentHome = gpsSol.llh;
+                    mavlinkSendCommandAck(command, navSetHomeFromGeodetic(&currentHome, NAV_WP_MSL_DATUM) ? MAV_RESULT_ACCEPTED : MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
+                    return true;
                 }
-                setWaypoint(0, &wp);
-                mavlinkSendCommandAck(command, MAV_RESULT_ACCEPTED, ackTargetSystem, ackTargetComponent);
+
+                if (!isfinite(latitudeDeg) || latitudeDeg < -90.0f || latitudeDeg > 90.0f ||
+                    !isfinite(longitudeDeg) || longitudeDeg < -180.0f || longitudeDeg > 180.0f ||
+                    !isfinite(altitudeMeters) ||
+                    altitudeMeters < (float)INT32_MIN / 100.0f ||
+                    altitudeMeters > (float)INT32_MAX / 100.0f) {
+                    mavlinkSendCommandAck(command, MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
+                    return true;
+                }
+
+                gpsLocation_t home = {0};
+                home.lat = (int32_t)lrintf(latitudeDeg * 1e7f);
+                home.lon = (int32_t)lrintf(longitudeDeg * 1e7f);
+                home.alt = (int32_t)lrintf(altitudeMeters * 100.0f);
+                const geoAltitudeDatumFlag_e datumFlag = mavlinkFrameUsesAbsoluteAltitude(frame) ? NAV_WP_MSL_DATUM : NAV_WP_TAKEOFF_DATUM;
+                mavlinkSendCommandAck(command, navSetHomeFromGeodetic(&home, datumFlag) ? MAV_RESULT_ACCEPTED : MAV_RESULT_FAILED, ackTargetSystem, ackTargetComponent);
                 return true;
             }
         case MAV_CMD_DO_REPOSITION:
