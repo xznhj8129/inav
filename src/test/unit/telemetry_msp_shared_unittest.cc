@@ -56,6 +56,11 @@ enum {
 
 static std::vector<std::vector<uint8_t>> sentFrames;
 
+// One transport endpoint, enough storage for the longest test reply.
+static mspSharedContext_t context;
+static uint8_t requestBuffer[16];
+static uint8_t responseBuffer[512];
+
 extern "C" {
     mspResult_e mspFcProcessCommand(mspPacket_t *cmd, mspPacket_t *reply, mspPostProcessFnPtr *mspPostProcessFn)
     {
@@ -87,33 +92,42 @@ static void captureFrame(uint8_t *payload, const uint8_t payloadSize)
 static bool sendV1Request(uint8_t cmd)
 {
     uint8_t frame[SPORT_PAYLOAD_SIZE] = { STATUS_START | STATUS_V1, 0, cmd, 0, 0, 0 };
-    return handleMspFrame(frame, sizeof(frame));
+    return handleMspFrame(&context, frame, sizeof(frame));
 }
 
 static bool sendV2Request(uint16_t cmd)
 {
     uint8_t frame[SPORT_PAYLOAD_SIZE] = { STATUS_START | STATUS_V2, 0, (uint8_t)(cmd & 0xff), (uint8_t)(cmd >> 8), 0, 0 };
-    return handleMspFrame(frame, sizeof(frame));
+    return handleMspFrame(&context, frame, sizeof(frame));
+}
+
+static bool sendReply(uint8_t payloadSize)
+{
+    return sendMspReply(&context, payloadSize, captureFrame, nullptr);
 }
 
 class MspSharedTest : public ::testing::Test {
 protected:
     void SetUp() override
     {
-        initSharedMsp();
         sentFrames.clear();
+        initSharedMsp(&context, requestBuffer, sizeof(requestBuffer), responseBuffer, sizeof(responseBuffer));
     }
 };
 
 TEST_F(MspSharedTest, ReplyAfterDiscardedV1ReplyStartsWithHeader)
 {
     ASSERT_TRUE(sendV1Request(CMD_LONG_REPLY));
-    ASSERT_TRUE(sendMspReply(SPORT_PAYLOAD_SIZE, captureFrame));
+    ASSERT_TRUE(sendReply(SPORT_PAYLOAD_SIZE));
     ASSERT_TRUE(sentFrames.back()[0] & STATUS_START);
 
-    // a new request while the long reply is still being sent discards that reply
+    // A start frame while a reply is draining only abandons that reply; the
+    // endpoint keeps no partial request, so the requester retries.
+    EXPECT_FALSE(sendV1Request(CMD_SHORT_REPLY));
+    EXPECT_FALSE(sendReply(SPORT_PAYLOAD_SIZE)); // nothing is pending
+
     ASSERT_TRUE(sendV1Request(CMD_SHORT_REPLY));
-    EXPECT_FALSE(sendMspReply(SPORT_PAYLOAD_SIZE, captureFrame));
+    EXPECT_FALSE(sendReply(SPORT_PAYLOAD_SIZE));
 
     const std::vector<uint8_t> expected = { STATUS_START | STATUS_V1, 2, CMD_SHORT_REPLY, CMD_SHORT_REPLY, CMD_SHORT_REPLY + 1 };
     const std::vector<uint8_t> &frame = sentFrames.back();
@@ -125,10 +139,13 @@ TEST_F(MspSharedTest, ReplyAfterDiscardedV1ReplyStartsWithHeader)
 TEST_F(MspSharedTest, ReplyAfterDiscardedV2ReplyStartsWithHeader)
 {
     ASSERT_TRUE(sendV2Request(CMD_V2_LONG));
-    ASSERT_TRUE(sendMspReply(CRSF_PAYLOAD_SIZE, captureFrame));
+    ASSERT_TRUE(sendReply(CRSF_PAYLOAD_SIZE));
+
+    EXPECT_FALSE(sendV2Request(CMD_V2_SHORT));
+    EXPECT_FALSE(sendReply(CRSF_PAYLOAD_SIZE)); // nothing is pending
 
     ASSERT_TRUE(sendV2Request(CMD_V2_SHORT));
-    EXPECT_FALSE(sendMspReply(CRSF_PAYLOAD_SIZE, captureFrame));
+    EXPECT_FALSE(sendReply(CRSF_PAYLOAD_SIZE));
 
     const std::vector<uint8_t> expected = { STATUS_START | STATUS_V2, 0, CMD_V2_SHORT & 0xff, CMD_V2_SHORT >> 8, 2, 0,
                                             CMD_V2_SHORT & 0xff, (CMD_V2_SHORT + 1) & 0xff };
@@ -138,16 +155,24 @@ TEST_F(MspSharedTest, ReplyAfterDiscardedV2ReplyStartsWithHeader)
     EXPECT_TRUE(std::equal(expected.begin() + 1, expected.end(), frame.begin() + 1));
 }
 
-TEST_F(MspSharedTest, ReplyAfterReplyDiscardedByStrayFrameStartsWithHeader)
+TEST_F(MspSharedTest, ReplyAfterReplyDiscardedByStartFrameStartsWithHeader)
 {
     ASSERT_TRUE(sendV1Request(CMD_LONG_REPLY));
-    ASSERT_TRUE(sendMspReply(SPORT_PAYLOAD_SIZE, captureFrame));
+    ASSERT_TRUE(sendReply(SPORT_PAYLOAD_SIZE));
 
+    // A stray continuation frame does not own the endpoint: the reply is still
+    // pending and the next chunk stays a continuation.
     uint8_t continuation[SPORT_PAYLOAD_SIZE] = { STATUS_V1 | 5, 0, 0, 0, 0, 0 };
-    EXPECT_FALSE(handleMspFrame(continuation, sizeof(continuation)));
+    EXPECT_TRUE(handleMspFrame(&context, continuation, sizeof(continuation)));
+    EXPECT_TRUE(sharedMspReplyPending(&context));
+    ASSERT_TRUE(sendReply(SPORT_PAYLOAD_SIZE));
+    EXPECT_FALSE(sentFrames.back()[0] & STATUS_START);
 
+    // A start frame abandons the drained reply; the retry's reply starts with a
+    // header, so a consumer can tell which request it belongs to.
+    EXPECT_FALSE(sendV1Request(CMD_SHORT_REPLY));
     ASSERT_TRUE(sendV1Request(CMD_SHORT_REPLY));
-    EXPECT_FALSE(sendMspReply(SPORT_PAYLOAD_SIZE, captureFrame));
+    EXPECT_FALSE(sendReply(SPORT_PAYLOAD_SIZE));
     EXPECT_TRUE(sentFrames.back()[0] & STATUS_START);
     EXPECT_EQ(CMD_SHORT_REPLY, sentFrames.back()[2]);
 }
@@ -155,13 +180,13 @@ TEST_F(MspSharedTest, ReplyAfterReplyDiscardedByStrayFrameStartsWithHeader)
 TEST_F(MspSharedTest, ExactlyFilledFrameIsFollowedByStatusOnlyFrame)
 {
     ASSERT_TRUE(sendV1Request(CMD_EXACT_REPLY));
-    EXPECT_TRUE(sendMspReply(SPORT_PAYLOAD_SIZE, captureFrame));
+    EXPECT_TRUE(sendReply(SPORT_PAYLOAD_SIZE));
     ASSERT_EQ(1u, sentFrames.size());
     EXPECT_EQ((size_t)SPORT_PAYLOAD_SIZE, sentFrames[0].size());
     EXPECT_EQ(3, sentFrames[0][1]);
 
     // clients derived from the Betaflight Lua MSP code complete such a reply only on this frame
-    EXPECT_FALSE(sendMspReply(SPORT_PAYLOAD_SIZE, captureFrame));
+    EXPECT_FALSE(sendReply(SPORT_PAYLOAD_SIZE));
     ASSERT_EQ(2u, sentFrames.size());
     ASSERT_EQ(1u, sentFrames[1].size());
     EXPECT_FALSE(sentFrames[1][0] & STATUS_START);
