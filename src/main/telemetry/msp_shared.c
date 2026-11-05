@@ -375,7 +375,10 @@ bool sendMspReply(mspSharedContext_t *context, uint8_t payloadSize, mspResponseF
 
     responseFn(payloadOut, (uint8_t)(payloadBuf->ptr - payloadOut));
 
-    if (sbufBytesRemaining(txBuf) > 0) {
+    // A reply that exactly fills the frame is followed by a status-only frame:
+    // Betaflight-style MSP-over-telemetry consumers complete a reply that ends
+    // on a frame boundary only when that trailer arrives.
+    if (responseBytes >= payloadBytes) {
         return true;
     }
 

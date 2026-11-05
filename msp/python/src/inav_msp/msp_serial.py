@@ -163,8 +163,8 @@ class _MSPParser:
                 elif b == DIR_TO_FC:
                     self.direction = DIR_TO_FC
                 else:
-                    # invalid; resync
-                    self.state = 0
+                    # invalid; resync. A '$' here is the start of another frame.
+                    self.state = 1 if b == MSP_V1_SYNC_1 else 0
                     continue
 
                 if self.version == 1:
@@ -219,7 +219,10 @@ class _MSPParser:
                     return None
                 self.length_expected |= (b & 0xFF) << 8
                 if self.length_expected > MAX_PAYLOAD_LEN:
-                    raise ValueError(f"MSP V2 payload length {self.length_expected} exceeds limit {MAX_PAYLOAD_LEN}")
+                    # A declared length over the limit is malformed input, not
+                    # a transport failure: discard the header and resync.
+                    self.reset()
+                    continue
                 self.payload = bytearray()
                 self.length_received = 0
                 # go to payload or checksum
@@ -262,7 +265,10 @@ class _MSPParser:
                 self.length_expected += (b & 0xFF) << 8
                 self.checksum ^= (b & 0xFF)
                 if self.length_expected > MAX_PAYLOAD_LEN:
-                    raise ValueError(f"MSP V1 payload length {self.length_expected} exceeds limit {MAX_PAYLOAD_LEN}")
+                    # A declared length over the limit is malformed input, not
+                    # a transport failure: discard the header and resync.
+                    self.reset()
+                    continue
                 self.payload = bytearray()
                 self.length_received = 0
                 self.state = 7
@@ -349,7 +355,7 @@ class MSPSerial:
         *,
         max_retries: int = 1,
         reconnect_delay: float = 0.5,
-        log_path: Optional[str] = "msp.log",
+        log_path: Optional[str] = None,
     ) -> None:
         """
         port: serial device path (e.g. '/dev/ttyACM0') or host:port for TCP when tcp=True
@@ -837,7 +843,16 @@ class MSPSerial:
             body = repr(data)
         line = f"{ts} {direction} {body}\n"
         with self._log_lock:
-            if self._log_fp is None:
-                self._log_fp = open(self._log_path, "a", encoding="ascii", errors="ignore")
-            self._log_fp.write(line)
-            self._log_fp.flush()
+            try:
+                if self._log_fp is None:
+                    self._log_fp = open(self._log_path, "a", encoding="ascii", errors="ignore")
+                self._log_fp.write(line)
+                self._log_fp.flush()
+            except OSError as exc:
+                # The frame log is diagnostic only: a full disk or an
+                # unwritable path must not fail a request or stop the reader,
+                # and retrying the same write on every frame would repeat the
+                # failure, so the log is disabled for the rest of the session.
+                self._log_enabled = False
+                self._log_fp = None
+                print(f"msp: {direction} logging to {self._log_path} disabled: {exc}", file=sys.stderr)

@@ -584,13 +584,12 @@ class MSPApi:
             "capacityUnit": InavEnums.batCapacityUnit_e(rep["capacityUnit"]),
         }
 
-    def get_gps_statistics(self) -> Dict[str, float]:
+    def get_gps_statistics(self) -> Dict[str, Union[int, float]]:
         self.info, rep = self._request(InavMSP.MSP_GPSSTATISTICS)
-        packet_count = max(rep["packetCount"], 1)
         return {
             "lastMessageDt": rep["lastMessageDt"] / 1000.0,
-            "errors": rep["errors"] / packet_count,
-            "timeouts": rep["timeouts"] / packet_count,
+            "errors": rep["errors"],
+            "timeouts": rep["timeouts"],
             "hdop": rep["hdop"] / 100.0,
             "eph": rep["eph"] / 100.0,
             "epv": rep["epv"] / 100.0,
@@ -1041,16 +1040,21 @@ class MSPApi:
         def set_local_target(
             self,
             *,
-            x_cm: float,
-            y_cm: float,
-            z_cm: float,
+            forward_cm: float,
+            right_cm: float,
+            up_cm: float,
         ) -> Mapping[str, Any]:
-            payload_map = {
-                "posX": int(round(x_cm)),
-                "posY": int(round(y_cm)),
-                "posZ": int(round(z_cm)),
-            }
-            payload = self._pack_request(InavMSP.MSP2_INAV_SET_LOCAL_TARGET, payload_map)
+            """Set a target offset from the current position in the body frame,
+            in centimetres, up-positive. The firmware rotates it into NEU using
+            the current yaw; up_cm=0 keeps the current altitude."""
+            payload = self._pack_request(
+                InavMSP.MSP2_INAV_SET_LOCAL_TARGET,
+                {
+                    "offsetForward": int(round(forward_cm)),
+                    "offsetRight": int(round(right_cm)),
+                    "offsetUp": int(round(up_cm)),
+                },
+            )
             self.info, rep = self._request(InavMSP.MSP2_INAV_SET_LOCAL_TARGET, payload)
             return rep
 
@@ -1118,7 +1122,7 @@ class MSPApi:
         def set_altitude_target(self, *, altitude_datum: Union[int, "InavEnums.geoAltitudeDatumFlag_e"], altitude_m: float) -> Mapping[str, Any]:
             raise RuntimeError("API version mismatch")
 
-        def set_local_target(self, *, x_cm: float, y_cm: float, z_cm: float) -> Mapping[str, Any]:
+        def set_local_target(self, *, forward_cm: float, right_cm: float, up_cm: float) -> Mapping[str, Any]:
             raise RuntimeError("API version mismatch")
 
         def get_local_target(self) -> Dict[str, Any]:

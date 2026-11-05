@@ -240,6 +240,15 @@ bool MSPIntf::request(uint16_t messageID, void *payload, uint16_t maxSize, uint1
     return waitFor(messageID, payload, maxSize, recvSize);
 }
 
+// Send a request whose reply is a fixed-size struct and require the FC to send
+// the whole struct. recv() reports the wire payload size, so a short or empty
+// frame would otherwise leave part of the caller's struct stale.
+bool MSPIntf::requestFixed(uint16_t messageID, void *payload, uint16_t size)
+{
+    uint16_t recvSize = 0;
+    return request(messageID, payload, size, &recvSize) && recvSize >= size;
+}
+
 // Send a command, optionally wait for ACK (reply with same message ID, zero payload)
 bool MSPIntf::command(uint16_t messageID, const void *payload, uint16_t size, bool waitACK)
 {
@@ -264,65 +273,42 @@ bool MSPIntf::command(uint16_t messageID, const void *payload, uint16_t size, bo
 
 // --- Version & Board Info ---
 bool MSPIntf::requestApiVersion(mspApiVersionReply_t *reply) {
-    return request(MSP_API_VERSION, reply, sizeof(*reply));
+    return requestFixed(MSP_API_VERSION, reply, sizeof(*reply));
 }
 bool MSPIntf::requestFcVariant(mspFcVariantReply_t *reply) {
-    return request(MSP_FC_VARIANT, reply, sizeof(*reply));
+    return requestFixed(MSP_FC_VARIANT, reply, sizeof(*reply));
 }
 bool MSPIntf::requestFcVersion(mspFcVersionReply_t *reply) {
-    return request(MSP_FC_VERSION, reply, sizeof(*reply));
+    return requestFixed(MSP_FC_VERSION, reply, sizeof(*reply));
 }
 bool MSPIntf::requestBoardInfo(mspBoardInfoReply_t *reply, char *targetNameBuf, uint8_t targetNameBufLen) {
-     uint16_t recvSize;
-     // Request fixed part first
-     if (request(MSP_BOARD_INFO, reply, BOARD_INFO_FIXED_SIZE, &recvSize)) {
-         if (recvSize >= BOARD_INFO_FIXED_SIZE && reply->targetNameLength > 0 && targetNameBuf && targetNameBufLen > 0) {
-             uint16_t nameBytesToRead = reply->targetNameLength;
-             uint16_t bufferSpace = targetNameBufLen - 1; // Leave space for null terminator
-             uint16_t bytesRead = 0;
-             uint32_t t0 = millis();
+    // The fixed header and the target-name tail arrive in one frame, and recv()
+    // consumes the whole frame, so request both in one piece.
+    uint8_t payload[sizeof(mspBoardInfoReply_t) + MAX_TARGET_NAME_LENGTH];
+    uint16_t recvSize = 0;
+    if (!request(MSP_BOARD_INFO, payload, sizeof(payload), &recvSize)) return false;
+    if (recvSize < sizeof(*reply)) return false;
+    memcpy(reply, payload, sizeof(*reply));
+    if (!targetNameBuf || targetNameBufLen == 0) return true;
 
-             // Read variable part (target name) directly
-             while (bytesRead < nameBytesToRead && millis() - t0 < _timeout) {
-                 if (_stream->available()) {
-                     char c = _stream->read();
-                     if (bytesRead < bufferSpace) {
-                         targetNameBuf[bytesRead] = c;
-                     }
-                     bytesRead++;
-                 }
-             }
-             targetNameBuf[min(bytesRead, bufferSpace)] = '\0'; // Null terminate
-
-             // Now read the final CRC byte which followed the name
-             uint8_t dummy_crc;
-             uint32_t t1 = millis();
-              while (_stream->available() < 1 && millis() - t1 < _timeout) {}
-             if (_stream->available() >= 1) {
-                _stream->read(); // Consume the CRC byte (validation happened in recv via request->waitFor)
-                return true; // Assume success if we got here
-             } else {
-                return false; // Timeout reading name CRC
-             }
-         } else if (recvSize >= BOARD_INFO_FIXED_SIZE) {
-             // No target name sent or no buffer provided, but fixed part OK
-             if (targetNameBuf && targetNameBufLen > 0) targetNameBuf[0] = '\0';
-             return true;
-         }
-     }
-     return false; // Request failed
+    uint16_t nameLen = (uint16_t)(recvSize - sizeof(*reply));
+    if (nameLen > reply->targetNameLength) nameLen = reply->targetNameLength;
+    if (nameLen > (uint16_t)(targetNameBufLen - 1)) nameLen = (uint16_t)(targetNameBufLen - 1);
+    memcpy(targetNameBuf, payload + sizeof(*reply), nameLen);
+    targetNameBuf[nameLen] = '\0';
+    return true;
 }
 bool MSPIntf::requestBuildInfo(mspBuildInfoReply_t *reply) {
-    return request(MSP_BUILD_INFO, reply, sizeof(*reply));
+    return requestFixed(MSP_BUILD_INFO, reply, sizeof(*reply));
 }
 bool MSPIntf::requestUID(mspUidReply_t *reply) {
-    return request(MSP_UID, reply, sizeof(*reply));
+    return requestFixed(MSP_UID, reply, sizeof(*reply));
 }
 bool MSPIntf::requestCraftName(char *name, uint8_t bufLen) {
     uint16_t recvSize = 0;
     if (!name || bufLen == 0) return false;
     if (request(MSP_NAME, name, bufLen - 1, &recvSize)) {
-        name[min((uint16_t)(bufLen - 1), recvSize)] = ' ';
+        name[min((uint16_t)(bufLen - 1), recvSize)] = '\0';
         return true;
     }
     return false;
@@ -336,50 +322,50 @@ bool MSPIntf::setCraftName(const char *name) {
 
 // --- Status ---
 bool MSPIntf::requestStatus(mspStatusReply_t *reply) {
-    return request(MSP_STATUS, reply, sizeof(*reply));
+    return requestFixed(MSP_STATUS, reply, sizeof(*reply));
 }
 bool MSPIntf::requestStatusEx(mspStatusExReply_t *reply) {
-    return request(MSP_STATUS_EX, reply, sizeof(*reply));
+    return requestFixed(MSP_STATUS_EX, reply, sizeof(*reply));
 }
 bool MSPIntf::requestInavStatus(msp2InavStatusReply_t *reply) {
-    bool success = request(MSP2_INAV_STATUS, reply, sizeof(*reply));
+    bool success = requestFixed(MSP2_INAV_STATUS, reply, sizeof(*reply));
     if (success) {
         _last_status_arming_flags = reply->armingFlags; // Cache for isArmed()
     }
     return success;
 }
 
-// Check ARMFLAG_ARMED bit (bit 2) from last cached status
+// Check the ARMED flag (bit 2) from last cached status
 bool MSPIntf::isArmed() {
-    return (_last_status_arming_flags & (1UL << (1 << 2))) != 0;
+    return (_last_status_arming_flags & ARMED) != 0;
 }
 
 // --- Sensor Data ---
 bool MSPIntf::requestRawIMU(mspRawImuReply_t *reply) {
-    return request(MSP_RAW_IMU, reply, sizeof(*reply));
+    return requestFixed(MSP_RAW_IMU, reply, sizeof(*reply));
 }
 bool MSPIntf::requestAttitude(mspAttitudeReply_t *reply) {
-    return request(MSP_ATTITUDE, reply, sizeof(*reply));
+    return requestFixed(MSP_ATTITUDE, reply, sizeof(*reply));
 }
 bool MSPIntf::requestAltitude(mspAltitudeReply_t *reply) {
-    return request(MSP_ALTITUDE, reply, sizeof(*reply));
+    return requestFixed(MSP_ALTITUDE, reply, sizeof(*reply));
 }
 bool MSPIntf::requestSonarAltitude(mspSonarAltitudeReply_t *reply) {
-    return request(MSP_SONAR_ALTITUDE, reply, sizeof(*reply));
+    return requestFixed(MSP_SONAR_ALTITUDE, reply, sizeof(*reply));
 }
 bool MSPIntf::requestAirspeed(msp2InavAirSpeedReply_t *reply) {
-    return request(MSP2_INAV_AIR_SPEED, reply, sizeof(*reply));
+    return requestFixed(MSP2_INAV_AIR_SPEED, reply, sizeof(*reply));
 }
 
 // --- GPS & Navigation ---
 bool MSPIntf::requestRawGPS(mspRawGpsReply_t *reply) {
-    return request(MSP_RAW_GPS, reply, sizeof(*reply));
+    return requestFixed(MSP_RAW_GPS, reply, sizeof(*reply));
 }
 bool MSPIntf::requestCompGPS(mspCompGpsReply_t *reply) {
-    return request(MSP_COMP_GPS, reply, sizeof(*reply));
+    return requestFixed(MSP_COMP_GPS, reply, sizeof(*reply));
 }
 bool MSPIntf::requestNavStatus(mspNavStatusReply_t *reply) {
-    return request(MSP_NAV_STATUS, reply, sizeof(*reply));
+    return requestFixed(MSP_NAV_STATUS, reply, sizeof(*reply));
 }
 bool MSPIntf::setHeading(int16_t headingDeg) {
     // Ensure heading is within 0-359 range if necessary, though FC might handle wrap-around.
@@ -391,19 +377,16 @@ bool MSPIntf::setHeading(int16_t headingDeg) {
 
 // --- Waypoints & Missions ---
 bool MSPIntf::requestWaypointInfo(mspWpGetinfoReply_t *reply) {
-    return request(MSP_WP_GETINFO, reply, sizeof(*reply));
+    return requestFixed(MSP_WP_GETINFO, reply, sizeof(*reply));
 }
 
 bool MSPIntf::requestWaypoint(uint8_t index, mspWpReply_t *reply) {
     uint8_t payload = index;
-    if (waitFor(MSP_WP, reply, sizeof(*reply))) {
-        return (reply->waypointIndex == index);
-    }
+    uint16_t recvSize = 0;
     send(MSP_WP, &payload, sizeof(payload));
-    if (waitFor(MSP_WP, reply, sizeof(*reply))) {
-         return (reply->waypointIndex == index);
-    }
-    return false;
+    if (!waitFor(MSP_WP, reply, sizeof(*reply), &recvSize)) return false;
+    if (recvSize < sizeof(*reply)) return false;
+    return (reply->waypointIndex == index);
 }
 
 bool MSPIntf::setWaypoint(const mspSetWpRequest_t *wp) {
@@ -434,7 +417,9 @@ bool MSPIntf::requestBoxIDs(uint8_t *boxIds, uint16_t maxIds, uint16_t *count) {
      if (!boxIds || maxIds == 0 || !count) return false;
      uint16_t recvSize = 0;
      if (request(MSP_BOXIDS, boxIds, maxIds, &recvSize)) {
-         *count = recvSize;
+         // recv() reports the wire size even when it discarded bytes past the
+         // buffer, so count only the IDs that were stored.
+         *count = (recvSize > maxIds) ? maxIds : recvSize;
          return true;
      }
      *count = 0;
@@ -443,10 +428,11 @@ bool MSPIntf::requestBoxIDs(uint8_t *boxIds, uint16_t maxIds, uint16_t *count) {
 
 bool MSPIntf::requestModeRanges(mspModeRangesReply_t *table, uint16_t *count) {
     if (!table || !count) return false;
-    uint16_t recvSize = 0;
     *count = 0;
-    if (!request(MSP_MODE_RANGES, table, sizeof(*table), &recvSize)) return false;
-    *count = (uint16_t)(recvSize / sizeof(table->items[0]));
+    if (!requestFixed(MSP_MODE_RANGES, table, sizeof(*table))) return false;
+    // The reply is the whole fixed table; the wire size cannot exceed what was
+    // stored, so report exactly the entries the table holds.
+    *count = (uint16_t)(sizeof(table->items) / sizeof(table->items[0]));
     return true;
 }
 
@@ -459,7 +445,9 @@ bool MSPIntf::requestRcChannels(mspRcReplyElem_t *channels, uint8_t maxChannels,
         return false;
     }
     if (recvSize == 0 || recvSize % sizeof(mspRcReplyElem_t) != 0) return false;
-    if (received) *received = (uint8_t)(recvSize / sizeof(mspRcReplyElem_t));
+    uint16_t count = (uint16_t)(recvSize / sizeof(mspRcReplyElem_t));
+    if (count > maxChannels) count = maxChannels; // recv() discarded the rest
+    if (received) *received = (uint8_t)count;
     return true;
 }
 
@@ -473,7 +461,7 @@ bool MSPIntf::commandRawRC(const int16_t *channels, uint8_t channelCount) {
 }
 
 bool MSPIntf::requestMotorOutputs(mspMotorReply_t *reply) {
-    return request(MSP_MOTOR, reply, sizeof(*reply));
+    return requestFixed(MSP_MOTOR, reply, sizeof(*reply));
 }
 
 bool MSPIntf::commandMotorOutputs(const uint16_t *motorValues) {
@@ -524,10 +512,10 @@ bool MSPIntf::setSensorConfig(const mspSensorConfigReply_t *config){
 
 // --- Battery & Power ---
 bool MSPIntf::requestBatteryState(mspBatteryStateReply_t *reply){
-    return request(MSP_BATTERY_STATE, reply, sizeof(*reply));
+    return requestFixed(MSP_BATTERY_STATE, reply, sizeof(*reply));
 }
 bool MSPIntf::requestAnalog(msp2InavAnalogReply_t *reply){
-    return request(MSP2_INAV_ANALOG, reply, sizeof(*reply));
+    return requestFixed(MSP2_INAV_ANALOG, reply, sizeof(*reply));
 }
 
 // --- Calibration & System ---
@@ -553,8 +541,8 @@ bool MSPIntf::commandEepromWrite() {
 
 // --- Programming Framework ---
 bool MSPIntf::requestGvarStatus(msp2InavGvarStatusReply_t *reply){
-    return request(MSP2_INAV_GVAR_STATUS, reply, sizeof(*reply));
+    return requestFixed(MSP2_INAV_GVAR_STATUS, reply, sizeof(*reply));
 }
 bool MSPIntf::requestLogicConditionsStatus(msp2InavLogicConditionsStatusReply_t *reply){
-    return request(MSP2_INAV_LOGIC_CONDITIONS_STATUS, reply, sizeof(*reply));
+    return requestFixed(MSP2_INAV_LOGIC_CONDITIONS_STATUS, reply, sizeof(*reply));
 }

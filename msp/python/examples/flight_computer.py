@@ -220,6 +220,11 @@ class FlightComputer:
                 latitude=latitude,
                 longitude=longitude,
                 altitude=altitude,
+                # Plain waypoint action: no speed or hold-time override; datum 0
+                # is takeoff/home-relative (NAV_WP_TAKEOFF_DATUM).
+                param1=0,
+                param2=0,
+                param3=0,
                 flag=0
             )
             logging.info(f"Waypoint {index} set: {latitude}, {longitude} @ {altitude}m")
