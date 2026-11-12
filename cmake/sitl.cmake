@@ -25,6 +25,8 @@ main_sources(SITL_SRC
     target/SITL/sim/realFlight.h
     target/SITL/sim/simHelper.c
     target/SITL/sim/simHelper.h
+    target/SITL/sim/simSensors.c
+    target/SITL/sim/simSensors.h
     target/SITL/sim/soap_client.c
     target/SITL/sim/soap_client.h
     target/SITL/sim/xplane.c

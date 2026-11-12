@@ -27,6 +27,7 @@
 #include <stdbool.h>
 
 #include "common/time.h"
+#include "target/SITL/sim/simSensors.h"
 
 // SITL stepped clock: the simulator drives SITL time through MSP_SIMULATOR
 // frames carrying HITL_STEPPED_CLOCK. Implemented in target.c.
@@ -41,3 +42,6 @@ void sitlSchedulerIdle(timeUs_t nextTaskAtUs, bool taskRan);
 
 // Main loop between steps: services MSP while sim time stands still.
 void sitlServiceBetweenSteps(void);
+
+// The physics backend running inside SITL (--sim=jsbsim), or NULL.
+const simInProcessBackend_t *sitlInProcessSim(void);

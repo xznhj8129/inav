@@ -61,6 +61,7 @@
 
 #include "target/SITL/sim/realFlight.h"
 #include "target/SITL/sim/xplane.h"
+#include "target/SITL/sim/simSensors.h"
 
 #include "target/SITL/serial_proxy.h"
 
@@ -94,6 +95,7 @@ static uint8_t pwmMapping[MAX_MOTORS + MAX_SERVOS];
 static uint8_t mappingCount = 0;
 static bool useImu = false;
 static char *simIp = NULL;
+static const simInProcessBackend_t *inProcessSim;   // physics inside SITL, on the stepped clock
 static int simPort = 0;
 
 static char **c_argv;
@@ -447,6 +449,12 @@ bool sitlRunStep(timeUs_t stepUs)
         fprintf(stderr, "[SYSTEM] Stepped clock from %lu us\n", (unsigned long)simTimeUs);
     }
 
+    // An in-process simulator starts its physics clock at the first step and
+    // otherwise catches up with time that passed between steps
+    if (inProcessSim && inProcessSim->advanceTo(simTimeUs)) {
+        unlockMainPID();
+    }
+
     stepEndUs = simTimeUs + stepUs;
     stepInProgress = true;
     stepCount++;
@@ -484,6 +492,17 @@ void sitlSchedulerIdle(timeUs_t nextTaskAtUs, bool taskRan)
     // Nothing is due now: jump to the next due time. Move at least 1 us, since
     // a realtime task runs only once it is past its period.
     simTimeUs = MIN(MAX(nextTaskAtUs, simTimeUs + 1), stepEndUs);
+
+    // An in-process simulator runs physics up to the new time; fresh sensor
+    // data releases the PID loop, as a simulator packet does
+    if (inProcessSim && inProcessSim->advanceTo(simTimeUs)) {
+        unlockMainPID();
+    }
+}
+
+const simInProcessBackend_t *sitlInProcessSim(void)
+{
+    return inProcessSim;
 }
 
 void sitlServiceBetweenSteps(void)
