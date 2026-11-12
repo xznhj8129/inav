@@ -13,6 +13,7 @@ Currently supported are
 - RealFlight  https://www.realflight.com/
 - X-Plane https://www.x-plane.com/
 - fl2sim [replay Blackbox Log via SITL](https://github.com/stronnag/bbl2kml/wiki/fl2sitl), uses the X-Plane protocol.
+- JSBSim https://github.com/JSBSim-Team/jsbsim, built into SITL: physics runs inside the SITL process, driven by a script. See [JSBSim.md](JSBSim.md).
 
 INAV SITL communicates for sensor data and control directly with the corresponding simulator, see the documentation of the individual simulators and the Configurator or the command line options.
 
@@ -151,7 +152,9 @@ If SITL is started without command line options, only a serial MSP / CLI connect
 
 ```--path``` Path and file name to config file. If not present, eeprom.bin in the current directory is used. Example: ```C:\INAV_SITL\flying-wing.bin```, ```/home/user/sitl-eeproms/test-eeprom.bin```.
 
-```--sim=[sim]``` Select the simulator. xp = X-Plane, rf = RealFlight. Example: ```--sim=xp```. If not specified, configurator-only mode is started. Omit for usage with INAV-X-Plane-HITL plugin.
+```--sim=[sim]``` Select the simulator. xp = X-Plane, rf = RealFlight, jsbsim = JSBSim inside SITL (see [JSBSim.md](JSBSim.md)). Example: ```--sim=xp```. If not specified, configurator-only mode is started. Omit for usage with INAV-X-Plane-HITL plugin.
+
+```--simcfg=[path]``` Vehicle file for `--sim=jsbsim`: JSBSim model, start condition, which INAV output drives which control, sensors. See [JSBSim.md](JSBSim.md).
 
 ```--simip=[ip]``` Hostname or IP address of the simulator, if you specify a simulator with "--sim" and omit this option IPv4 localhost (`127.0.0.1`) will be used. Example: ```--simip=172.65.21.15```, ```--simip acme-sims.org```, ```--sim ::1```.
 
@@ -195,6 +198,8 @@ A simulator that drives SITL over `MSP_SIMULATOR` (format 3) can run SITL on its
 - The sensor values are held for the whole step. A step must be short enough for the airframe: a multirotor needs about 2.5 ms (400 Hz), a fixed-wing flies the same with 10 ms steps.
 
 Frames without the flag behave exactly as before.
+
+With `--sim=jsbsim` the physics runs inside SITL and the frame carries no sensor data, only the sticks and the step; see [JSBSim.md](JSBSim.md).
 
 ## Running SITL
 It is recommended to start the tools in the following order:
