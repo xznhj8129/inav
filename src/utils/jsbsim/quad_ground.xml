@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- JSBSim initialization file: on the ground at Sneedville, TN, facing north -->
+<initialize name="quad_ground">
+  <latitude unit="DEG" type="geodetic">36.530440</latitude>
+  <longitude unit="DEG">-83.216383</longitude>
+  <elevation unit="FT">0</elevation>
+  <altitudeAGL unit="FT">0</altitudeAGL>
+  <psi unit="DEG">0</psi>
+  <vc unit="KTS">0</vc>
+  <running>-1</running>
+  <trim>ground</trim>
+</initialize>

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- JSBSim initialization file: in level flight 450 m above Sneedville, TN, heading north at 70 kts -->
+<initialize name="plane_air">
+  <latitude unit="DEG" type="geodetic">36.530440</latitude>
+  <longitude unit="DEG">-83.216383</longitude>
+  <elevation unit="FT">0</elevation>
+  <altitudeAGL unit="M">450</altitudeAGL>
+  <psi unit="DEG">0</psi>
+  <gamma unit="DEG">0</gamma>
+  <vc unit="KTS">70</vc>
+  <running>-1</running>
+</initialize>

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!-- INAV SITL vehicle for the JSBSim backend (sim=jsbsim): JSBSim's bundled DJI F450 quad.
+     "root" is JSBSim's data directory (with aircraft/, engine/, systems/),
+     relative to this file or absolute: a JSBSim source checkout, or the
+     directory of the jsbsim Python package. -->
+<inav_vehicle>
+  <model root="jsbsim" dt="0.001">F450</model>
+  <initialize>quad_ground.xml</initialize>
+
+  <!-- INAV quad-X motor order: rear right, front right, rear left, front left -->
+  <motor index="0">fcs/cmdAR_ext_nd</motor>
+  <motor index="1">fcs/cmdFR_ext_nd</motor>
+  <motor index="2">fcs/cmdAL_ext_nd</motor>
+  <motor index="3">fcs/cmdFL_ext_nd</motor>
+
+  <gps rate="10"/>
+  <rangefinder max="10"/>
+
+  <!-- the F450 file claims a newer format than JSBSim reads, and its own
+       onboard sensor systems fail to register; SITL computes the sensors -->
+  <known_error>INCOMPATIBLE CFG FILE</known_error>
+  <known_error>Failed to tie property fcs/</known_error>
+</inav_vehicle>

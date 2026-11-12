@@ -62,6 +62,9 @@
 #include "target/SITL/sim/realFlight.h"
 #include "target/SITL/sim/xplane.h"
 #include "target/SITL/sim/simSensors.h"
+#if defined(USE_SIM_JSBSIM)
+#include "target/SITL/sim/jsbsim.h"
+#endif
 
 #include "target/SITL/serial_proxy.h"
 
@@ -95,6 +98,7 @@ static uint8_t pwmMapping[MAX_MOTORS + MAX_SERVOS];
 static uint8_t mappingCount = 0;
 static bool useImu = false;
 static char *simIp = NULL;
+static char *simCfg = NULL;
 static const simInProcessBackend_t *inProcessSim;   // physics inside SITL, on the stepped clock
 static int simPort = 0;
 
@@ -178,6 +182,19 @@ void systemInit(void) {
                 fprintf(stderr, "[SIM] Connection with X-PLane NOT established.\n");
             }
             break;
+        case SITL_SIM_JSBSIM:
+#if defined(USE_SIM_JSBSIM)
+            if (!simCfg) {
+                fprintf(stderr, "[SIM] --sim=jsbsim needs --simcfg=<vehicle.xml>.\n");
+                exit(1);
+            }
+            inProcessSim = simJsbsimInit(simCfg, useImu);
+            fprintf(stderr, "[SIM] JSBSim ready; it runs on the stepped clock (MSP_SIMULATOR frames).\n");
+#else
+            fprintf(stderr, "[SIM] This SITL was built without JSBSim. Install JSBSim (pkg-config JSBSim) and rebuild.\n");
+            exit(1);
+#endif
+            break;
         default:
           fprintf(stderr, "[SIM] No interface specified. Configurator only.\n");
           break;
@@ -248,7 +265,8 @@ void printCmdLineOptions(void)
     printVersion();
     fprintf(stderr, "Avaiable options:\n");
     fprintf(stderr, "--path=[path]                  Path and filename of eeprom.bin. If not specified 'eeprom.bin' in program directory is used.\n");
-    fprintf(stderr, "--sim=[rf|xp]                  Simulator interface: rf = RealFligt, xp = XPlane. Example: --sim=rf\n");
+    fprintf(stderr, "--sim=[rf|xp|jsbsim]           Simulator interface: rf = RealFligt, xp = XPlane, jsbsim = JSBSim inside SITL. Example: --sim=rf\n");
+    fprintf(stderr, "--simcfg=[path]                Vehicle file for --sim=jsbsim (JSBSim model, start condition, output mapping, sensors).\n");
     fprintf(stderr, "--simip=[ip]                   IP-Address oft the simulator host. If not specified localhost (127.0.0.1) is used.\n");
     fprintf(stderr, "--simport=[port]               Port oft the simulator host.\n");
     fprintf(stderr, "--useimu                       Use IMU sensor data from the simulator instead of using attitude data from the simulator directly (experimental, not recommended).\n");
@@ -295,6 +313,7 @@ void parseArguments(int argc, char *argv[])
             {"tcpbaseport", required_argument, 0, '6'},
             {"sdcard", required_argument, 0, '7'},
             {"faster", no_argument, 0, '8'},
+            {"simcfg", required_argument, 0, '9'},
             {NULL, 0, NULL, 0}
         };
 
@@ -308,6 +327,8 @@ void parseArguments(int argc, char *argv[])
                     sitlSim = SITL_SIM_REALFLIGHT;
                 } else if (strcmp(optarg, "xp") == 0){
                     sitlSim = SITL_SIM_XPLANE;
+                } else if (strcmp(optarg, "jsbsim") == 0) {
+                    sitlSim = SITL_SIM_JSBSIM;
                 } else {
                     fprintf(stderr, "[SIM] Unsupported simulator %s.\n", optarg);
                 }
@@ -398,6 +419,10 @@ void parseArguments(int argc, char *argv[])
 
             case '8':
                 steppedBusyWait = true;
+                break;
+
+            case '9':
+                simCfg = optarg;
                 break;
 
             default:

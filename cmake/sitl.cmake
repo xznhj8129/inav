@@ -33,6 +33,17 @@ main_sources(SITL_SRC
     target/SITL/sim/xplane.h
 )
 
+# JSBSim backend (--sim=jsbsim): optional, built when an installed JSBSim is
+# found through its pkg-config file. Without it SITL builds as before.
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    pkg_check_modules(JSBSIM QUIET JSBSim)
+endif()
+if(JSBSIM_FOUND)
+    message(STATUS "SITL JSBSim backend enabled (JSBSim ${JSBSIM_VERSION}, ${JSBSIM_PREFIX})")
+else()
+    message(STATUS "SITL JSBSim backend disabled (pkg-config JSBSim not found)")
+endif()
 
 if(CMAKE_HOST_APPLE)
   set(MACOSX ON)
@@ -143,6 +154,21 @@ function (target_sitl name)
     target_compile_options(${exe_target} PRIVATE ${SITL_COMPILE_OPTIONS})
 
     target_link_libraries(${exe_target} PRIVATE ${SITL_LINK_LIBRARIS})
+
+    if(JSBSIM_FOUND)
+        # C++, so built apart from the C sources and their C-only warning flags
+        set(jsbsim_target ${name}_jsbsim)
+        add_library(${jsbsim_target} STATIC ${MAIN_SRC_DIR}/target/SITL/sim/jsbsim.cpp)
+        set_target_properties(${jsbsim_target} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF)
+        target_include_directories(${jsbsim_target} PRIVATE ${MAIN_SRC_DIR})
+        target_include_directories(${jsbsim_target} SYSTEM PRIVATE ${JSBSIM_INCLUDE_DIRS})
+        target_compile_options(${jsbsim_target} PRIVATE -Wall -Wextra ${JSBSIM_CFLAGS_OTHER})
+        if(WARNINGS_AS_ERRORS)
+            target_compile_options(${jsbsim_target} PRIVATE -Werror)
+        endif()
+        target_compile_definitions(${exe_target} PRIVATE USE_SIM_JSBSIM)
+        target_link_libraries(${exe_target} PRIVATE ${jsbsim_target} ${JSBSIM_LINK_LIBRARIES})
+    endif()
     target_link_options(${exe_target} PRIVATE ${SITL_LINK_OPTIONS})
 
     set(script_path ${MAIN_SRC_DIR}/target/link/sitl.ld)

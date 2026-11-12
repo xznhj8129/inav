@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!-- INAV SITL vehicle for the JSBSim backend (sim=jsbsim): JSBSim's bundled Cessna 172 (c172p),
+     a full-size aircraft. "root" as in quad.xml. -->
+<inav_vehicle>
+  <model root="jsbsim" dt="0.001">c172p</model>
+  <initialize>plane_air.xml</initialize>
+  <property name="fcs/mixture-cmd-norm">1</property>
+
+  <motor index="0">fcs/throttle-cmd-norm</motor>
+  <!-- servo 0/1/2 = aileron/elevator/rudder, as set up in plane.cli. The rudder
+       also steers the nosewheel, like the real pedals; JSBSim's steering turns
+       the opposite way to its rudder. -->
+  <servo index="0">fcs/aileron-cmd-norm</servo>
+  <servo index="1">fcs/elevator-cmd-norm</servo>
+  <servo index="2">fcs/rudder-cmd-norm</servo>
+  <servo index="2" invert="true">fcs/steer-cmd-norm</servo>
+
+  <gps rate="10"/>
+</inav_vehicle>
