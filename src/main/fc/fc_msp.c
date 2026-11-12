@@ -151,6 +151,7 @@
 
 #if defined(SITL_BUILD)
 #include "target/SITL/stepped_clock.h"
+#include "target/SITL/sim/simHelper.h"
 #endif
 
 extern timeDelta_t cycleTime; // FIXME dependency on mw.c
@@ -4555,6 +4556,41 @@ void mspWriteSimulatorOSD(sbuf_t *dst)
 	}
 }
 
+static void readMspSimulatorRc(sbuf_t *src)
+{
+    for (int i = 0; i < HITL_SIM_MAX_RC_INPUTS; i++) {
+        simulatorData.rcInput[i] = sbufReadU16(src);
+    }
+    rxSimSetChannelValue(simulatorData.rcInput, HITL_SIM_MAX_RC_INPUTS);
+    simulatorData.rssi = sbufReadU16(src);
+    rxSimSetRssi(simulatorData.rssi);
+}
+
+#if defined(SITL_BUILD)
+// Where the in-process simulator's vehicle really is, at the end of the step
+static void writeMspSimulatorTruth(sbuf_t *dst)
+{
+    simTruth_t truth;
+    sitlInProcessSim()->getTruth(&truth);
+
+    int16_t roll, pitch, yaw;
+    simAttitudeToInav(truth.roll, truth.pitch, truth.yaw, &roll, &pitch, &yaw);
+
+    sbufWriteU32(dst, truth.simTimeUs);
+    sbufWriteU32(dst, (int32_t)llround(truth.latDeg * (double)1e7));
+    sbufWriteU32(dst, (int32_t)llround(truth.lonDeg * (double)1e7));
+    sbufWriteU32(dst, (int32_t)lrintf(truth.altMslM * 100.0f));
+    sbufWriteU32(dst, (int32_t)lrintf(truth.aglM * 100.0f));
+    sbufWriteU16(dst, roll);
+    sbufWriteU16(dst, pitch);
+    sbufWriteU16(dst, yaw);
+    for (int i = 0; i < 3; i++) {
+        sbufWriteU16(dst, constrainToInt16(truth.velNed[i] * 100.0f));
+    }
+    sbufWriteU16(dst, (uint16_t)constrainf(truth.airspeedMs * 100.0f, 0.0f, UINT16_MAX));
+}
+#endif
+
 static void readMspSimulatorValues(sbuf_t *src, const int dataSize, const uint8_t simMspVersion)
 {
     if (!ARMING_FLAG(SIMULATOR_MODE_HITL)) { // Just once
@@ -4690,12 +4726,7 @@ static void readMspSimulatorValues(sbuf_t *src, const int dataSize, const uint8_
         }
 
         if (SIMULATOR_HAS_OPTION(HITL_SIM_RC_INPUT)) {
-            for (int i = 0; i < HITL_SIM_MAX_RC_INPUTS; i++) {
-                simulatorData.rcInput[i] = sbufReadU16(src);
-            }
-            rxSimSetChannelValue(simulatorData.rcInput, HITL_SIM_MAX_RC_INPUTS);
-            simulatorData.rssi = sbufReadU16(src);
-            rxSimSetRssi(simulatorData.rssi);
+            readMspSimulatorRc(src);
         } else {
             sbufAdvance(src, sizeof(uint16_t) * HITL_SIM_MAX_RC_INPUTS + sizeof(uint16_t)); // + RSSI
         }
@@ -4730,6 +4761,9 @@ static mspResult_e mspProcessSimulatorCommand(sbuf_t *dst, sbuf_t *src, const in
     }
 
     const int remainingPayload = (int)sbufBytesRemaining(src);
+#if defined(SITL_BUILD)
+    bool writeTruth = false;
+#endif
 
     if (!SIMULATOR_HAS_OPTION(HITL_SITL_MODE)) {
         if (!SIMULATOR_HAS_OPTION(HITL_ENABLE)) {
@@ -4757,6 +4791,23 @@ static mspResult_e mspProcessSimulatorCommand(sbuf_t *dst, sbuf_t *src, const in
 #endif
         }
     }
+#if defined(SITL_BUILD)
+    else if (simMspVersion == SIMULATOR_MSP_VERSION_3 && SIMULATOR_HAS_OPTION(HITL_STEPPED_CLOCK)) {
+        // SITL mode with physics inside SITL (--sim=jsbsim): the frame carries
+        // no sensors, only the sticks (optional) and the step
+        if (!sitlInProcessSim()) {
+            return MSP_RESULT_ERROR;
+        }
+        if (SIMULATOR_HAS_OPTION(HITL_SIM_RC_INPUT)) {
+            readMspSimulatorRc(src);
+        }
+        rxSimSetFailsafe(SIMULATOR_HAS_OPTION(HITL_FAILSAFE_TRIGGERED));
+        if (sbufBytesRemaining(src) < (int)sizeof(uint32_t) || !sitlRunStep(sbufReadU32(src))) {
+            return MSP_RESULT_ERROR;
+        }
+        writeTruth = true;
+    }
+#endif
 
     sbufWriteU16(dst, (uint16_t)simulatorData.input[INPUT_STABILIZED_ROLL]);
     sbufWriteU16(dst, (uint16_t)simulatorData.input[INPUT_STABILIZED_PITCH]);
@@ -4786,6 +4837,12 @@ static mspResult_e mspProcessSimulatorCommand(sbuf_t *dst, sbuf_t *src, const in
     sbufWriteU16(dst, attitude.values.yaw);
 
     mspWriteSimulatorOSD(dst);
+
+#if defined(SITL_BUILD)
+    if (writeTruth) {
+        writeMspSimulatorTruth(dst);
+    }
+#endif
 
     return MSP_RESULT_ACK;
 }

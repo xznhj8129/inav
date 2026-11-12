@@ -3820,25 +3820,37 @@ When the MSP JSON specification changes, bump `msp_messages.json` version:
 | `stepUs` | `uint32_t` | 4 | us | (SITL, format 3, if `HITL_STEPPED_CLOCK`) Simulated time SITL runs before replying |
   
 **Reply Payload:**
-|Field|C Type|Size (Bytes)|Description|
-|---|---|---|---|
-| `stabilizedRoll` | `uint16_t` | 2 | Stabilized Roll command output (-500 to 500) |
-| `stabilizedPitch` | `uint16_t` | 2 | Stabilized Pitch command output (-500 to 500) |
-| `stabilizedYaw` | `uint16_t` | 2 | Stabilized Yaw command output (-500 to 500) |
-| `stabilizedThrottle` | `uint16_t` | 2 | Stabilized Throttle command output (-500 to 500 if armed, else -500) |
-| `debugFlags` | `uint8_t` | 1 | Packed flags: Debug index (0-7), Platform type, Armed state, OSD feature status |
-| `debugValue` | `uint32_t` | 4 | Current debug value (`debug[simulatorData.debugIndex]`) |
-| `attitudeRoll` | `int16_t` | 2 | Current estimated Roll (deci-deg) |
-| `attitudePitch` | `int16_t` | 2 | Current estimated Pitch (deci-deg) |
-| `attitudeYaw` | `int16_t` | 2 | Current estimated Yaw (deci-deg) |
-| `osdHeader` | `uint8_t` | 1 | OSD RLE Header (255) |
-| `osdRows` | `uint8_t` | 1 | (If OSD supported) Number of OSD rows |
-| `osdCols` | `uint8_t` | 1 | (If OSD supported) Number of OSD columns |
-| `osdStartY` | `uint8_t` | 1 | (If OSD supported) Starting row for RLE data |
-| `osdStartX` | `uint8_t` | 1 | (If OSD supported) Starting column for RLE data |
-| `osdRleData` | `uint8_t[]` | array | (If OSD supported) Run-length encoded OSD character data. Terminated by `[0, 0]` |
+|Field|C Type|Size (Bytes)|Units|Description|
+|---|---|---|---|---|
+| `stabilizedRoll` | `uint16_t` | 2 | - | Stabilized Roll command output (-500 to 500) |
+| `stabilizedPitch` | `uint16_t` | 2 | - | Stabilized Pitch command output (-500 to 500) |
+| `stabilizedYaw` | `uint16_t` | 2 | - | Stabilized Yaw command output (-500 to 500) |
+| `stabilizedThrottle` | `uint16_t` | 2 | - | Stabilized Throttle command output (-500 to 500 if armed, else -500) |
+| `debugFlags` | `uint8_t` | 1 | - | Packed flags: Debug index (0-7), Platform type, Armed state, OSD feature status |
+| `debugValue` | `uint32_t` | 4 | - | Current debug value (`debug[simulatorData.debugIndex]`) |
+| `attitudeRoll` | `int16_t` | 2 | - | Current estimated Roll (deci-deg) |
+| `attitudePitch` | `int16_t` | 2 | - | Current estimated Pitch (deci-deg) |
+| `attitudeYaw` | `int16_t` | 2 | - | Current estimated Yaw (deci-deg) |
+| `osdHeader` | `uint8_t` | 1 | - | OSD RLE Header (255) |
+| `osdRows` | `uint8_t` | 1 | - | (If OSD supported) Number of OSD rows |
+| `osdCols` | `uint8_t` | 1 | - | (If OSD supported) Number of OSD columns |
+| `osdStartY` | `uint8_t` | 1 | - | (If OSD supported) Starting row for RLE data |
+| `osdStartX` | `uint8_t` | 1 | - | (If OSD supported) Starting column for RLE data |
+| `osdRleData` | `uint8_t[]` | array | - | (If OSD supported) Run-length encoded OSD character data. Terminated by `[0, 0]` |
+| `truthSimTimeUs` | `uint32_t` | 4 | us | (SITL mode step with an in-process simulator, `--sim=jsbsim`) Simulated time of the truth sample |
+| `truthLat` | `int32_t` | 4 | - | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True latitude (1e7 deg) |
+| `truthLon` | `int32_t` | 4 | - | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True longitude (1e7 deg) |
+| `truthAltMsl` | `int32_t` | 4 | cm | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True altitude above mean sea level |
+| `truthAgl` | `int32_t` | 4 | cm | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True height above ground |
+| `truthRoll` | `int16_t` | 2 | - | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True roll (deci-deg, same signs as attitudeRoll) |
+| `truthPitch` | `int16_t` | 2 | - | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True pitch (deci-deg, same signs as attitudePitch) |
+| `truthYaw` | `int16_t` | 2 | - | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True heading (deci-deg, 0..3600) |
+| `truthVelN` | `int16_t` | 2 | cm/s | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True velocity north |
+| `truthVelE` | `int16_t` | 2 | cm/s | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True velocity east |
+| `truthVelD` | `int16_t` | 2 | cm/s | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True velocity down |
+| `truthAirspeed` | `uint16_t` | 2 | cm/s | (SITL mode step with an in-process simulator, `--sim=jsbsim`) True airspeed |
 
-**Notes:** Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details. SITL stepped clock: in format 3 with `HITL_STEPPED_CLOCK`, the request ends with a `uint32_t` step in microseconds; SITL runs that much simulated time on the frame's sensor values before replying, and sets bit 3 (8) of the reply's debug index byte while the stepped clock is active.
+**Notes:** Requires `USE_SIMULATOR`. Complex message handling state changes for enabling/disabling HITL. Sensor data is injected directly. OSD data is sent using a custom RLE scheme. See `simulatorData` struct and associated code for details. SITL stepped clock: in format 3 with `HITL_STEPPED_CLOCK`, the request ends with a `uint32_t` step in microseconds; SITL runs that much simulated time on the frame's sensor values before replying, and sets bit 3 (8) of the reply's debug index byte while the stepped clock is active. SITL mode with an in-process simulator (`--sim=jsbsim`): a format 3 request with `HITL_SITL_MODE` and `HITL_STEPPED_CLOCK` carries no sensor data, only `flags`, then (if `HITL_SIM_RC_INPUT`) 8 `uint16_t` RC channels and a `uint16_t` RSSI, then the `uint32_t` step; `HITL_FAILSAFE_TRIGGERED` puts the simulated receiver in failsafe. SITL runs the simulator's physics and the flight controller through the step, and the reply ends, after the OSD data, with the `truth*` fields: where the simulated vehicle really is at the end of the step.
 
 ## <a id="msp2_inav_servo_mixer"></a>`MSP2_INAV_SERVO_MIXER (8224 / 0x2020)`
 **Description:** Retrieves the custom servo mixer rules, including programming framework condition IDs, for primary and secondary mixer profiles. Supersedes `MSP_SERVO_MIX_RULES`.  
