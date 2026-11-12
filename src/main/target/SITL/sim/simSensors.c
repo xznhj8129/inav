@@ -40,6 +40,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/servos.h"
+#include "navigation/navigation.h"
 #include "io/gps.h"
 #include "io/rangefinder.h"
 #include "sensors/battery_sensor_fake.h"
@@ -132,6 +133,16 @@ void simAttitudeToInav(float roll, float pitch, float yaw, int16_t *rollDd, int1
     if (*yawDd < 0) {
         *yawDd += 3600;
     }
+}
+
+bool simArmed(void)
+{
+    return ARMING_FLAG(ARMED);
+}
+
+bool simLaunchReady(void)
+{
+    return FLIGHT_MODE(NAV_LAUNCH_MODE) && fixedWingLaunchStatus() == FW_LAUNCH_WAIT_DETECTION;
 }
 
 uint8_t simMotorCount(void)

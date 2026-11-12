@@ -61,6 +61,15 @@ Configure INAV for the vehicle as you would a real one. The example profiles set
 | `gps` | GPS update rate in Hz. Required. |
 | `rangefinder` | Optional. Range in m of a rangefinder looking along the body's down axis at flat ground. |
 | `known_error` | Optional. JSBSim error messages containing this text are not printed. |
+| `hold` | Optional. Holds an airborne start where it is until released: physics does not run and the accelerometer reads gravity at the start attitude, so you can arm, pick modes and set the throttle first. `release` and `delay` as for `catapult`. |
+| `catapult` | Optional. The vehicle sits on a catapult at its start condition (give the rail's pitch as `theta`, its height as `altitudeAGL` and `vc` 0 in the initialization file), attitude locked, until released; then a perfect rail along the nose pushes it at constant acceleration to `speed` (m/s) over `length` (m), and it flies free from the rail's end. |
+
+`release` says what lets a `hold` or `catapult` go, `delay` (s, default 0) how long after that holds:
+
+- `release="launch_ready"`: INAV's NAV LAUNCH shows READY TO LAUNCH, i.e. it is armed, the throttle is up, any idle motor has spun up and it is waiting for the throw. The catapult then gives INAV the acceleration it detects as a launch (`nav_fw_launch_accel`, about 1.9 g by default: 15 m/s over 2 m is about 5.7 g). Never fires without NAV LAUNCH.
+- `release="arm"`: INAV is armed. For launches without NAV LAUNCH (ACRO, MANUAL), a held airborne start, or a held multirotor.
+
+SITL prints when it releases, and the speed at the catapult's end.
 
 If the vehicle goes into the ground (below its gear), SITL prints the time and height and exits with an error.
 

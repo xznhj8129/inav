@@ -311,6 +311,7 @@ typedef enum {
 } navRTHClimbFirst_e;
 
 typedef enum {  // keep aligned with fixedWingLaunchState_t
+    FW_LAUNCH_WAIT_DETECTION = 4,
     FW_LAUNCH_DETECTED = 5,
     FW_LAUNCH_ABORTED = 10,
     FW_LAUNCH_FLYING = 11,

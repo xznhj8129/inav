@@ -89,6 +89,10 @@ void simSensorsApply(const simSensorSample_t *sample, uint32_t nowUs);
 // heading 0..3600.
 void simAttitudeToInav(float roll, float pitch, float yaw, int16_t *rollDd, int16_t *pitchDd, int16_t *yawDd);
 
+// Flight controller state a simulated launcher acts on
+bool simArmed(void);
+bool simLaunchReady(void);      // NAV LAUNCH is waiting for the throw ("READY TO LAUNCH")
+
 uint8_t simMotorCount(void);
 uint8_t simServoCount(void);
 float simMotorOutput(uint8_t index);    // 0..1

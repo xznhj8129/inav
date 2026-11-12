@@ -15,5 +15,8 @@
   <servo index="2">fcs/rudder-cmd-norm</servo>
   <servo index="2" invert="true">fcs/steer-cmd-norm</servo>
 
+  <!-- held in the air at its start until 0.5 s after INAV arms -->
+  <hold release="arm" delay="0.5"/>
+
   <gps rate="10"/>
 </inav_vehicle>

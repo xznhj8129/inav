@@ -37,6 +37,7 @@
 #include <FGFDMExec.h>
 #include <initialization/FGInitialCondition.h>
 #include <initialization/FGTrim.h>
+#include <models/FGExternalReactions.h>
 #include <input_output/FGLog.h>
 #include <input_output/FGPropertyManager.h>
 #include <input_output/FGXMLElement.h>
@@ -53,6 +54,7 @@ constexpr double KTS_MS = 0.514444;
 constexpr double G_MSS = 9.80665;
 constexpr double GROUND_STRIKE_M = -0.5;   // below this the airframe is in the ground, not on its gear
 constexpr double RANGEFINDER_MIN_TILT = 0.5;  // cos of the tilt beyond which the rangefinder sees no ground
+constexpr double RAIL_GAIN = 50.0;         // 1/s: how hard the catapult rail pulls the velocity onto what it allows
 
 // Prints JSBSim's errors except the ones the vehicle file lists as harmless.
 class ErrorsOnly : public JSBSim::FGLogger {
@@ -101,8 +103,208 @@ struct Output {
     SGPropertyNode *property;
 };
 
+[[noreturn]] void fail(const std::string &what)
+{
+    fprintf(stderr, "[SIM][JSBSIM] %s\n", what.c_str());
+    exit(1);
+}
+
+// What lets a held vehicle go
+enum class Release {
+    Arm,            // INAV armed
+    LaunchReady,    // INAV's NAV LAUNCH waiting for the throw ("READY TO LAUNCH")
+};
+
+// A start held until released, after <delay> s of its release condition holding.
+// <hold>: an airborne start pinned where it is; physics does not run, the
+// accelerometer reads gravity at the start attitude.
+// <catapult>: held at its start (JSBSim's hold-down, attitude locked), then
+// pushed along a perfect rail on the nose at constant acceleration, reaching
+// <speed> at the rail's end (<length>); it flies free from there. The push is
+// an external force added to the model; JSBSim's own forces act throughout.
+class Launcher {
+public:
+    Launcher(JSBSim::FGFDMExec &fdm, Element *el, bool isCatapult, double dt)
+        : fdm(fdm), catapult(isCatapult), dt(dt)
+    {
+        const std::string release = el->GetAttributeValue("release");
+        if (release == "arm") {
+            releaseOn = Release::Arm;
+        } else if (release == "launch_ready") {
+            releaseOn = Release::LaunchReady;
+        } else {
+            fail(el->ReadFrom() + "release=\"" + release + "\": use \"arm\" or \"launch_ready\"");
+        }
+        delayS = el->HasAttribute("delay") ? el->GetAttributeValueAsNumber("delay") : 0.0;
+        if (!catapult) {
+            return;
+        }
+
+        const double lengthM = el->GetAttributeValueAsNumber("length");
+        const double speedMs = el->GetAttributeValueAsNumber("speed");
+        lengthFt = lengthM / FT_M;
+        accelFt = (speedMs / FT_M) * (speedMs / FT_M) / (2.0 * lengthFt);
+
+        // <external_reactions><force name="launch_rail" frame="BODY"><location unit="IN"> x y z
+        JSBSim::Element_ptr reactions = new Element("external_reactions");
+        Element *force = child(reactions, "force");
+        force->AddAttribute("name", "launch_rail");
+        force->AddAttribute("frame", "BODY");
+        Element *location = child(force, "location");
+        location->AddAttribute("unit", "IN");
+        for (const char *axis : {"x", "y", "z"}) {
+            child(location, axis)->AddData("0");
+        }
+        fdm.GetExternalReactions()->Load(reactions);
+
+        rail[0] = prop("external_reactions/launch_rail/x");
+        rail[1] = prop("external_reactions/launch_rail/y");
+        rail[2] = prop("external_reactions/launch_rail/z");
+        magnitude = prop("external_reactions/launch_rail/magnitude");
+        mass = prop("inertia/mass-slugs");
+        uvw[0] = prop("velocities/u-fps");
+        uvw[1] = prop("velocities/v-fps");
+        uvw[2] = prop("velocities/w-fps");
+        static const char *const axes[3] = {"x", "y", "z"};
+        static const char *const sources[4] = {"aero", "prop", "gear", "weight"};
+        for (int a = 0; a < 3; a++) {
+            for (int f = 0; f < 4; f++) {
+                forces[a][f] = prop(std::string("forces/fb") + axes[a] + "-" + sources[f] + "-lbs");
+            }
+            // the push acts through the CG
+            prop(std::string("external_reactions/launch_rail/location-") + axes[a] + "-in")
+                ->setDoubleValue(prop(std::string("inertia/cg-") + axes[a] + "-in")->getDoubleValue());
+        }
+
+        // attitude locked on the rail: rotation is not integrated
+        rateIntegrator = prop("simulation/integrator/rate/rotational");
+        positionIntegrator = prop("simulation/integrator/position/rotational");
+        savedRateIntegrator = rateIntegrator->getIntValue();
+        savedPositionIntegrator = positionIntegrator->getIntValue();
+        rateIntegrator->setIntValue(0);
+        positionIntegrator->setIntValue(0);
+        holdDown = prop("forces/hold-down");
+        holdDown->setIntValue(1);
+    }
+
+    bool held(void) const { return isHeld; }
+    bool frozen(void) const { return isHeld && !catapult; }    // physics does not run
+
+    void update(double simTimeS)
+    {
+        if (!isHeld) {
+            return;
+        }
+        if (!(releaseOn == Release::Arm ? simArmed() : simLaunchReady())) {
+            readySinceS = -1.0;
+            return;
+        }
+        if (readySinceS < 0.0) {
+            readySinceS = simTimeS;
+        }
+        if (simTimeS - readySinceS >= delayS) {
+            isHeld = false;
+            if (catapult) {
+                holdDown->setIntValue(0);
+            }
+            fprintf(stderr, "[SIM][JSBSIM] %s released at sim %.3f s\n", catapult ? "catapult" : "hold", simTimeS);
+        }
+    }
+
+    void beforeStep(void)
+    {
+        if (!onRail()) {
+            return;
+        }
+        const double m = mass->getDoubleValue();
+        const double along = m * (accelFt + RAIL_GAIN * (accelFt * (railTimeS + dt) - uvw[0]->getDoubleValue())) - force(0);
+        const double f[3] = {
+            along,
+            m * -RAIL_GAIN * uvw[1]->getDoubleValue() - force(1),
+            m * -RAIL_GAIN * uvw[2]->getDoubleValue() - force(2),
+        };
+        const double total = sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
+        if (total > 0.0) {
+            for (int a = 0; a < 3; a++) {
+                rail[a]->setDoubleValue(f[a] / total);
+            }
+        }
+        magnitude->setDoubleValue(total);
+    }
+
+    void afterStep(void)
+    {
+        if (!onRail()) {
+            return;
+        }
+        railTimeS += dt;
+        runFt += uvw[0]->getDoubleValue() * dt;
+        if (runFt >= lengthFt) {
+            magnitude->setDoubleValue(0.0);
+            rateIntegrator->setIntValue(savedRateIntegrator);
+            positionIntegrator->setIntValue(savedPositionIntegrator);
+            leftRail = true;
+            fprintf(stderr, "[SIM][JSBSIM] off the catapult at %.1f m/s\n", uvw[0]->getDoubleValue() * FT_M);
+        }
+    }
+
+private:
+    bool onRail(void) const { return catapult && !isHeld && !leftRail; }
+
+    double force(int axis) const
+    {
+        double sum = 0.0;
+        for (SGPropertyNode *n : forces[axis]) {
+            sum += n->getDoubleValue();
+        }
+        return sum;
+    }
+
+    SGPropertyNode *prop(const std::string &name)
+    {
+        SGPropertyNode *n = fdm.GetPropertyManager()->GetNode(name);
+        if (!n) {
+            fail("launcher: JSBSim has no property " + name);
+        }
+        return n;
+    }
+
+    static Element *child(Element *parent, const char *name)
+    {
+        Element *e = new Element(name);
+        e->SetParent(parent);
+        parent->AddChildElement(e);
+        return e;
+    }
+
+    JSBSim::FGFDMExec &fdm;
+    const bool catapult;
+    const double dt;
+    Release releaseOn = Release::Arm;
+    double delayS = 0.0;
+    bool isHeld = true;
+    double readySinceS = -1.0;
+
+    double lengthFt = 0.0;
+    double accelFt = 0.0;       // ft/s^2 along the rail
+    double railTimeS = 0.0;
+    double runFt = 0.0;
+    bool leftRail = false;
+    SGPropertyNode *rail[3] = {};
+    SGPropertyNode *magnitude = nullptr;
+    SGPropertyNode *mass = nullptr;
+    SGPropertyNode *uvw[3] = {};
+    SGPropertyNode *forces[3][4] = {};
+    SGPropertyNode *holdDown = nullptr;
+    SGPropertyNode *rateIntegrator = nullptr;
+    SGPropertyNode *positionIntegrator = nullptr;
+    int savedRateIntegrator = 0;
+    int savedPositionIntegrator = 0;
+};
+
 struct Vehicle {
     std::unique_ptr<JSBSim::FGFDMExec> fdm;
+    std::unique_ptr<Launcher> launcher;     // <hold> or <catapult>, or none
     std::vector<Output> outputs;
     uint32_t dtUs;
     double rangefinderMaxM;     // 0: no rangefinder
@@ -124,12 +326,6 @@ SGPropertyNode *node(const char *name)
     return vehicle.fdm->GetPropertyManager()->GetNode(name);
 }
 
-[[noreturn]] void fail(const std::string &what)
-{
-    fprintf(stderr, "[SIM][JSBSIM] %s\n", what.c_str());
-    exit(1);
-}
-
 SGPath resolve(const SGPath &dir, const std::string &path)
 {
     const SGPath p(path);
@@ -148,14 +344,22 @@ simSensorSample_t sensorSample(void)
     const double theta = v.theta->getDoubleValue();
     const double psi = v.psi->getDoubleValue();
 
-    // N* are specific force in g, with Nz positive up
-    s.specificForceFlu[0] = v.nx->getDoubleValue() * G_MSS;
-    s.specificForceFlu[1] = -v.ny->getDoubleValue() * G_MSS;
-    s.specificForceFlu[2] = v.nz->getDoubleValue() * G_MSS;
+    if (v.launcher && v.launcher->held()) {
+        // held still: the accelerometer feels what holds it up (JSBSim zeroes its accelerations)
+        s.specificForceFlu[0] = sin(theta) * G_MSS;
+        s.specificForceFlu[1] = sin(phi) * cos(theta) * G_MSS;
+        s.specificForceFlu[2] = cos(phi) * cos(theta) * G_MSS;
+        s.rateFlu[0] = s.rateFlu[1] = s.rateFlu[2] = 0.0f;
+    } else {
+        // N* are specific force in g, with Nz positive up
+        s.specificForceFlu[0] = v.nx->getDoubleValue() * G_MSS;
+        s.specificForceFlu[1] = -v.ny->getDoubleValue() * G_MSS;
+        s.specificForceFlu[2] = v.nz->getDoubleValue() * G_MSS;
 
-    s.rateFlu[0] = v.p->getDoubleValue();
-    s.rateFlu[1] = -v.q->getDoubleValue();
-    s.rateFlu[2] = -v.r->getDoubleValue();
+        s.rateFlu[0] = v.p->getDoubleValue();
+        s.rateFlu[1] = -v.q->getDoubleValue();
+        s.rateFlu[2] = -v.r->getDoubleValue();
+    }
 
     // a flat field pointing north (no dip), north rotated into the body
     s.magFlu[0] = cos(theta) * cos(psi);
@@ -213,7 +417,19 @@ bool advanceTo(uint32_t simTimeUs)
 
     setOutputs();
     while (v.steps < due) {
+        Launcher *l = v.launcher.get();
+        if (l) {
+            l->update(v.steps * (v.dtUs / 1e6));
+            if (l->frozen()) {
+                v.steps++;
+                continue;
+            }
+            l->beforeStep();
+        }
         v.fdm->Run();
+        if (l) {
+            l->afterStep();
+        }
         v.steps++;
         const double aglM = v.hagl->getDoubleValue() * FT_M;
         if (std::isnan(aglM) || aglM < GROUND_STRIKE_M) {
@@ -324,6 +540,15 @@ const simInProcessBackend_t *simJsbsimInit(const char *vehicleFile, bool useImu)
 
     loadOutputs(doc, "motor", true, simMotorCount());
     loadOutputs(doc, "servo", false, simServoCount());
+
+    Element *hold = doc->FindElement("hold");
+    Element *catapult = doc->FindElement("catapult");
+    if (hold && catapult) {
+        fail(file.utf8Str() + ": <hold> and <catapult> both given; a catapult holds the vehicle itself");
+    }
+    if (hold || catapult) {
+        v.launcher = std::make_unique<Launcher>(*v.fdm, catapult ? catapult : hold, catapult != nullptr, dt);
+    }
 
     Element *rangefinder = doc->FindElement("rangefinder");
     v.rangefinderMaxM = rangefinder ? rangefinder->GetAttributeValueAsNumber("max") : 0.0;
