@@ -45,9 +45,17 @@ void gpsFakeRestart(void)
     // NOP
 }
 
+static bool newSolution;
+
 void gpsFakeHandle(void)
 {
-    gpsProcessNewSolutionData(false);
+    // Publish each solution once, as a real receiver does: every publication
+    // counts as a new fix (gpsHeartbeat), and the AHRS differentiates the GPS
+    // velocity between fixes.
+    if (newSolution) {
+        newSolution = false;
+        gpsProcessNewSolutionData(false);
+    }
 }
 
 void gpsFakeSet(
@@ -95,6 +103,7 @@ void gpsFakeSet(
     }
     
     gpsProcessNewDriverData();
+    newSolution = true;
 }
    
 #endif
