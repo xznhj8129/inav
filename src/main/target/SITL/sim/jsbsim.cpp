@@ -122,6 +122,9 @@ enum class Release {
 // pushed along a perfect rail on the nose at constant acceleration, reaching
 // <speed> at the rail's end (<length>); it flies free from there. The push is
 // an external force added to the model; JSBSim's own forces act throughout.
+// Without <speed> it is an unpowered launch rail: nothing pushes, the vehicle
+// rests at the rail's base until its own thrust along the rail beats weight
+// and drag, and slides back onto the base if it stops beating them.
 class Launcher {
 public:
     Launcher(JSBSim::FGFDMExec &fdm, Element *el, bool isCatapult, double dt)
@@ -141,9 +144,12 @@ public:
         }
 
         const double lengthM = el->GetAttributeValueAsNumber("length");
-        const double speedMs = el->GetAttributeValueAsNumber("speed");
         lengthFt = lengthM / FT_M;
-        accelFt = (speedMs / FT_M) * (speedMs / FT_M) / (2.0 * lengthFt);
+        pushes = el->HasAttribute("speed");
+        if (pushes) {
+            const double speedMs = el->GetAttributeValueAsNumber("speed");
+            accelFt = (speedMs / FT_M) * (speedMs / FT_M) / (2.0 * lengthFt);
+        }
 
         // <external_reactions><force name="launch_rail" frame="BODY"><location unit="IN"> x y z
         JSBSim::Element_ptr reactions = new Element("external_reactions");
@@ -187,7 +193,7 @@ public:
         holdDown->setIntValue(1);
     }
 
-    bool held(void) const { return isHeld; }
+    bool held(void) const { return isHeld || resting; }     // JSBSim's hold-down holds it
     bool frozen(void) const { return isHeld && !catapult; }    // physics does not run
 
     void update(double simTimeS)
@@ -205,9 +211,11 @@ public:
         if (simTimeS - readySinceS >= delayS) {
             isHeld = false;
             if (catapult) {
-                holdDown->setIntValue(0);
+                // a launch rail's vehicle rests at its base until its thrust lets it move
+                resting = !pushes;
+                holdDown->setIntValue(resting);
             }
-            fprintf(stderr, "[SIM][JSBSIM] %s released at sim %.3f s\n", catapult ? "catapult" : "hold", simTimeS);
+            fprintf(stderr, "[SIM][JSBSIM] %s released at sim %.3f s\n", name(), simTimeS);
         }
     }
 
@@ -216,8 +224,19 @@ public:
         if (!onRail()) {
             return;
         }
+        if (resting) {
+            // JSBSim computed the forces in the last step even though hold-down kept them from acting
+            if (force(0) <= 0.0) {
+                return;
+            }
+            resting = false;
+            holdDown->setIntValue(0);
+        }
         const double m = mass->getDoubleValue();
-        const double along = m * (accelFt + RAIL_GAIN * (accelFt * (railTimeS + dt) - uvw[0]->getDoubleValue())) - force(0);
+        // a launch rail adds nothing along it: the vehicle's own forces move it
+        const double along = pushes
+            ? m * (accelFt + RAIL_GAIN * (accelFt * (railTimeS + dt) - uvw[0]->getDoubleValue())) - force(0)
+            : 0.0;
         const double f[3] = {
             along,
             m * -RAIL_GAIN * uvw[1]->getDoubleValue() - force(1),
@@ -234,22 +253,30 @@ public:
 
     void afterStep(void)
     {
-        if (!onRail()) {
+        if (!onRail() || resting) {
             return;
         }
         railTimeS += dt;
         runFt += uvw[0]->getDoubleValue() * dt;
-        if (runFt >= lengthFt) {
+        if (!pushes && runFt <= 0.0) {
+            // slid back onto the base: it rests there again (hold-down zeroes the velocity)
+            runFt = 0.0;
+            magnitude->setDoubleValue(0.0);
+            resting = true;
+            holdDown->setIntValue(1);
+        } else if (runFt >= lengthFt) {
             magnitude->setDoubleValue(0.0);
             rateIntegrator->setIntValue(savedRateIntegrator);
             positionIntegrator->setIntValue(savedPositionIntegrator);
             leftRail = true;
-            fprintf(stderr, "[SIM][JSBSIM] off the catapult at %.1f m/s\n", uvw[0]->getDoubleValue() * FT_M);
+            fprintf(stderr, "[SIM][JSBSIM] off the %s at %.1f m/s\n", name(), uvw[0]->getDoubleValue() * FT_M);
         }
     }
 
 private:
     bool onRail(void) const { return catapult && !isHeld && !leftRail; }
+
+    const char *name(void) const { return !catapult ? "hold" : pushes ? "catapult" : "launch rail"; }
 
     double force(int axis) const
     {
@@ -286,7 +313,9 @@ private:
     double readySinceS = -1.0;
 
     double lengthFt = 0.0;
+    bool pushes = false;        // a catapult; else an unpowered launch rail
     double accelFt = 0.0;       // ft/s^2 along the rail
+    bool resting = false;       // a launch rail's vehicle at the rail's base
     double railTimeS = 0.0;
     double runFt = 0.0;
     bool leftRail = false;
