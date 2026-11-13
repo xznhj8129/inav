@@ -52,6 +52,8 @@ typedef struct {
     float pressurePa;
     float airspeedMs;
     float rangeM;               // distance to the ground along body down; negative when out of range
+    float batteryV;             // battery voltage; 0 when the vehicle has no battery
+    float batteryA;             // current drawn from the battery
 } simSensorSample_t;
 
 // Where the simulated vehicle really is, for scenario checks.

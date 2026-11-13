@@ -38,6 +38,7 @@
 #include <initialization/FGInitialCondition.h>
 #include <initialization/FGTrim.h>
 #include <models/FGExternalReactions.h>
+#include <models/FGPropulsion.h>
 #include <input_output/FGLog.h>
 #include <input_output/FGPropertyManager.h>
 #include <input_output/FGXMLElement.h>
@@ -337,6 +338,9 @@ struct Vehicle {
     std::vector<Output> outputs;
     uint32_t dtUs;
     double rangefinderMaxM;     // 0: no rangefinder
+    double batteryV;            // 0: no battery
+    // brushless motors the battery feeds: motor current and throttle per motor
+    std::vector<std::pair<SGPropertyNode *, SGPropertyNode *>> motorCurrents;
     bool started;
     uint32_t startUs;
     uint64_t steps;
@@ -418,6 +422,15 @@ simSensorSample_t sensorSample(void)
             s.rangeM = d;
         }
     }
+
+    // JSBSim's brushless motor runs on its supply voltage times the throttle,
+    // as an ESC does, so the battery delivers the motor current times the throttle
+    s.batteryV = v.batteryV;
+    double amps = 0.0;
+    for (const auto &m : v.motorCurrents) {
+        amps += m.first->getDoubleValue() * m.second->getDoubleValue();
+    }
+    s.batteryA = amps;
 
     return s;
 }
@@ -581,6 +594,18 @@ const simInProcessBackend_t *simJsbsimInit(const char *vehicleFile, bool useImu)
 
     Element *rangefinder = doc->FindElement("rangefinder");
     v.rangefinderMaxM = rangefinder ? rangefinder->GetAttributeValueAsNumber("max") : 0.0;
+
+    Element *battery = doc->FindElement("battery");
+    v.batteryV = battery ? battery->GetAttributeValueAsNumber("voltage") : 0.0;
+    if (battery) {
+        for (unsigned i = 0; i < v.fdm->GetPropulsion()->GetNumEngines(); i++) {
+            const std::string n = std::to_string(i);
+            SGPropertyNode *current = node(("propulsion/engine[" + n + "]/current-amperes").c_str());
+            if (current) {
+                v.motorCurrents.emplace_back(current, node(("fcs/throttle-pos-norm[" + n + "]").c_str()));
+            }
+        }
+    }
 
     Element *gps = doc->FindElement("gps");
     if (!gps) {

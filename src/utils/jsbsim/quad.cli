@@ -18,6 +18,8 @@ set rangefinder_hardware = FAKE
 set pitot_hardware = NONE
 feature GPS
 set gps_provider = FAKE
+set vbat_meter_type = FAKE           # battery voltage and current from the vehicle file's <battery>
+set current_meter_type = FAKE
 
 # the F450 hovers at ~42% ESC command
 set nav_mc_hover_thr = 1420

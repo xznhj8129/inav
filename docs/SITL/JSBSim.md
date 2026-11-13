@@ -33,7 +33,7 @@ inav_SITL --sim=jsbsim --simcfg=quad.xml --useimu --path=quad.bin
 - `--useimu` lets INAV's own AHRS estimate the attitude from the simulated gyro, accelerometer and compass. Without it SITL hands INAV the true attitude, and the AHRS is not tested.
 - SITL boots on wall time with the vehicle at its start condition. Physics stands still until the first step frame arrives, then runs only on the stepped clock.
 
-Configure INAV for the vehicle as you would a real one. The example profiles set the simulated sensors: `receiver_type = SIM (SITL)`, `acc_hardware`, `baro_hardware` and `mag_hardware = FAKE`, `gps_provider = FAKE`, and `align_mag = CW0` (with `DEFAULT`, INAV turns the compass `CW270FLIP`, the usual external mounting). Add `rangefinder_hardware = FAKE` or `pitot_hardware = FAKE` to use those sensors.
+Configure INAV for the vehicle as you would a real one. The example profiles set the simulated sensors: `receiver_type = SIM (SITL)`, `acc_hardware`, `baro_hardware` and `mag_hardware = FAKE`, `gps_provider = FAKE`, and `align_mag = CW0` (with `DEFAULT`, INAV turns the compass `CW270FLIP`, the usual external mounting). Add `rangefinder_hardware = FAKE` or `pitot_hardware = FAKE` to use those sensors, and `vbat_meter_type = FAKE` and `current_meter_type = FAKE` for the battery.
 
 ## Vehicle file
 
@@ -48,6 +48,7 @@ Configure INAV for the vehicle as you would a real one. The example profiles set
   <servo index="2" invert="true">fcs/steer-cmd-norm</servo>
   <gps rate="10"/>
   <rangefinder max="10"/>
+  <battery voltage="14.6"/>
   <known_error>INCOMPATIBLE CFG FILE</known_error>
 </inav_vehicle>
 ```
@@ -60,6 +61,7 @@ Configure INAV for the vehicle as you would a real one. The example profiles set
 | `motor`, `servo` | One INAV output driving one JSBSim property. `index` is INAV's motor or servo number from 0 (motor 1 = 0). Motors go out as 0..1, servos as -1..1. `invert="true"` negates it; one output may drive several properties. |
 | `gps` | GPS update rate in Hz. Required. |
 | `rangefinder` | Optional. Range in m of a rangefinder looking along the body's down axis at flat ground. |
+| `battery` | Optional. `voltage` (V) INAV's battery meter reads. The current is what the model's brushless motors draw from it: JSBSim's brushless motor runs on its supply voltage times the throttle, as behind an ESC, so the battery delivers the motor current times the throttle. Set `voltage` to the motors' supply voltage (`maxvolts` in their JSBSim engine file). The voltage does not sag or drop as the battery drains. Without it INAV reads no battery. |
 | `known_error` | Optional. JSBSim error messages containing this text are not printed. |
 | `hold` | Optional. Holds an airborne start where it is until released: physics does not run and the accelerometer reads gravity at the start attitude, so you can arm, pick modes and set the throttle first. `release` and `delay` as for `catapult`. |
 | `catapult` | Optional. The vehicle sits on a catapult at its start condition (give the rail's pitch as `theta`, its height as `altitudeAGL` and `vc` 0 in the initialization file), attitude locked, until released; then a perfect rail along the nose pushes it at constant acceleration to `speed` (m/s) over `length` (m), and it flies free from the rail's end. Without `speed` it is an unpowered launch rail, like a model rocket's rod: once released (usually `release="arm"`) the vehicle rests at the rail's base until its own thrust along the rail beats weight and drag, and slides back onto the base if it stops beating them. |

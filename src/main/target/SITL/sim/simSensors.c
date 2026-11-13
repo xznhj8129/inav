@@ -51,7 +51,6 @@
 #define SIM_MAG_SCALE           1024.0f     // fake magnetometer: unit field vector * 1024
 #define SIM_BARO_TEMP_C         21
 #define SIM_GPS_SATS            14
-#define SIM_VBAT_CENTIVOLTS     1680        // a full 4S pack
 
 static bool useImu;
 static uint32_t gpsPeriodUs;
@@ -83,7 +82,8 @@ void simSensorsApplyBoot(const simSensorSample_t *s)
     fakeBaroSet(lrintf(s->pressurePa), DEGREES_TO_CENTIDEGREES(SIM_BARO_TEMP_C));
     fakePitotSetAirspeed(s->airspeedMs * 100.0f);
     fakeRangefindersSetData(s->rangeM < 0.0f ? -1 : lrintf(s->rangeM * 100.0f));
-    fakeBattSensorSetVbat(SIM_VBAT_CENTIVOLTS);
+    fakeBattSensorSetVbat(constrainf(s->batteryV * 100.0f, 0.0f, UINT16_MAX));
+    fakeBattSensorSetAmperage(constrainf(s->batteryA * 100.0f, 0.0f, UINT16_MAX));
 }
 
 void simSensorsApply(const simSensorSample_t *s, uint32_t nowUs)

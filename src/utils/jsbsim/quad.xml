@@ -15,6 +15,9 @@
 
   <gps rate="10"/>
   <rangefinder max="10"/>
+  <!-- the supply voltage of the F450's motor model (maxvolts in JSBSim's DJI_E305);
+       the current comes from the motors -->
+  <battery voltage="14.6"/>
 
   <!-- the F450 file claims a newer format than JSBSim reads, and its own
        onboard sensor systems fail to register; SITL computes the sensors -->
